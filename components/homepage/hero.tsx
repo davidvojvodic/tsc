@@ -1,6 +1,4 @@
-// components/HeroSection.tsx
 import Image from "next/image";
-
 import { Button } from "@/components/ui/button";
 import { Container } from "../container";
 
@@ -15,17 +13,6 @@ export function HeroSection() {
   return (
     <Container>
       <div className="relative">
-        {/* Small profile image in top-right */}
-        <div className="absolute -top-12 right-4 z-10 md:right-8">
-          <Image
-            src="/profile-small.jpg"
-            alt="Profile"
-            width={40}
-            height={40}
-            className="rounded-full"
-          />
-        </div>
-
         <div className="grid gap-12 py-16 md:grid-cols-2 md:items-center md:py-24">
           {/* Left column - Text content */}
           <div className="flex flex-col gap-6">
@@ -47,59 +34,30 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right column - Images */}
-          <div className="relative h-[500px]">
-            {/* Decorative dots pattern */}
-            <div className="absolute right-0 top-0 h-64 w-64 opacity-10">
-              <div className="grid grid-cols-6 gap-4">
-                {[...Array(36)].map((_, i) => (
-                  <div key={i} className="h-2 w-2 rounded-full bg-foreground" />
-                ))}
-              </div>
-            </div>
+          {/* Right column - Hero Image */}
+          <div className="relative aspect-square max-h-[600px] w-full">
+            <Image
+              src="/hero-upscaled.png" // Make sure to save the image you provided with this name
+              alt="Student Profiles"
+              fill
+              className="object-contain"
+              priority
+            />
 
-            {/* Profile images */}
-            <div className="relative h-full">
-              <div className="absolute left-4 top-8 z-20 h-64 w-64 overflow-hidden rounded-full bg-blue-500">
-                <Image
-                  src="/profile-1.jpg"
-                  alt="Student profile"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="absolute right-4 top-32 z-10 h-72 w-72 overflow-hidden rounded-full bg-red-400">
-                <Image
-                  src="/profile-2.jpg"
-                  alt="Student profile"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="absolute bottom-0 right-16 h-64 w-64 overflow-hidden rounded-full bg-yellow-400">
-                <Image
-                  src="/profile-3.jpg"
-                  alt="Student profile"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-
-              {/* Community badge */}
-              <div className="absolute bottom-12 left-0 z-30 rounded-lg bg-white p-3 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <div className="flex -space-x-2">
-                    {[...Array(5)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="h-6 w-6 rounded-full border-2 border-white bg-gray-200"
-                      />
-                    ))}
-                  </div>
-                  <div className="text-sm">
-                    <p className="font-semibold">Join our community of</p>
-                    <p>100+ Students</p>
-                  </div>
+            {/* Community badge */}
+            <div className="absolute bottom-12 left-4 z-30 rounded-lg bg-white p-3 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="flex -space-x-2">
+                  {[...Array(5)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-6 w-6 rounded-full border-2 border-white bg-gray-200"
+                    />
+                  ))}
+                </div>
+                <div className="text-sm">
+                  <p className="font-semibold">Join our community of</p>
+                  <p>100+ Students</p>
                 </div>
               </div>
             </div>

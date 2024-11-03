@@ -48,10 +48,10 @@ export function Navbar() {
           {/* Auth Buttons */}
           <div className="flex items-center gap-x-4">
             <div className="hidden md:flex md:items-center md:gap-x-4">
-              <Button variant="ghost" asChild>
+              <Button asChild>
                 <Link href="/login">Log In</Link>
               </Button>
-              <Button asChild>
+              <Button variant="outline" asChild>
                 <Link href="/signup">Sign Up</Link>
               </Button>
             </div>
@@ -59,7 +59,7 @@ export function Navbar() {
             {/* Mobile Menu */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button variant="outline" size="icon" className="md:hidden">
                   <Menu className="h-6 w-6" />
                   <span className="sr-only">Open menu</span>
                 </Button>

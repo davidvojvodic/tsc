@@ -52,7 +52,7 @@ export function Navbar() {
                 <Link href="/login">Log In</Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link href="/signup">Sign Up</Link>
+                <Link href="/register">Sign Up</Link>
               </Button>
             </div>
 

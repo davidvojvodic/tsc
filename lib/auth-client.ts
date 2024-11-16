@@ -2,7 +2,7 @@ import { createAuthClient } from "better-auth/react";
 
 const environment = process.env.NEXT_PUBLIC_VERCEL_ENV || "development";
 
-function getBaseURL() {
+export function getBaseURL() {
   switch (environment) {
     case "development":
       return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -27,4 +27,5 @@ if (!baseURL && environment === "production") {
 
 export const authClient = createAuthClient({
   baseURL,
+  fetchOptions: { credentials: "include" },
 });

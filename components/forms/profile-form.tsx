@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, LogOut, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import { UploadButton } from "@/lib/uploadthing";
 
 const profileFormSchema = z.object({
   name: z
@@ -55,6 +58,9 @@ interface User {
 
 export function ProfileForm({ user }: { user: User }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -63,6 +69,67 @@ export function ProfileForm({ user }: { user: User }) {
       email: user.email,
     },
   });
+
+  async function updateAvatar(url: string) {
+    try {
+      const response = await fetch(`/api/users/${user.id}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image: url }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update avatar");
+      }
+
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      console.error("[UPDATE_AVATAR]", error);
+      toast.error("Failed to update avatar");
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    try {
+      const response = await fetch(`/api/users/${user.id}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image: null }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove avatar");
+      }
+
+      startTransition(() => {
+        router.refresh();
+      });
+
+      toast.success("Avatar removed successfully");
+    } catch (error) {
+      console.error("[REMOVE_AVATAR]", error);
+      toast.error("Failed to remove avatar");
+    }
+  }
+
+  async function handleSignOut() {
+    try {
+      setIsSigningOut(true);
+      await authClient.signOut();
+      router.push("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out");
+    } finally {
+      setIsSigningOut(false);
+    }
+  }
 
   async function onSubmit(data: ProfileFormValues) {
     setIsLoading(true);
@@ -93,8 +160,27 @@ export function ProfileForm({ user }: { user: User }) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>Update your profile information.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Profile</CardTitle>
+              <CardDescription>
+                Update your profile information.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              className="text-destructive hover:bg-destructive/90 hover:text-white"
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+            >
+              {isSigningOut ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="mr-2 h-4 w-4" />
+              )}
+              Sign Out
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-x-4">
@@ -104,10 +190,32 @@ export function ProfileForm({ user }: { user: User }) {
                 {user.name?.charAt(0) || user.email.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <Button variant="outline" size="sm">
-              <Upload className="mr-2 h-4 w-4" />
-              Change Avatar
-            </Button>
+            <div className="flex flex-col gap-2">
+              <UploadButton
+                endpoint="imageUploader"
+                onClientUploadComplete={(res) => {
+                  if (res?.[0]) {
+                    updateAvatar(res[0].url);
+                    toast.success("Avatar updated successfully");
+                  }
+                }}
+                onUploadError={(error: Error) => {
+                  toast.error(`Failed to upload avatar: ${error.message}`);
+                }}
+              />
+              {user.image && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={handleRemoveAvatar}
+                  disabled={isPending}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remove Avatar
+                </Button>
+              )}
+            </div>
           </div>
 
           <Form {...form}>

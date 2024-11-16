@@ -33,6 +33,7 @@
     "@sanity/image-url": "^1.0.2",
     "@sanity/preview-kit": "^5.1.11",
     "@sanity/vision": "^3.61.0",
+    "@uploadthing/react": "^7.1.1",
     "bcrypt": "^5.1.1",
     "better-auth": "^0.5.2-beta.4",
     "class-variance-authority": "^0.7.0",
@@ -51,6 +52,7 @@
     "styled-components": "^6.1.13",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "uploadthing": "^7.3.0",
     "ws": "^8.18.0",
     "zod": "^3.23.8"
   },

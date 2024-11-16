@@ -9,11 +9,14 @@ const profileSchema = z.object({
   name: z
     .string()
     .min(2, "Name must be at least 2 characters.")
-    .max(30, "Name must not be longer than 30 characters."),
+    .max(30, "Name must not be longer than 30 characters.")
+    .optional(),
   email: z
     .string()
     .min(1, "Email is required.")
-    .email("Invalid email address."),
+    .email("Invalid email address.")
+    .optional(),
+  image: z.string().url().nullable().optional(),
 });
 
 export async function PATCH(
@@ -56,10 +59,11 @@ export async function PATCH(
     const user = await prisma.user.update({
       where: { id: params.id },
       data: {
-        name: validatedData.name,
-        email: validatedData.email,
+        ...validatedData,
         // Set emailVerified to false if email is changed
-        emailVerified: session.user.email === validatedData.email,
+        ...(validatedData.email && validatedData.email !== session.user.email
+          ? { emailVerified: false }
+          : {}),
       },
     });
 

@@ -1,10 +1,13 @@
 // components/Navbar.tsx
 import Link from "next/link";
 import Image from "next/image";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import prisma from "@/lib/prisma";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, LayoutDashboard } from "lucide-react";
 import { Container } from "../container";
 
 const navigation = [
@@ -14,7 +17,30 @@ const navigation = [
   { name: "Online Learning", href: "/learning" },
 ];
 
-export function Navbar() {
+async function getUserWithRole() {
+  const session = await auth.api.getSession({
+    headers: headers(),
+  });
+
+  if (!session) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  return user;
+}
+
+export async function Navbar() {
+  const user = await getUserWithRole();
+  const isAuthorized = user?.role === "ADMIN" || user?.role === "TEACHER";
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
@@ -48,12 +74,33 @@ export function Navbar() {
           {/* Auth Buttons */}
           <div className="flex items-center gap-x-4">
             <div className="hidden md:flex md:items-center md:gap-x-4">
-              <Button asChild>
-                <Link href="/login">Log In</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/register">Sign Up</Link>
-              </Button>
+              {user ? (
+                <>
+                  {isAuthorized && (
+                    <Button variant="outline" asChild>
+                      <Link
+                        href={"/admin"}
+                        className="flex items-center gap-x-2"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </Button>
+                  )}
+                  <Button variant="default" asChild>
+                    <Link href="/account">My Account</Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild>
+                    <Link href="/login">Log In</Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/register">Sign Up</Link>
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu */}
@@ -76,12 +123,33 @@ export function Navbar() {
                     </Link>
                   ))}
                   <div className="flex flex-col gap-2 pt-4">
-                    <Button variant="ghost" asChild>
-                      <Link href="/login">Log In</Link>
-                    </Button>
-                    <Button asChild>
-                      <Link href="/signup">Sign Up</Link>
-                    </Button>
+                    {user ? (
+                      <>
+                        {isAuthorized && (
+                          <Button variant="outline" asChild>
+                            <Link
+                              href={"/admin"}
+                              className="flex items-center gap-x-2"
+                            >
+                              <LayoutDashboard className="h-4 w-4" />
+                              Dashboard
+                            </Link>
+                          </Button>
+                        )}
+                        <Button variant="default" asChild>
+                          <Link href="/account">My Account</Link>
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="ghost" asChild>
+                          <Link href="/login">Log In</Link>
+                        </Button>
+                        <Button asChild>
+                          <Link href="/register">Sign Up</Link>
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </SheetContent>

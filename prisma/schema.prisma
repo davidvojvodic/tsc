@@ -1,19 +1,20 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// Generator configuration for Prisma Client
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
+// Datasource configuration for PostgreSQL
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
+// User model for authentication and user management
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -22,14 +23,18 @@ model User {
   updatedAt     DateTime  @updatedAt
   emailVerified Boolean
   image         String?
+  role          Role      @default(USER)
   Session       Session[]
   Account       Account[]
+  posts         Post[]
+  pages         Page[] // Relation to static pages
 
   @@map("user")
 }
 
+// Session model for user sessions
 model Session {
-  id        String   @id
+  id        String   @id @default(uuid())
   expiresAt DateTime
   ipAddress String?
   userAgent String?
@@ -39,8 +44,9 @@ model Session {
   @@map("session")
 }
 
+// Account model for third-party account linking
 model Account {
-  id           String    @id
+  id           String    @id @default(uuid())
   accountId    String
   providerId   String
   userId       String
@@ -54,11 +60,207 @@ model Account {
   @@map("account")
 }
 
+// Verification model for email or action verification
 model Verification {
-  id         String   @id
+  id         String   @id @default(uuid())
   identifier String
   value      String
   expiresAt  DateTime
 
   @@map("verification")
+}
+
+// Role enumeration for user roles
+enum Role {
+  USER
+  ADMIN
+  TEACHER
+}
+
+// Post model for blog posts
+model Post {
+  id          String     @id @default(uuid())
+  title       String
+  slug        String     @unique
+  content     String     @db.Text
+  excerpt     String?    @db.Text
+  featured    Boolean    @default(false)
+  published   Boolean    @default(false)
+  publishedAt DateTime?
+  author      User       @relation(fields: [authorId], references: [id])
+  authorId    String
+  categories  Category[] // Relation to categories for organization
+  tags        Tag[]
+  cover       Media?     @relation(fields: [coverId], references: [id])
+  coverId     String?
+  quizzes     Quiz[] // Relation to quizzes if posts are associated with quizzes
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  Project     Project?   @relation(fields: [projectId], references: [id])
+  projectId   String?
+
+  @@map("post")
+}
+
+// Page model for static pages
+model Page {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  content     String    @db.Text
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  author      User      @relation(fields: [authorId], references: [id])
+  authorId    String
+  parent      Page?     @relation("PageToPage", fields: [parentId], references: [id])
+  parentId    String?
+  children    Page[]    @relation("PageToPage")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Media       Media?    @relation(fields: [mediaId], references: [id])
+  mediaId     String?
+  Project     Project?  @relation(fields: [projectId], references: [id])
+  projectId   String?
+
+  @@map("page")
+}
+
+// Category model for organizing posts and other content
+model Category {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?    @db.Text
+  posts       Post[] // Posts associated with this category
+  parent      Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  parentId    String?
+  children    Category[] @relation("CategoryToCategory")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("category")
+}
+
+// Tag model for tagging posts and other content
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  posts     Post[] // Posts associated with this tag
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tag")
+}
+
+// Media model for handling images, documents, etc.
+enum MediaType {
+  IMAGE
+  DOCUMENT
+  VIDEO
+  AUDIO
+  OTHER
+}
+
+model Media {
+  id        String    @id @default(uuid())
+  filename  String
+  url       String
+  mimeType  String
+  size      Int
+  type      MediaType @default(OTHER)
+  alt       String?
+  posts     Post[] // Posts using this media as cover
+  pages     Page[] // Pages using this media
+  teachers  Teacher[] // Teachers' photos
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Project   Project?  @relation(fields: [projectId], references: [id])
+  projectId String?
+
+  @@map("media")
+}
+
+// Teacher model for managing teacher profiles
+model Teacher {
+  id        String   @id @default(uuid())
+  name      String
+  bio       String?  @db.Text
+  photo     Media?   @relation(fields: [photoId], references: [id])
+  photoId   String?
+  quizzes   Quiz[] // Quizzes created by the teacher
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Project   Project? @relation(fields: [projectId], references: [id])
+  projectId String?
+
+  @@map("teacher")
+}
+
+// Quiz model for creating quizzes
+model Quiz {
+  id          String     @id @default(uuid())
+  title       String
+  description String?    @db.Text
+  teacher     Teacher    @relation(fields: [teacherId], references: [id])
+  teacherId   String
+  questions   Question[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  Post        Post?      @relation(fields: [postId], references: [id])
+  postId      String?
+  Project     Project?   @relation(fields: [projectId], references: [id])
+  projectId   String?
+
+  @@map("quiz")
+}
+
+// Question model for quiz questions
+model Question {
+  id      String   @id @default(uuid())
+  text    String   @db.Text
+  quiz    Quiz     @relation(fields: [quizId], references: [id])
+  quizId  String
+  options Option[] @relation("QuestionOptions") // All options related to this question
+
+  // Correct option fields
+  correctOptionId String @unique // Ensures one-to-one relation
+  correctOption   Option @relation("CorrectAnswer", fields: [correctOptionId], references: [id]) // Correct option
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("question")
+}
+
+// Option model for quiz answer options
+model Option {
+  id                    String    @id @default(uuid())
+  text                  String
+  question              Question  @relation("QuestionOptions", fields: [questionId], references: [id]) // Relation to the parent question
+  questionId            String
+  correctAnswerQuestion Question? @relation("CorrectAnswer") // Reciprocal relation for correctOption
+
+  correct Boolean @default(false) // Indicates if this option is the correct answer
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("option")
+}
+
+// Project model for organizing different projects or courses (optional)
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  description String?   @db.Text
+  teachers    Teacher[] // Teachers involved in the project
+  pages       Page[] // Pages related to the project
+  posts       Post[] // Posts related to the project
+  quizzes     Quiz[] // Quizzes related to the project
+  media       Media[] // Media related to the project
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("project")
 }

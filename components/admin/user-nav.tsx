@@ -4,7 +4,7 @@
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
+  // DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -13,10 +13,10 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   User,
-  Settings,
-  Lock,
-  HelpCircle,
-  LifeBuoy,
+  // Settings,
+  // Lock,
+  // HelpCircle,
+  // LifeBuoy,
   LogOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -50,7 +50,7 @@ export function UserNav({ email }: { email: string }) {
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        {/* <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <Settings className="mr-2 h-4 w-4" />
@@ -60,8 +60,8 @@ export function UserNav({ email }: { email: string }) {
             <Lock className="mr-2 h-4 w-4" />
             <span>Security</span>
           </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        </DropdownMenuGroup> */}
+        {/* <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <LifeBuoy className="mr-2 h-4 w-4" />
@@ -71,7 +71,7 @@ export function UserNav({ email }: { email: string }) {
             <HelpCircle className="mr-2 h-4 w-4" />
             <span>Documentation</span>
           </DropdownMenuItem>
-        </DropdownMenuGroup>
+        </DropdownMenuGroup> */}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />

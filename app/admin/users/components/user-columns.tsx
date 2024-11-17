@@ -8,7 +8,7 @@ export type UserColumn = {
   id: string;
   name: string | null;
   email: string;
-  role: "ADMIN" | "USER" | "EDITOR" | "TEACHER" | "MODERATOR";
+  role: "ADMIN" | "USER" | "TEACHER";
   createdAt: string;
 };
 

@@ -1,24 +1,10 @@
-// app/api/teachers/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { z } from "zod";
 import { headers } from "next/headers";
 import { MediaType } from "@prisma/client";
-
-export const teacherSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  bio: z.string().optional().nullable(),
-  photo: z
-    .object({
-      url: z.string().url(),
-      fileKey: z.string(),
-      size: z.number(),
-      mimeType: z.string(),
-    })
-    .optional()
-    .nullable(),
-});
+import { teacherSchema } from "@/lib/schemas/schema";
+import { z } from "zod";
 
 async function checkAdminAccess(userId: string) {
   const user = await prisma.user.findUnique({

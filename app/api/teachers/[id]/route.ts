@@ -3,8 +3,9 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { headers } from "next/headers";
-import { teacherSchema } from "../route";
+
 import { MediaType } from "@prisma/client";
+import { teacherSchema } from "@/lib/schemas/schema";
 
 async function checkAdminAccess(userId: string) {
   const user = await prisma.user.findUnique({

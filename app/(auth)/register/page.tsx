@@ -27,9 +27,11 @@ import { formSchema } from "@/lib/auth-schema";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,71 +47,51 @@ export default function RegisterPage() {
     const { name, email, password } = values;
 
     try {
-      const { data, error } = await authClient.signUp.email(
-        {
-          email,
-          password,
-          name,
-          callbackURL: "/login",
-        },
-        {
-          onRequest: () => {
-            toast({
-              title: "Creating your account",
-              description: "Please wait while we set things up...",
-            });
-          },
-          onSuccess: () => {
-            toast({
-              title: "Success!",
-              description:
-                "Your account has been created. Please check your email to verify your account.",
-            });
-            form.reset();
-          },
-          onError: (ctx) => {
-            toast({
-              title: "Error",
-              description: ctx.error.message,
-              variant: "destructive",
-            });
-            if (ctx.error.message.toLowerCase().includes("email")) {
-              form.setError("email", {
-                type: "manual",
-                message: ctx.error.message,
-              });
-            } else if (ctx.error.message.toLowerCase().includes("password")) {
-              form.setError("password", {
-                type: "manual",
-                message: ctx.error.message,
-              });
-            } else {
-              form.setError("root", {
-                type: "manual",
-                message: ctx.error.message,
-              });
-            }
-          },
-        }
-      );
+      const { data, error } = await authClient.signUp.email({
+        email,
+        password,
+        name,
+      });
 
-      // Handle successful registration
-      if (data?.user) {
-        // You could store user data in a global state here if needed
-        console.log("Registration successful:", data.user);
-      }
-
-      // Handle registration errors
       if (error) {
         throw new Error(error.message || "Registration failed");
+      }
+
+      if (data?.user) {
+        toast({
+          title: "Account created!",
+          description: "Please check your email to verify your account.",
+        });
+        form.reset();
+        router.push("/");
+        router.refresh();
       }
     } catch (err) {
       console.error("Registration error:", err);
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: err instanceof Error ? err.message : "Registration failed",
         variant: "destructive",
       });
+
+      if (err instanceof Error) {
+        if (err.message.toLowerCase().includes("email")) {
+          form.setError("email", {
+            type: "manual",
+            message: err.message,
+          });
+        } else if (err.message.toLowerCase().includes("password")) {
+          form.setError("password", {
+            type: "manual",
+            message: err.message,
+          });
+        } else {
+          form.setError("root", {
+            type: "manual",
+            message: err.message,
+          });
+        }
+      }
     } finally {
       setIsLoading(false);
     }

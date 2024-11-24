@@ -28,7 +28,8 @@ export function UserNav({ email }: { email: string }) {
   const handleSignOut = async () => {
     try {
       await authClient.signOut();
-      router.push("/login");
+      router.push("/");
+      router.refresh();
     } catch (error) {
       console.error("Error signing out:", error);
     }

@@ -2,12 +2,14 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Generator configuration for Prisma Client
+
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
 // Datasource configuration for PostgreSQL
+
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
@@ -15,6 +17,7 @@ datasource db {
 }
 
 // User model for authentication and user management
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -29,48 +32,69 @@ model User {
   posts         Post[]
   pages         Page[] // Relation to static pages
 
+  banned     Boolean?
+  banReason  String?
+  banExpires DateTime?
+
   @@map("user")
 }
 
 // Session model for user sessions
-model Session {
-  id        String   @id @default(uuid())
-  expiresAt DateTime
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+model Session {
+  id             String   @id @default(uuid())
+  expiresAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  impersonatedBy String?
+
+  @@unique([token])
   @@map("session")
 }
 
 // Account model for third-party account linking
+
 model Account {
-  id           String    @id @default(uuid())
-  accountId    String
-  providerId   String
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken  String?
-  refreshToken String?
-  idToken      String?
-  expiresAt    DateTime?
-  password     String?
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  expiresAt             DateTime?
+  password              String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@map("account")
 }
 
 // Verification model for email or action verification
+
 model Verification {
   id         String   @id @default(uuid())
   identifier String
   value      String
   expiresAt  DateTime
 
+  createdAt DateTime?
+  updatedAt DateTime?
+
   @@map("verification")
 }
 
 // Role enumeration for user roles
+
 enum Role {
   USER
   ADMIN
@@ -78,6 +102,7 @@ enum Role {
 }
 
 // Post model for blog posts
+
 model Post {
   id          String     @id @default(uuid())
   title       String
@@ -103,6 +128,7 @@ model Post {
 }
 
 // Page model for static pages
+
 model Page {
   id          String    @id @default(uuid())
   title       String
@@ -126,6 +152,7 @@ model Page {
 }
 
 // Category model for organizing posts and other content
+
 model Category {
   id          String     @id @default(uuid())
   name        String     @unique
@@ -142,6 +169,7 @@ model Category {
 }
 
 // Tag model for tagging posts and other content
+
 model Tag {
   id        String   @id @default(uuid())
   name      String   @unique
@@ -154,6 +182,7 @@ model Tag {
 }
 
 // Media model for handling images, documents, etc.
+
 enum MediaType {
   IMAGE
   DOCUMENT
@@ -182,6 +211,7 @@ model Media {
 }
 
 // Teacher model for managing teacher profiles
+
 model Teacher {
   id        String   @id @default(uuid())
   name      String
@@ -198,6 +228,7 @@ model Teacher {
 }
 
 // Quiz model for creating quizzes
+
 model Quiz {
   id          String     @id @default(uuid())
   title       String
@@ -216,6 +247,7 @@ model Quiz {
 }
 
 // Question model for quiz questions
+
 model Question {
   id      String   @id @default(uuid())
   text    String   @db.Text
@@ -234,6 +266,7 @@ model Question {
 }
 
 // Option model for quiz answer options
+
 model Option {
   id                    String    @id @default(uuid())
   text                  String
@@ -250,6 +283,7 @@ model Option {
 }
 
 // Project model for organizing different projects or courses (optional)
+
 model Project {
   id          String    @id @default(uuid())
   name        String

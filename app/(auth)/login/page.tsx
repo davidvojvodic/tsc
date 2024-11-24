@@ -47,67 +47,50 @@ export default function LoginPage() {
     const { email, password } = values;
 
     try {
-      const { data, error } = await authClient.signIn.email(
-        {
-          email,
-          password,
-          callbackURL: "/",
-        },
-        {
-          onRequest: () => {
-            toast({
-              title: "Signing in",
-              description: "Please wait while we verify your credentials...",
-            });
-          },
-          onSuccess: () => {
-            toast({
-              title: "Welcome back!",
-              description: "You have successfully signed in.",
-            });
-            form.reset();
-            router.push("/"); // Redirect to home page
-          },
-          onError: (ctx) => {
-            toast({
-              title: "Error",
-              description: ctx.error.message,
-              variant: "destructive",
-            });
-            if (ctx.error.message.toLowerCase().includes("email")) {
-              form.setError("email", {
-                type: "manual",
-                message: ctx.error.message,
-              });
-            } else if (ctx.error.message.toLowerCase().includes("password")) {
-              form.setError("password", {
-                type: "manual",
-                message: ctx.error.message,
-              });
-            } else {
-              form.setError("root", {
-                type: "manual",
-                message: ctx.error.message,
-              });
-            }
-          },
-        }
-      );
-
-      if (data?.user) {
-        console.log("Login successful:", data.user);
-      }
+      const { data, error } = await authClient.signIn.email({
+        email,
+        password,
+      });
 
       if (error) {
         throw new Error(error.message || "Login failed");
+      }
+
+      if (data?.user) {
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        });
+        form.reset();
+        router.push("/");
+        router.refresh();
       }
     } catch (err) {
       console.error("Login error:", err);
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: err instanceof Error ? err.message : "Login failed",
         variant: "destructive",
       });
+
+      if (err instanceof Error) {
+        if (err.message.toLowerCase().includes("email")) {
+          form.setError("email", {
+            type: "manual",
+            message: err.message,
+          });
+        } else if (err.message.toLowerCase().includes("password")) {
+          form.setError("password", {
+            type: "manual",
+            message: err.message,
+          });
+        } else {
+          form.setError("root", {
+            type: "manual",
+            message: err.message,
+          });
+        }
+      }
     } finally {
       setIsLoading(false);
     }

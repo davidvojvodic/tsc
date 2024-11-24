@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Edit, MoreHorizontal, Trash, Shield } from "lucide-react";
+import { Copy, Edit, MoreHorizontal, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -78,11 +78,6 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
             onClick={() => router.push(`/admin/users/${data.id}`)}
           >
             <Edit className="mr-2 h-4 w-4" /> Edit User
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => router.push(`/admin/users/${data.id}/permissions`)}
-          >
-            <Shield className="mr-2 h-4 w-4" /> Manage Permissions
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

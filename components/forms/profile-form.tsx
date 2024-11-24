@@ -122,7 +122,7 @@ export function ProfileForm({ user }: { user: User }) {
     try {
       setIsSigningOut(true);
       await authClient.signOut();
-      router.push("/login");
+      router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Failed to sign out");

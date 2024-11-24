@@ -1,4 +1,5 @@
 import { createAuthClient } from "better-auth/react";
+import { adminClient } from "better-auth/client/plugins";
 
 const environment = process.env.NEXT_PUBLIC_VERCEL_ENV || "development";
 
@@ -28,4 +29,5 @@ if (!baseURL && environment === "production") {
 export const authClient = createAuthClient({
   baseURL,
   fetchOptions: { credentials: "include" },
+  plugins: [adminClient()],
 });

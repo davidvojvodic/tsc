@@ -18,7 +18,11 @@ export const formSchema = z.object({
     .max(50, { message: "Password cannot exceed 50 characters" }),
 });
 
-export const signInFormSchema = formSchema.pick({
-  email: true,
-  password: true,
+export const signInFormSchema = z.object({
+  email: z
+    .string()
+    .email({ message: "Please enter a valid email address" })
+    .min(2)
+    .max(50),
+  password: z.string().min(1, { message: "Password is required" }),
 });

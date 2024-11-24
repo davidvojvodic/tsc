@@ -16,6 +16,7 @@ import {
   ImageIcon,
   GraduationCap,
   BrainCircuit,
+  FolderKanban,
 } from "lucide-react";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -40,6 +41,13 @@ export const routes = [
     href: "/admin/posts",
     color: "text-pink-700",
     isActive: false,
+  },
+  {
+    label: "Projects",
+    icon: FolderKanban,
+    href: "/admin/projects",
+    color: "text-cyan-500",
+    isActive: true,
   },
   {
     label: "Pages",

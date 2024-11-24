@@ -177,6 +177,8 @@ model Tag {
   posts     Post[] // Posts associated with this tag
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Project   Project? @relation(fields: [projectId], references: [id])
+  projectId String?
 
   @@map("tag")
 }
@@ -192,20 +194,23 @@ enum MediaType {
 }
 
 model Media {
-  id        String    @id @default(uuid())
-  filename  String
-  url       String
-  mimeType  String
-  size      Int
-  type      MediaType @default(OTHER)
-  alt       String?
-  posts     Post[] // Posts using this media as cover
-  pages     Page[] // Pages using this media
-  teachers  Teacher[] // Teachers' photos
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  Project   Project?  @relation(fields: [projectId], references: [id])
-  projectId String?
+  id             String         @id @default(uuid())
+  filename       String
+  url            String
+  mimeType       String
+  size           Int
+  type           MediaType      @default(OTHER)
+  alt            String?
+  posts          Post[] // Posts using this media as cover
+  pages          Page[] // Pages using this media
+  teachers       Teacher[] // Teachers' photos
+  projectHero    Project[]      @relation("ProjectHero")
+  projectGallery Project[]      @relation("ProjectGallery")
+  projectPhases  ProjectPhase[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  Project        Project?       @relation(fields: [projectId], references: [id])
+  projectId      String?
 
   @@map("media")
 }
@@ -285,16 +290,57 @@ model Option {
 // Project model for organizing different projects or courses (optional)
 
 model Project {
-  id          String    @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
-  description String?   @db.Text
-  teachers    Teacher[] // Teachers involved in the project
-  pages       Page[] // Pages related to the project
-  posts       Post[] // Posts related to the project
-  quizzes     Quiz[] // Quizzes related to the project
-  media       Media[] // Media related to the project
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  slug        String  @unique
+  description String? @db.Text
+
+  // Status and visibility
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  featured    Boolean   @default(false)
+
+  // Media relationships
+  heroImage   Media?  @relation("ProjectHero", fields: [heroImageId], references: [id])
+  heroImageId String?
+  gallery     Media[] @relation("ProjectGallery")
+
+  // Content relationships
+  teachers Teacher[]
+  pages    Page[]
+  posts    Post[]
+  quizzes  Quiz[]
+  tags     Tag[]
+
+  // Timeline phases
+  timeline ProjectPhase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Media     Media[]
 
   @@map("project")
+}
+
+model ProjectPhase {
+  id          String    @id @default(uuid())
+  title       String
+  description String    @db.Text
+  startDate   DateTime
+  endDate     DateTime?
+  completed   Boolean   @default(false)
+  order       Int // For maintaining phase order
+
+  // Media for the phase (optional)
+  media   Media?  @relation(fields: [mediaId], references: [id])
+  mediaId String?
+
+  // Relation to project
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("project_phase")
 }

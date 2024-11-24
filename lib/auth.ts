@@ -33,4 +33,8 @@ export const auth = betterAuth({
       defaultRole: "USER",
     }),
   ],
+  cors: {
+    origin: process.env.NEXT_PUBLIC_APP_URL || "*",
+    credentials: true,
+  },
 });

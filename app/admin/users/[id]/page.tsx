@@ -23,25 +23,25 @@ export default async function UserPage({ params }: { params: { id: string } }) {
     redirect("/");
   }
 
-  // For edit mode, fetch the user
-  const user =
-    params.id !== "new"
-      ? await prisma.user.findUnique({
-          where: { id: params.id },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            emailVerified: true,
-          },
-        })
-      : null;
+  // Fetch the user
+  const user = await prisma.user.findUnique({
+    where: { id: params.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  if (!user) {
+    redirect("/admin/users");
+  }
 
   return (
     <div className="flex-col">
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <UserForm initialData={user || undefined} />
+        <UserForm initialData={user} />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 // components/admin/header.tsx
 import { UserNav } from "./user-nav";
-import { ModeToggle } from "@/components/ui/mode-toggle";
+// import { ModeToggle } from "@/components/ui/mode-toggle";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -17,7 +17,7 @@ export function AdminHeader({ email }: { email: string }) {
           >
             <Bell className="h-5 w-5" />
           </Button>
-          <ModeToggle />
+          {/* <ModeToggle /> */}
           <UserNav email={email} />
         </div>
       </div>

@@ -27,4 +27,32 @@ export const projectSchema = z.object({
     })
     .nullable()
     .optional(),
+  teacherIds: z.array(z.string()).optional(),
+  tagIds: z.array(z.string()).optional(),
 });
+
+export const projectPhaseSchema = z.object({
+  title: z.string().min(2, "Title is required"),
+  description: z.string().min(2, "Description is required"),
+  startDate: z.date().nullable().optional(),
+  endDate: z.date().nullable().optional(),
+  completed: z.boolean().default(false),
+  order: z.number().int().min(0),
+  media: z
+    .object({
+      url: z.string().url(),
+      fileKey: z.string(),
+    })
+    .nullable()
+    .optional(),
+});
+
+export const galleryImageSchema = z.object({
+  url: z.string().url(),
+  fileKey: z.string(),
+  alt: z.string().optional(),
+});
+
+export type ProjectFormValues = z.infer<typeof projectSchema>;
+export type ProjectPhaseFormValues = z.infer<typeof projectPhaseSchema>;
+export type GalleryImageFormValues = z.infer<typeof galleryImageSchema>;

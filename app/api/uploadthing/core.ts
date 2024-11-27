@@ -1,33 +1,34 @@
+// app/api/uploadthing/core.ts
+
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 
 const f = createUploadthing();
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const auth = (req: Request) => ({ id: "fakeId" }); // Fake auth function
+const auth = (req: Request) => ({ id: "fakeId" });
 
-// FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {
-  // Define as many FileRoutes as you like, each with a unique routeSlug
-  imageUploader: f({ image: { maxFileSize: "4MB" } })
-    // Set permissions and file types for this FileRoute
+  imageUploader: f({
+    image: { maxFileSize: "16MB" }, // Allowed file types and their max sizes
+    video: { maxFileSize: "256MB" },
+  })
     .middleware(async ({ req }) => {
-      // This code runs on your server before upload
+      // Authentication logic
       const user = await auth(req);
 
-      // If you throw, the user will not be able to upload
+      // If authentication fails, throw an error to prevent upload
       if (!user) throw new UploadThingError("Unauthorized");
 
-      // Whatever is returned here is accessible in onUploadComplete as `metadata`
+      // Return metadata accessible in onUploadComplete
       return { userId: user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      // This code RUNS ON YOUR SERVER after upload
+      // Server-side logic after upload completes
       console.log("Upload complete for userId:", metadata.userId);
+      console.log("File URL:", file.url);
 
-      console.log("file url", file.url);
-
-      // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
+      // Return data to be accessible on the client-side
       return { uploadedBy: metadata.userId };
     }),
 } satisfies FileRouter;

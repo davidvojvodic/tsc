@@ -218,16 +218,15 @@ model Media {
 // Teacher model for managing teacher profiles
 
 model Teacher {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
-  bio       String?  @db.Text
-  photo     Media?   @relation(fields: [photoId], references: [id])
+  bio       String?   @db.Text
+  photo     Media?    @relation(fields: [photoId], references: [id])
   photoId   String?
-  quizzes   Quiz[] // Quizzes created by the teacher
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Project   Project? @relation(fields: [projectId], references: [id])
-  projectId String?
+  quizzes   Quiz[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[] // Change from single project to many projects
 
   @@map("teacher")
 }
@@ -290,12 +289,10 @@ model Option {
 // Project model for organizing different projects or courses (optional)
 
 model Project {
-  id          String  @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
-  slug        String  @unique
-  description String? @db.Text
-
-  // Status and visibility
+  slug        String    @unique
+  description String?   @db.Text
   published   Boolean   @default(false)
   publishedAt DateTime?
   featured    Boolean   @default(false)
@@ -306,13 +303,13 @@ model Project {
   gallery     Media[] @relation("ProjectGallery")
 
   // Content relationships
-  teachers Teacher[]
-  pages    Page[]
-  posts    Post[]
-  quizzes  Quiz[]
+  teachers Teacher[] // This creates the many-to-many relationship
   tags     Tag[]
+  quizzes  Quiz[]
+  posts    Post[]
+  pages    Page[]
 
-  // Timeline phases
+  // Timeline
   timeline ProjectPhase[]
 
   createdAt DateTime @default(now())
@@ -326,7 +323,7 @@ model ProjectPhase {
   id          String    @id @default(uuid())
   title       String
   description String    @db.Text
-  startDate   DateTime
+  startDate   DateTime?
   endDate     DateTime?
   completed   Boolean   @default(false)
   order       Int // For maintaining phase order

@@ -1,4 +1,3 @@
-// app/(public)/projects/[slug]/page.tsx
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
@@ -7,19 +6,30 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
-  Clock,
-  Tag,
   GraduationCap,
   BrainCircuit,
   ArrowLeft,
+  Calendar,
+  Expand,
 } from "lucide-react";
 import Link from "next/link";
-
-interface ProjectPageProps {
-  params: {
-    slug: string;
-  };
-}
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { GalleryView } from "@/components/project/gallery-view";
 
 async function getProject(slug: string) {
   const project = await prisma.project.findUnique({
@@ -38,8 +48,11 @@ async function getProject(slug: string) {
       },
       quizzes: true,
       timeline: {
+        include: {
+          media: true,
+        },
         orderBy: {
-          startDate: "asc",
+          order: "asc",
         },
       },
     },
@@ -48,17 +61,27 @@ async function getProject(slug: string) {
   return project;
 }
 
-export default async function ProjectPage({ params }: ProjectPageProps) {
+export default async function ProjectPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const project = await getProject(params.slug);
 
   if (!project) {
     notFound();
   }
 
+  // Calculate project stats
+  const completedPhases = project.timeline.filter((p) => p.completed).length;
+  const completionPercentage = Math.round(
+    (completedPhases / project.timeline.length) * 100
+  );
+
   return (
     <Container>
       {/* Hero Section */}
-      <div className="relative h-[60vh] min-h-[400px] w-full mb-10">
+      <div className="relative h-[50vh] min-h-[400px] w-full mb-10 rounded-xl overflow-hidden">
         {project.heroImage ? (
           <Image
             src={project.heroImage.url}
@@ -70,10 +93,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         ) : (
           <div className="absolute inset-0 bg-muted" />
         )}
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
 
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-          <Button asChild className="mb-6">
+        <div className="absolute bottom-0 left-0 right-0 p-8">
+          <Button asChild variant="outline" size="sm" className="mb-6">
             <Link href="/projects">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Projects
@@ -86,168 +109,215 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               </Badge>
             ))}
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
             {project.name}
           </h1>
-          <p className="text-lg max-w-2xl text-white/90">
-            {project.description}
-          </p>
         </div>
       </div>
 
-      {/* Project Info */}
-      <div className="grid gap-8 md:grid-cols-[2fr,1fr] mb-16">
-        <div className="space-y-6">
-          <div className="prose max-w-none">
-            <h2 className="text-2xl font-bold mb-4">About this Project</h2>
-            <p>{project.description}</p>
-          </div>
+      {/* Project Overview */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>About this Project</CardTitle>
+          <CardDescription>Project overview and details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-lg text-muted-foreground mb-8">
+            {project.description}
+          </p>
 
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Start Date</p>
+              <p className="text-xl font-semibold">
+                {project.timeline[0]?.startDate
+                  ? format(project.timeline[0].startDate, "MMM yyyy")
+                  : "Not specified"}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Team Size</p>
+              <p className="text-xl font-semibold">
+                {project.teachers.length} members
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Completion</p>
+              <p className="text-xl font-semibold">{completionPercentage}%</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Resources</p>
+              <p className="text-xl font-semibold">
+                {project.quizzes.length} quizzes
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Project Content Grid */}
+      <div className="grid gap-8 md:grid-cols-[2fr,1fr] mb-16">
+        <div className="space-y-8">
           {/* Timeline */}
           {project.timeline.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-2xl font-bold mb-6">Project Timeline</h2>
-              <div className="space-y-8">
-                {project.timeline.map((phase, index) => (
-                  <div key={phase.id} className="relative pl-8 pb-8">
-                    {/* Timeline line */}
-                    {index !== project.timeline.length - 1 && (
-                      <div className="absolute left-[11px] top-3 h-full w-[2px] bg-border" />
-                    )}
-                    {/* Timeline dot */}
-                    <div
-                      className={`absolute left-0 top-[6px] h-6 w-6 rounded-full border-2 ${
-                        phase.completed
-                          ? "bg-primary border-primary"
-                          : "bg-background border-primary"
-                      }`}
-                    />
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline">
-                          <Clock className="mr-1 h-3 w-3" />
-                          {format(phase.startDate, "MMM yyyy")}
-                          {phase.endDate &&
-                            ` - ${format(phase.endDate, "MMM yyyy")}`}
-                        </Badge>
-                        {phase.completed && (
-                          <Badge variant="secondary">Completed</Badge>
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Timeline</CardTitle>
+                <CardDescription>
+                  Track the project&apos;s progress and milestones
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  {project.timeline.map((phase, index) => (
+                    <div key={phase.id} className="relative pl-8 pb-8">
+                      {index !== project.timeline.length - 1 && (
+                        <div className="absolute left-[11px] top-3 h-full w-[2px] bg-border" />
+                      )}
+
+                      <div
+                        className={cn(
+                          "absolute left-0 top-[6px] h-6 w-6 rounded-full border-2 transition-colors",
+                          phase.completed
+                            ? "bg-primary border-primary"
+                            : "bg-background border-primary"
+                        )}
+                      />
+
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          {(phase.startDate || phase.endDate) && (
+                            <Badge variant="outline">
+                              <Calendar className="mr-1 h-3 w-3" />
+                              {phase.startDate &&
+                                format(phase.startDate, "MMM d, yyyy")}
+                              {phase.endDate &&
+                                ` - ${format(phase.endDate, "MMM d, yyyy")}`}
+                            </Badge>
+                          )}
+                          {phase.completed && (
+                            <Badge variant="secondary">Completed</Badge>
+                          )}
+                        </div>
+
+                        <h3 className="text-xl font-semibold mb-2">
+                          {phase.title}
+                        </h3>
+                        <p className="text-muted-foreground mb-4">
+                          {phase.description}
+                        </p>
+
+                        {phase.media && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <div className="relative h-[200px] w-full sm:w-[300px] rounded-lg overflow-hidden cursor-pointer group">
+                                <Image
+                                  src={phase.media.url}
+                                  alt={phase.title}
+                                  fill
+                                  className="object-cover transition-transform group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <Expand className="w-8 h-8 text-white" />
+                                </div>
+                              </div>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                              <DialogHeader>
+                                <DialogTitle>{phase.title}</DialogTitle>
+                              </DialogHeader>
+                              <div className="relative h-[600px] w-full">
+                                <Image
+                                  src={phase.media.url}
+                                  alt={phase.title}
+                                  fill
+                                  className="object-contain"
+                                />
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         )}
                       </div>
-                      <h3 className="text-lg font-semibold mb-2">
-                        {phase.title}
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {phase.description}
-                      </p>
-                      {phase.mediaId && (
-                        <div className="mt-4 relative h-48 w-full rounded-lg overflow-hidden">
-                          <Image
-                            src={phase.mediaId}
-                            alt={phase.title}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Project Stats */}
-          <div className="rounded-lg border bg-card p-6">
-            <h3 className="font-semibold mb-4">Project Details</h3>
-            <div className="space-y-4">
-              {project.teachers.length > 0 && (
-                <div className="flex items-start gap-3">
-                  <GraduationCap className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <div className="text-sm font-medium mb-1">Teachers</div>
-                    <div className="flex flex-wrap gap-2">
-                      {project.teachers.map((teacher) => (
-                        <div
-                          key={teacher.id}
-                          className="flex items-center gap-2"
-                        >
-                          {teacher.photo && (
-                            <Image
-                              src={teacher.photo.url}
-                              alt={teacher.name}
-                              width={24}
-                              height={24}
-                              className="rounded-full"
-                            />
-                          )}
-                          <span className="text-sm text-muted-foreground">
-                            {teacher.name}
-                          </span>
-                        </div>
-                      ))}
+          {/* Teachers */}
+          {project.teachers.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5" />
+                  Project Team
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-4">
+                  {project.teachers.map((teacher) => (
+                    <div key={teacher.id} className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={teacher.photo?.url} />
+                        <AvatarFallback>
+                          {teacher.name[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{teacher.name}</div>
+                        {teacher.bio && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {teacher.bio}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              )}
-
-              {project.quizzes.length > 0 && (
-                <div className="flex items-start gap-3">
-                  <BrainCircuit className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <div className="text-sm font-medium mb-1">Quizzes</div>
-                    <div className="text-sm text-muted-foreground">
-                      {project.quizzes.length} quizzes available
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {project.tags.length > 0 && (
-                <div className="flex items-start gap-3">
-                  <Tag className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <div className="text-sm font-medium mb-1">Tags</div>
-                    <div className="flex flex-wrap gap-1">
-                      {project.tags.map((tag) => (
-                        <Badge
-                          key={tag.id}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {tag.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+              </CardContent>
+            </Card>
+          )}
+          {/* Gallery */}
 
           {/* Gallery */}
           {project.gallery.length > 0 && (
-            <div className="rounded-lg border bg-card p-6">
-              <h3 className="font-semibold mb-4">Project Gallery</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {project.gallery.map((image) => (
-                  <div
-                    key={image.id}
-                    className="relative aspect-square rounded-md overflow-hidden"
-                  >
-                    <Image
-                      src={image.url}
-                      alt={image.alt || "Project image"}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <GalleryView images={project.gallery} />
+          )}
+          {/* Resources */}
+          {project.quizzes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BrainCircuit className="h-5 w-5" />
+                  Learning Resources
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {project.quizzes.map((quiz) => (
+                    <div
+                      key={quiz.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="font-medium">{quiz.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {quiz.description ||
+                            "Take this quiz to test your knowledge"}
+                        </p>
+                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/quizzes/${quiz.id}`}>Start Quiz</Link>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

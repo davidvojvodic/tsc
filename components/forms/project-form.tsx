@@ -1,23 +1,7 @@
-// app/admin/projects/components/project-form.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
-import * as z from "zod";
-
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import {
   Card,
   CardContent,
@@ -25,302 +9,294 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { UploadButton } from "@/lib/uploadthing";
-import Image from "next/image";
+import { toast } from "sonner";
+import { ProjectFormData, Teacher } from "@/lib/types";
+import { Check, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { useProjectForm } from "@/store/use-project-form";
+import { BasicForm } from "../project/basic-form";
+import { TimelineEditor } from "../project/timeline-editor";
+import { GalleryEditor } from "../project/gallery-editor";
+import { TeacherSelector } from "../project/teacher-selector";
 
-// Form validation schema
-const formSchema = z.object({
-  name: z
-    .string()
-    .min(2, { message: "Name must be at least 2 characters long" })
-    .max(50, { message: "Name cannot exceed 50 characters" }),
-  slug: z
-    .string()
-    .min(2, { message: "Slug must be at least 2 characters long" })
-    .max(50, { message: "Slug cannot exceed 50 characters" })
-    .regex(/^[a-zA-Z0-9-]+$/, {
-      message: "Slug can only contain letters, numbers, and dashes",
-    }),
-  description: z
-    .string()
-    .max(500, { message: "Description cannot exceed 500 characters" })
-    .optional()
-    .nullable(),
-  published: z.boolean().default(false),
-  featured: z.boolean().default(false),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+const steps = [
+  {
+    id: "basic",
+    title: "Basic Info",
+    description: "Project name, description, and settings",
+  },
+  {
+    id: "timeline",
+    title: "Timeline",
+    description: "Add project phases and milestones",
+  },
+  {
+    id: "gallery",
+    title: "Gallery",
+    description: "Upload and manage project images",
+  },
+  {
+    id: "teachers",
+    title: "Teachers",
+    description: "Assign teachers to the project",
+  },
+];
 
 interface ProjectFormProps {
-  initialData?: {
-    id: string;
-    name: string;
-    slug: string;
-    description: string | null;
-    published: boolean;
-    featured: boolean;
-    heroImage: { url: string } | null;
-  };
+  initialData?: ProjectFormData;
+  availableTeachers: Teacher[];
 }
 
-export function ProjectForm({ initialData }: ProjectFormProps) {
+export function ProjectForm({
+  initialData,
+  availableTeachers,
+}: ProjectFormProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [heroImage, setHeroImage] = useState<{
-    url: string;
-    fileKey: string;
-  } | null>(
-    initialData?.heroImage
-      ? {
-          url: initialData.heroImage.url,
-          fileKey: "", // You might want to store this in your database
-        }
-      : null
-  );
+  const {
+    currentStep,
+    basicInfo,
+    timeline,
+    gallery,
+    teachers,
+    isLoading,
+    setCurrentStep,
+    setBasicInfo,
+    setTimeline,
+    setGallery,
+    setTeachers,
+    setIsLoading,
+    reset,
+  } = useProjectForm();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: initialData?.name || "",
-      slug: initialData?.slug || "",
-      description: initialData?.description || "",
-      published: initialData?.published || false,
-      featured: initialData?.featured || false,
-    },
-  });
+  // Initialize form with initial data if provided
+  useEffect(() => {
+    if (initialData) {
+      setBasicInfo({
+        name: initialData.name,
+        slug: initialData.slug,
+        description: initialData.description,
+        published: initialData.published,
+        featured: initialData.featured,
+        heroImage: initialData.heroImage
+          ? {
+              url: initialData.heroImage.url,
+              fileKey: initialData.heroImage.id,
+            }
+          : null,
+      });
 
-  const onSubmit = async (values: FormValues) => {
+      // Transform timeline data
+      const transformedTimeline = initialData.timeline.map((phase, index) => ({
+        ...phase,
+        startDate: phase.startDate ? new Date(phase.startDate) : null,
+        endDate: phase.endDate ? new Date(phase.endDate) : null,
+        order: index,
+        media: phase.mediaId ? { url: phase.mediaId } : null,
+      }));
+      setTimeline(transformedTimeline);
+
+      // Transform gallery data
+      const transformedGallery = initialData.gallery.map((img) => ({
+        id: img.id,
+        url: img.url,
+        fileKey: img.id,
+        alt: null,
+      }));
+      setGallery(transformedGallery);
+
+      setTeachers(initialData.teachers.map((t) => t.id));
+    }
+
+    return () => reset();
+  }, [initialData, reset, setBasicInfo, setGallery, setTimeline, setTeachers]);
+
+  const isStepValid = (step: number) => {
+    switch (step) {
+      case 0:
+        return basicInfo.name.length >= 2 && basicInfo.slug.length >= 2;
+      case 1:
+        return timeline.length > 0;
+      case 2:
+        return gallery.length > 0;
+      case 3:
+        return teachers.length > 0;
+      default:
+        return false;
+    }
+  };
+
+  const handleNext = () => {
+    if (isStepValid(currentStep)) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep(currentStep - 1);
+  };
+
+  const handleSubmit = async () => {
+    if (!isStepValid(3)) {
+      toast.error("Please complete all required fields");
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const url = initialData?.id
-        ? `/api/projects/${initialData.id}`
-        : "/api/projects";
 
-      const response = await fetch(url, {
-        method: initialData?.id ? "PATCH" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...values,
-          heroImage,
-        }),
-      });
+      const formData = {
+        basicInfo,
+        timeline,
+        gallery: gallery.map(({ ...rest }) => rest),
+        teacherIds: teachers,
+      };
+
+      const response = await fetch(
+        initialData ? `/api/projects/${initialData.id}` : "/api/projects",
+        {
+          method: initialData ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(await response.text());
       }
 
       toast.success(
-        initialData?.id
+        initialData
           ? "Project updated successfully"
           : "Project created successfully"
       );
-
       router.push("/admin/projects");
       router.refresh();
     } catch (error) {
-      console.error("[PROJECT_FORM_ERROR]", error);
-      toast.error("Something went wrong. Please try again.");
+      console.error("[PROJECT_SUBMIT_ERROR]", error);
+      toast.error("Failed to save project");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>
-          {initialData ? "Edit Project" : "Create New Project"}
-        </CardTitle>
-        <CardDescription>
-          {initialData
-            ? "Make changes to your project"
-            : "Add a new project to your portfolio"}
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Hero Image Upload Section */}
-            <div className="space-y-4">
-              <FormLabel>Hero Image</FormLabel>
-              <div className="flex items-center gap-x-4">
-                <div className="relative h-40 w-40">
-                  {heroImage ? (
-                    <Image
-                      src={heroImage.url}
-                      alt="Hero image"
-                      fill
-                      className="object-cover rounded-md"
-                    />
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Progress Steps */}
+      <div className="w-full">
+        <div className="flex justify-between items-center">
+          {steps.map((step, index) => (
+            <div key={step.id} className="flex items-center">
+              <div className="relative flex items-center justify-center flex-col">
+                <div
+                  className={`w-10 h-10 flex items-center justify-center rounded-full border-2 
+                  ${
+                    index === currentStep
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : index < currentStep
+                        ? "border-green-500 bg-green-500 text-primary-foreground"
+                        : "border-muted bg-background text-muted-foreground"
+                  }`}
+                >
+                  {index < currentStep ? (
+                    <Check className="w-5 h-5" />
                   ) : (
-                    <div className="h-full w-full bg-secondary rounded-md" />
+                    <span>{index + 1}</span>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <UploadButton
-                    endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
-                      if (res?.[0]) {
-                        setHeroImage({
-                          url: res[0].url,
-                          fileKey: res[0].key,
-                        });
-                        toast.success("Hero image uploaded successfully");
-                      }
-                    }}
-                    onUploadError={(error: Error) => {
-                      toast.error(`Upload failed: ${error.message}`);
-                    }}
-                  />
-                  {heroImage && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setHeroImage(null)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remove image
-                    </Button>
-                  )}
+                <div className="mt-2 text-xs text-center">
+                  <div className="font-medium">{step.title}</div>
                 </div>
               </div>
-              <Separator />
+              {index < steps.length - 1 && (
+                <div
+                  className={`h-full transition-all duration-500 ${
+                    index < currentStep ? "bg-primary" : "bg-muted"
+                  }`}
+                />
+              )}
             </div>
+          ))}
+        </div>
+      </div>
 
-            {/* Form Fields */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      disabled={isLoading}
-                      placeholder="Enter project name"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {initialData ? "Edit Project" : "Create New Project"}
+          </CardTitle>
+          <CardDescription>{steps[currentStep].description}</CardDescription>
+        </CardHeader>
 
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Slug</FormLabel>
-                  <FormControl>
-                    <Input
-                      disabled={isLoading}
-                      placeholder="project-slug"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    This will be used in the URL of your project
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      disabled={isLoading}
-                      placeholder="Enter project description"
-                      className="resize-none"
-                      rows={5}
-                      {...field}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex flex-col gap-4">
-              <FormField
-                control={form.control}
-                name="published"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Published</FormLabel>
-                      <FormDescription>
-                        This project will be visible to the public
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
+        <CardContent>
+          <div className="space-y-6">
+            {currentStep === 0 && (
+              <BasicForm
+                value={basicInfo}
+                onChange={setBasicInfo}
+                isLoading={isLoading}
               />
+            )}
 
-              <FormField
-                control={form.control}
-                name="featured"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Featured</FormLabel>
-                      <FormDescription>
-                        This project will be highlighted on the homepage
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
+            {currentStep === 1 && (
+              <TimelineEditor
+                value={timeline}
+                onChange={setTimeline}
+                isLoading={isLoading}
               />
-            </div>
+            )}
 
-            {/* Form Actions */}
-            <div className="flex items-center justify-end gap-x-4">
+            {currentStep === 2 && (
+              <GalleryEditor
+                value={gallery}
+                onChange={setGallery}
+                isLoading={isLoading}
+              />
+            )}
+
+            {currentStep === 3 && (
+              <TeacherSelector
+                value={teachers} // Array of teacher IDs
+                onChange={setTeachers}
+                availableTeachers={availableTeachers}
+                isLoading={isLoading}
+              />
+            )}
+
+            <div className="flex justify-between mt-6">
               <Button
-                type="button"
                 variant="outline"
-                onClick={() => router.push("/admin/projects")}
-                disabled={isLoading}
+                onClick={handleBack}
+                disabled={currentStep === 0 || isLoading}
               >
-                Cancel
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {initialData ? "Save changes" : "Create project"}
-              </Button>
+
+              {currentStep < steps.length - 1 ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={!isStepValid(currentStep) || isLoading}
+                >
+                  Next
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!isStepValid(currentStep) || isLoading}
+                >
+                  {isLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {initialData ? "Save Changes" : "Create Project"}
+                </Button>
+              )}
             </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

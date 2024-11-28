@@ -55,11 +55,14 @@ export async function POST(req: NextRequest) {
         };
       }
 
-      // Create the teacher with the media reference
+      // Create the teacher with all fields
       return await tx.teacher.create({
         data: {
           name: validatedData.name,
+          title: validatedData.title,
           bio: validatedData.bio,
+          email: validatedData.email,
+          displayOrder: validatedData.displayOrder,
           ...photoConnect,
         },
         include: {

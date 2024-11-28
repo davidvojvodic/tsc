@@ -17,6 +17,9 @@ export default async function Home() {
       id: true,
       name: true,
       bio: true,
+      title: true,
+      email: true,
+      displayOrder: true,
       photo: {
         select: {
           url: true,

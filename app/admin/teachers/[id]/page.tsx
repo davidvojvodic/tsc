@@ -20,7 +20,10 @@ export default async function TeacherPage({
     ? {
         id: teacher.id,
         name: teacher.name,
+        title: teacher.title,
         bio: teacher.bio,
+        email: teacher.email,
+        displayOrder: teacher.displayOrder,
         photoId: teacher.photoId,
         photo: teacher.photo ? { url: teacher.photo.url } : null,
         createdAt: teacher.createdAt.toISOString(),

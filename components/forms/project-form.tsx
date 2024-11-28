@@ -108,7 +108,8 @@ export function ProjectForm({
     }
 
     return () => reset();
-  }, [initialData, reset, setBasicInfo, setGallery, setTimeline, setTeachers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isStepValid = (step: number) => {
     switch (step) {

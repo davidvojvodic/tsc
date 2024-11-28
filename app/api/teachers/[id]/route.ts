@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { headers } from "next/headers";
-
 import { MediaType } from "@prisma/client";
 import { teacherSchema } from "@/lib/schemas/schema";
 
@@ -14,6 +13,69 @@ async function checkAdminAccess(userId: string) {
   });
 
   return user?.role === "ADMIN";
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await auth.api.getSession({
+      headers: headers(),
+    });
+
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const isAdmin = await checkAdminAccess(session.user.id);
+    if (!isAdmin) {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    const body = await req.json();
+    const validatedData = teacherSchema.parse(body);
+
+    const teacher = await prisma.$transaction(async (tx) => {
+      let photoConnect = {};
+
+      if (validatedData.photo) {
+        const media = await tx.media.create({
+          data: {
+            filename: validatedData.photo.fileKey,
+            url: validatedData.photo.url,
+            mimeType: validatedData.photo.mimeType,
+            size: validatedData.photo.size,
+            type: MediaType.IMAGE,
+          },
+        });
+        photoConnect = {
+          photo: {
+            connect: { id: media.id },
+          },
+        };
+      }
+
+      return await tx.teacher.create({
+        data: {
+          name: validatedData.name,
+          title: validatedData.title,
+          bio: validatedData.bio,
+          email: validatedData.email,
+          displayOrder: validatedData.displayOrder,
+          ...photoConnect,
+        },
+        include: {
+          photo: true,
+        },
+      });
+    });
+
+    return NextResponse.json(teacher);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(error.issues, { status: 422 });
+    }
+    console.error("[TEACHERS_POST]", error);
+    return new NextResponse("Internal error", { status: 500 });
+  }
 }
 
 export async function PATCH(
@@ -40,7 +102,6 @@ export async function PATCH(
     const teacher = await prisma.$transaction(async (tx) => {
       let photoUpdate = {};
 
-      // If photo data is provided, create a new Media record
       if (validatedData.photo) {
         const media = await tx.media.create({
           data: {
@@ -58,7 +119,7 @@ export async function PATCH(
         };
       }
 
-      // If photo is explicitly set to null, disconnect the existing photo
+      // Handle photo removal
       if (validatedData.photo === null) {
         photoUpdate = {
           photo: {
@@ -67,26 +128,31 @@ export async function PATCH(
         };
       }
 
-      // Get the existing teacher to check for photo
+      // Get existing teacher to handle photo cleanup
       const existingTeacher = await tx.teacher.findUnique({
         where: { id: params.id },
         include: { photo: true },
       });
 
-      // If there's an existing photo and we're updating to a new one,
-      // delete the old photo
-      if (existingTeacher?.photo && validatedData.photo) {
+      if (!existingTeacher) {
+        throw new Error("Teacher not found");
+      }
+
+      // Delete old photo if being replaced or removed
+      if (existingTeacher.photo && validatedData.photo !== undefined) {
         await tx.media.delete({
           where: { id: existingTeacher.photo.id },
         });
       }
 
-      // Update the teacher
       return await tx.teacher.update({
         where: { id: params.id },
         data: {
           name: validatedData.name,
+          title: validatedData.title,
           bio: validatedData.bio,
+          email: validatedData.email,
+          displayOrder: validatedData.displayOrder,
           ...photoUpdate,
         },
         include: {
@@ -123,22 +189,18 @@ export async function DELETE(
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    // Delete the teacher and associated media in a transaction
     await prisma.$transaction(async (tx) => {
-      // Get the teacher with their photo
       const teacher = await tx.teacher.findUnique({
         where: { id: params.id },
         include: { photo: true },
       });
 
-      // If there's a photo, delete it
       if (teacher?.photo) {
         await tx.media.delete({
           where: { id: teacher.photo.id },
         });
       }
 
-      // Delete the teacher
       await tx.teacher.delete({
         where: { id: params.id },
       });

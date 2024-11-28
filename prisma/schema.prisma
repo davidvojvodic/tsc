@@ -218,15 +218,18 @@ model Media {
 // Teacher model for managing teacher profiles
 
 model Teacher {
-  id        String    @id @default(uuid())
-  name      String
-  bio       String?   @db.Text
-  photo     Media?    @relation(fields: [photoId], references: [id])
-  photoId   String?
-  quizzes   Quiz[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  projects  Project[] // Change from single project to many projects
+  id           String    @id @default(uuid())
+  name         String
+  title        String? // e.g. "Senior Mathematics Teacher", "Physics Professor"
+  bio          String?   @db.Text
+  photo        Media?    @relation(fields: [photoId], references: [id])
+  photoId      String?
+  email        String?
+  displayOrder Int       @default(0) // For controlling display order
+  quizzes      Quiz[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  projects     Project[]
 
   @@map("teacher")
 }

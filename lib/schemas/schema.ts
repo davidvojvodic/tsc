@@ -1,19 +1,5 @@
 import { z } from "zod";
 
-export const teacherSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  bio: z.string().optional().nullable(),
-  photo: z
-    .object({
-      url: z.string().url(),
-      fileKey: z.string(),
-      size: z.number(),
-      mimeType: z.string(),
-    })
-    .optional()
-    .nullable(),
-});
-
 export const projectSchema = z.object({
   name: z.string().min(2, "Name is required"),
   slug: z.string().min(2, "Slug is required"),
@@ -53,6 +39,35 @@ export const galleryImageSchema = z.object({
   alt: z.string().optional(),
 });
 
+export const teacherSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: "Name must be at least 2 characters long" })
+    .max(50, { message: "Name cannot exceed 50 characters" }),
+  title: z
+    .string()
+    .max(100, { message: "Title cannot exceed 100 characters" })
+    .optional()
+    .nullable(),
+  bio: z.string().optional().nullable(),
+  email: z
+    .string()
+    .email({ message: "Please enter a valid email address" })
+    .optional()
+    .nullable(),
+  displayOrder: z.number().int().default(0),
+  photo: z
+    .object({
+      url: z.string().url(),
+      fileKey: z.string(),
+      size: z.number(),
+      mimeType: z.string(),
+    })
+    .nullable()
+    .optional(),
+});
+
+export type TeacherFormValues = z.infer<typeof teacherSchema>;
 export type ProjectFormValues = z.infer<typeof projectSchema>;
 export type ProjectPhaseFormValues = z.infer<typeof projectPhaseSchema>;
 export type GalleryImageFormValues = z.infer<typeof galleryImageSchema>;

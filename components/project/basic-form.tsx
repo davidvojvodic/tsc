@@ -62,12 +62,13 @@ export function BasicForm({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: value.name,
-      slug: value.slug,
-      description: value.description,
-      published: value.published,
-      featured: value.featured,
+      name: value.name || "",
+      slug: value.slug || "",
+      description: value.description || "",
+      published: value.published || false,
+      featured: value.featured || false,
     },
+    values: value, // Add this line to update form when value prop changes
   });
 
   // Watch form values and update parent

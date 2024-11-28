@@ -5,15 +5,8 @@ import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import {
-  GraduationCap,
-  BrainCircuit,
-  ArrowLeft,
-  Calendar,
-  Expand,
-} from "lucide-react";
+import { BrainCircuit, ArrowLeft, Calendar, Expand } from "lucide-react";
 import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { GalleryView } from "@/components/project/gallery-view";
+import { ProjectTeam } from "@/components/project/project-team";
 
 async function getProject(slug: string) {
   const project = await prisma.project.findUnique({
@@ -250,38 +244,8 @@ export default async function ProjectPage({
         <div className="space-y-6">
           {/* Teachers */}
           {project.teachers.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5" />
-                  Project Team
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-4">
-                  {project.teachers.map((teacher) => (
-                    <div key={teacher.id} className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={teacher.photo?.url} />
-                        <AvatarFallback>
-                          {teacher.name[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{teacher.name}</div>
-                        {teacher.bio && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {teacher.bio}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <ProjectTeam teachers={project.teachers} />
           )}
-          {/* Gallery */}
 
           {/* Gallery */}
           {project.gallery.length > 0 && (

@@ -15,6 +15,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   Card,
@@ -29,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { UploadButton } from "@/lib/uploadthing";
+import { Label } from "../ui/label";
 
 // Form validation schema
 const formSchema = z.object({
@@ -36,22 +38,26 @@ const formSchema = z.object({
     .string()
     .min(2, { message: "Name must be at least 2 characters long" })
     .max(50, { message: "Name cannot exceed 50 characters" }),
-  bio: z
+  title: z
     .string()
-    .max(500, { message: "Bio cannot exceed 500 characters" })
+    .max(100, { message: "Title cannot exceed 100 characters" })
     .optional()
     .nullable(),
+  bio: z.string().optional().nullable(),
+  email: z.string().email().optional().nullable(),
+  displayOrder: z.number().int().default(0),
 });
 
-// TypeScript interface for the form values
 type FormValues = z.infer<typeof formSchema>;
 
-// Props interface
 interface TeacherFormProps {
   initialData?: {
     id: string;
     name: string;
+    title: string | null;
     bio: string | null;
+    email: string | null;
+    displayOrder: number;
     photoId: string | null;
     photo?: {
       url: string;
@@ -67,13 +73,25 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
     fileKey: string;
     size: number;
     mimeType: string;
-  } | null>(null);
+  } | null>(
+    initialData?.photo
+      ? {
+          url: initialData.photo.url,
+          fileKey: initialData.photoId || "",
+          size: 0,
+          mimeType: "image/jpeg",
+        }
+      : null
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData?.name || "",
+      title: initialData?.title || "",
       bio: initialData?.bio || "",
+      email: initialData?.email || null,
+      displayOrder: initialData?.displayOrder || 0,
     },
   });
 
@@ -82,7 +100,6 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
     setPhoto(null);
   };
 
-  // Form submission handler
   const onSubmit = async (values: FormValues) => {
     try {
       setIsLoading(true);
@@ -97,7 +114,7 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
         },
         body: JSON.stringify({
           ...values,
-          photo: photo, // Send the complete photo object
+          photo: photo,
         }),
       });
 
@@ -137,6 +154,7 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
       <CardContent className="space-y-6">
         {/* Photo Upload Section */}
         <div className="space-y-4">
+          <Label>Photo</Label>
           <div className="flex items-center gap-x-4">
             <Avatar className="h-24 w-24">
               <AvatarImage src={photo?.url || undefined} />
@@ -144,6 +162,11 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
             </Avatar>
             <div className="space-y-2">
               <UploadButton
+                appearance={{
+                  allowedContent: {
+                    display: "none",
+                  },
+                }}
                 endpoint="imageUploader"
                 onClientUploadComplete={(res) => {
                   if (res?.[0]) {
@@ -200,6 +223,48 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
 
             <FormField
               control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isLoading}
+                      placeholder="e.g. Senior Mathematics Teacher"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Professional title or role within the institution
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      disabled={isLoading}
+                      placeholder="Enter contact email"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="bio"
               render={({ field }) => (
                 <FormItem>
@@ -214,6 +279,29 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
                       value={field.value || ""}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="displayOrder"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Display Order</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      disabled={isLoading}
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Controls the order in which teachers are displayed (lower
+                    numbers appear first)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

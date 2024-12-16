@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -28,23 +26,43 @@ export function TeacherDialog({
   open,
   onOpenChange,
 }: TeacherDialogProps) {
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+
+  // Reset image loaded state when dialog opens/closes or teacher changes
+  React.useEffect(() => {
+    setImageLoaded(false);
+  }, [open, teacher?.id]);
+
   if (!teacher) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden">
-        <div className="grid lg:grid-cols-[280px,1fr] h-full">
+      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden max-h-[85vh]">
+        <div className="grid lg:grid-cols-[280px,1fr] h-[85vh]">
           {/* Left Column - Photo and Basic Info */}
-          <div className="relative bg-muted p-6 flex flex-col items-center text-center lg:h-full">
-            <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-background shadow-lg mb-4">
+          <div className="relative bg-muted p-6 flex flex-col items-center text-center">
+            <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-background shadow-lg mb-4 bg-muted relative">
               {teacher.photo ? (
-                <Image
-                  src={teacher.photo.url}
-                  alt={teacher.name}
-                  width={160}
-                  height={160}
-                  className="object-cover w-full h-full"
-                />
+                <>
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-5xl font-semibold text-primary/20">
+                        {teacher.name[0]}
+                      </span>
+                    </div>
+                  )}
+                  <Image
+                    src={teacher.photo.url}
+                    alt={teacher.name}
+                    width={160}
+                    height={160}
+                    className={`object-cover w-full h-full transition-opacity duration-300 ${
+                      imageLoaded ? "opacity-100" : "opacity-0"
+                    }`}
+                    onLoadingComplete={() => setImageLoaded(true)}
+                    priority
+                  />
+                </>
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-primary/10">
                   <span className="text-5xl font-semibold text-primary">
@@ -74,21 +92,23 @@ export function TeacherDialog({
           </div>
 
           {/* Right Column - Bio and Details */}
-          <div className="p-6">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
-                  <BookOpen className="h-5 w-5" />
-                  About
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {teacher.bio || "No bio available"}
-                </p>
+          <div className="overflow-y-auto">
+            <div className="p-6">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
+                    <BookOpen className="h-5 w-5" />
+                    About
+                  </h3>
+                  <p className="text-muted-foreground text-justify leading-relaxed">
+                    {teacher.bio || "No bio available"}
+                  </p>
+                </div>
+
+                <Separator />
+
+                {/* Additional sections could go here */}
               </div>
-
-              <Separator />
-
-              {/* Additional sections could go here */}
             </div>
           </div>
         </div>

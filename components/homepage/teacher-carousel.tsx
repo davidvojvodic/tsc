@@ -38,15 +38,22 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
     null
   );
   const [open, setOpen] = React.useState(false);
-
-  if (!teachers.length) {
-    return null;
-  }
+  const [loadedImages, setLoadedImages] = React.useState<Set<string>>(
+    new Set()
+  );
 
   const handleTeacherClick = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
     setOpen(true);
   };
+
+  const handleImageLoad = (teacherId: string) => {
+    setLoadedImages((prev) => new Set(prev).add(teacherId));
+  };
+
+  if (!teachers.length) {
+    return null;
+  }
 
   return (
     <>
@@ -91,7 +98,19 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
                                 src={teacher.photo.url}
                                 alt={teacher.name}
                                 fill
-                                className="object-cover w-full h-full"
+                                className={`object-cover w-full h-full transition-opacity duration-300 ${
+                                  loadedImages.has(teacher.id)
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                }`}
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                priority={teachers.indexOf(teacher) < 4}
+                                onLoad={() => handleImageLoad(teacher.id)}
+                                loading={
+                                  teachers.indexOf(teacher) < 4
+                                    ? "eager"
+                                    : "lazy"
+                                }
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-muted">

@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { GalleryView } from "@/components/project/gallery-view";
 import { ProjectTeam } from "@/components/project/project-team";
+import { RichTextDisplay } from "@/components/rich-text-content";
 
 async function getProject(slug: string) {
   const project = await prisma.project.findUnique({
@@ -116,9 +117,10 @@ export default async function ProjectPage({
           <CardDescription>Project overview and details</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-lg text-muted-foreground mb-8">
-            {project.description}
-          </p>
+          <RichTextDisplay
+            className="mb-3"
+            content={project.description || ""}
+          />
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="space-y-1">

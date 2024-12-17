@@ -58,7 +58,7 @@ export default async function ProjectPage({ params }: PageParams) {
         id: project.id,
         name: project.name,
         slug: project.slug,
-        description: project.description,
+        description: project.description || "",
         published: project.published,
         featured: project.featured,
         heroImage: project.heroImage

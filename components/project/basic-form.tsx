@@ -19,12 +19,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UploadButton } from "@/lib/uploadthing";
 import { toast } from "sonner";
 import { ProjectBasicInfo } from "@/store/use-project-form";
+import { RichTextEditor } from "../rich-text-editor";
 
 const formSchema = z.object({
   name: z
@@ -184,13 +184,11 @@ export function BasicForm({
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea
-                  disabled={isLoading}
-                  placeholder="Enter project description"
-                  className="resize-none"
-                  rows={5}
-                  {...field}
+                <RichTextEditor
                   value={field.value || ""}
+                  onChange={field.onChange}
+                  disabled={isLoading}
+                  placeholder="Write a description..."
                 />
               </FormControl>
               <FormMessage />

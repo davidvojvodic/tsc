@@ -74,7 +74,7 @@ export function ProjectForm({
       setBasicInfo({
         name: initialData.name,
         slug: initialData.slug,
-        description: initialData.description,
+        description: initialData.description || "",
         published: initialData.published,
         featured: initialData.featured,
         heroImage: initialData.heroImage
@@ -109,7 +109,7 @@ export function ProjectForm({
 
     return () => reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialData, reset, setBasicInfo]);
 
   const isStepValid = (step: number) => {
     switch (step) {

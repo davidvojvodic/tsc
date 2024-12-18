@@ -3,8 +3,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import TextStyle from "@tiptap/extension-text-style";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useCallback } from "react";
 import {
   Select,
   SelectContent,
@@ -40,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { FontSize } from "@/lib/font-size";
 
 interface RichTextEditorProps {
@@ -79,10 +79,9 @@ function ToolbarButton({
         <TooltipTrigger asChild>
           <div>
             <button
-              type="button" // Changed from Button component to native button
+              type="button"
               disabled={disabled}
               onMouseDown={(e) => {
-                // Changed from onClick to onMouseDown
                 e.preventDefault();
                 onClick();
               }}
@@ -173,13 +172,23 @@ function LinkDialog({ editor, open, onOpenChange }: LinkDialogProps) {
 }
 
 export function RichTextEditor({
-  value = "",
+  value,
   onChange,
   placeholder = "Start writing...",
   disabled = false,
 }: RichTextEditorProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+
+  const handleUpdate = useCallback(
+    ({ editor }: { editor: Editor }) => {
+      const html = editor.getHTML();
+      if (html !== value) {
+        onChange(html);
+      }
+    },
+    [onChange, value]
+  );
 
   const editor = useEditor(
     {
@@ -217,9 +226,7 @@ export function RichTextEditor({
       ],
       content: value,
       editable: !disabled,
-      onUpdate: ({ editor }) => {
-        onChange(editor.getHTML());
-      },
+      onUpdate: handleUpdate,
       editorProps: {
         attributes: {
           class: cn(
@@ -229,8 +236,14 @@ export function RichTextEditor({
         },
       },
     },
-    [value] // Add value as a dependency
+    []
   );
+
+  React.useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value, false);
+    }
+  }, [editor, value]);
 
   if (!editor) {
     return null;
@@ -241,47 +254,9 @@ export function RichTextEditor({
     return attrs.fontSize || "1rem";
   };
 
-  const TextFormatButtons = () => (
-    <div className="flex items-center gap-1">
-      <ToolbarButton
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        disabled={disabled}
-        active={editor.isActive("bold")}
-        tooltip="Bold (⌘+B)"
-      >
-        <Bold className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        disabled={disabled}
-        active={editor.isActive("italic")}
-        tooltip="Italic (⌘+I)"
-      >
-        <Italic className="h-4 w-4" />
-      </ToolbarButton>
-    </div>
-  );
-
-  const ListButtons = () => (
-    <div className="flex">
-      <ToolbarButton
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        disabled={disabled}
-        active={editor.isActive("bulletList")}
-        tooltip="Bullet List"
-      >
-        <List className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        disabled={disabled}
-        active={editor.isActive("orderedList")}
-        tooltip="Numbered List"
-      >
-        <ListOrdered className="h-4 w-4" />
-      </ToolbarButton>
-    </div>
-  );
+  const handleFontSizeChange = (size: string) => {
+    editor.chain().focus().setFontSize(size).run();
+  };
 
   return (
     <div
@@ -295,21 +270,18 @@ export function RichTextEditor({
         <div className="flex flex-wrap gap-1 items-center">
           <Select
             value={getCurrentFontSize()}
-            onValueChange={(value) => {
-              //   e.preventDefault();
-              editor.chain().focus().setFontSize(value).run();
-            }}
+            onValueChange={handleFontSizeChange}
             disabled={disabled}
           >
             <SelectTrigger className="w-[100px] h-8">
               <SelectValue placeholder="Size" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
               {fontSizes.map((size) => (
                 <SelectItem
                   key={size.value}
                   value={size.value}
-                  onSelect={(e) => e.preventDefault()}
+                  onMouseDown={(e) => e.preventDefault()}
                 >
                   {size.label}
                 </SelectItem>
@@ -318,9 +290,48 @@ export function RichTextEditor({
           </Select>
 
           <Separator orientation="vertical" className="mx-1 h-8" />
-          <TextFormatButtons />
+
+          {/* Text Format Buttons */}
+          <div className="flex items-center gap-1">
+            <ToolbarButton
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              disabled={disabled}
+              active={editor.isActive("bold")}
+              tooltip="Bold (⌘+B)"
+            >
+              <Bold className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              disabled={disabled}
+              active={editor.isActive("italic")}
+              tooltip="Italic (⌘+I)"
+            >
+              <Italic className="h-4 w-4" />
+            </ToolbarButton>
+          </div>
+
           <Separator orientation="vertical" className="mx-1 h-8" />
-          <ListButtons />
+
+          {/* List Buttons */}
+          <div className="flex">
+            <ToolbarButton
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+              disabled={disabled}
+              active={editor.isActive("bulletList")}
+              tooltip="Bullet List"
+            >
+              <List className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              disabled={disabled}
+              active={editor.isActive("orderedList")}
+              tooltip="Numbered List"
+            >
+              <ListOrdered className="h-4 w-4" />
+            </ToolbarButton>
+          </div>
 
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBlockquote().run()}

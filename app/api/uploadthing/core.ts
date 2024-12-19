@@ -1,34 +1,43 @@
-// app/api/uploadthing/core.ts
-
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { UploadThingError } from "uploadthing/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const f = createUploadthing();
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const auth = (req: Request) => ({ id: "fakeId" });
-
 export const ourFileRouter = {
-  imageUploader: f({
-    image: { maxFileSize: "16MB" }, // Allowed file types and their max sizes
+  materialUploader: f({
+    pdf: { maxFileSize: "32MB" },
+    text: { maxFileSize: "32MB" },
+    image: { maxFileSize: "16MB" },
     video: { maxFileSize: "256MB" },
+    audio: { maxFileSize: "32MB" },
+    // Add Microsoft Office formats
+    "application/msword": { maxFileSize: "32MB" }, // .doc
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+      maxFileSize: "32MB",
+    }, // .docx
+    "application/vnd.ms-excel": { maxFileSize: "32MB" }, // .xls
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+      maxFileSize: "32MB",
+    }, // .xlsx
+    "application/vnd.ms-powerpoint": { maxFileSize: "32MB" }, // .ppt
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+      { maxFileSize: "32MB" }, // .pptx
   })
-    .middleware(async ({ req }) => {
-      // Authentication logic
-      const user = await auth(req);
+    .middleware(async () => {
+      const headersObj = await headers();
+  const session = await auth.api.getSession({
+    headers: headersObj,
+  });
 
-      // If authentication fails, throw an error to prevent upload
-      if (!user) throw new UploadThingError("Unauthorized");
+      if (!session) throw new Error("Unauthorized");
 
-      // Return metadata accessible in onUploadComplete
-      return { userId: user.id };
+      return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      // Server-side logic after upload completes
       console.log("Upload complete for userId:", metadata.userId);
       console.log("File URL:", file.url);
 
-      // Return data to be accessible on the client-side
       return { uploadedBy: metadata.userId };
     }),
 } satisfies FileRouter;

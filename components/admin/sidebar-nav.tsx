@@ -57,11 +57,11 @@ export const routes = [
     isActive: false,
   },
   {
-    label: "Categories",
+    label: "Resources",
     icon: FolderTree,
-    href: "/admin/categories",
+    href: "/admin/materials",
     color: "text-emerald-500",
-    isActive: false,
+    isActive: true,
   },
   {
     label: "Tags",

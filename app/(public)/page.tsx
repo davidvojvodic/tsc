@@ -6,8 +6,9 @@ import prisma from "@/lib/prisma";
 import SchoolsSection from "@/components/homepage/schools";
 
 export default async function Home() {
+  const headersObj = await headers();
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: headersObj,
   });
 
   console.log(session);

@@ -12,8 +12,9 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const headersObj = await headers();
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: headersObj,
   });
 
   if (!session) {

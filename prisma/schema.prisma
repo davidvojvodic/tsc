@@ -215,6 +215,32 @@ model Media {
   @@map("media")
 }
 
+enum MaterialType {
+  PDF
+  WORD
+  EXCEL
+  POWERPOINT
+  OTHER
+}
+
+model Material {
+  id          String       @id @default(uuid())
+  title       String
+  description String?      @db.Text
+  type        MaterialType @default(OTHER)
+  url         String // URL from UploadThing
+  filename    String // Original filename
+  fileKey     String // UploadThing file key
+  size        Int // File size in bytes
+  downloads   Int          @default(0)
+  published   Boolean      @default(true)
+  category    String? // For organizing materials
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("material")
+}
+
 // Teacher model for managing teacher profiles
 
 model Teacher {

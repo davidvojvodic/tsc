@@ -11,15 +11,16 @@ import { Container } from "../container";
 import { ProfileDropdown } from "./profile-dropdown";
 
 const navigation = [
-  { name: "About Us", href: "/about" },
+  { name: "About Us", href: "/" },
   { name: "Our Projects", href: "/projects" },
-  { name: "Resources", href: "/resources" },
+  { name: "Resources", href: "/materials" },
   { name: "Online Learning", href: "/learning" },
 ];
 
 async function getUserWithRole() {
+  const headersObj = await headers();
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: headersObj,
   });
 
   if (!session) return null;

@@ -57,7 +57,7 @@ export default function RegisterPage() {
         throw new Error(error.message || "Registration failed");
       }
 
-      if (data?.user) {
+      if (data?.token) {
         toast({
           title: "Account created!",
           description: "Please check your email to verify your account.",

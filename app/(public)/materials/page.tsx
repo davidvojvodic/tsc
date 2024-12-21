@@ -9,10 +9,7 @@ import {  Prisma } from "@prisma/client";
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
-type PageProps = {
-  params: Promise<{ [key: string]: string | string[] | undefined }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
+
 
 async function getMaterials(query?: string, category?: string) {
   try {
@@ -82,12 +79,16 @@ async function getMaterials(query?: string, category?: string) {
   }
 }
 
-export default async function MaterialsPage({
-  searchParams,
-}: PageProps) {
-  const params = await searchParams;
-  const query = params.query?.toString();
-  const category = params.category?.toString();
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+type Params = Promise<{ [key: string]: string | string[] | undefined }>;
+
+export default async function MaterialsPage(props: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
+  const searchParams = await props.searchParams;
+  const query = searchParams.query?.toString();
+  const category = searchParams.category?.toString();
 
   const { materials, categories } = await getMaterials(query, category);
 

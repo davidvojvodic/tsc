@@ -1,74 +1,93 @@
+// app/(public)/materials/page.tsx
 import { Suspense } from "react";
 import prisma from "@/lib/prisma";
-
 import { Container } from "@/components/container";
 import { MaterialsFilter } from "./components/materials-filter";
-import MaterialsGridSkeleton, {
-  MaterialsGrid,
-} from "./components/materials-grid";
-import { Prisma } from "@prisma/client";
+import MaterialsGridSkeleton, { MaterialsGrid } from "./components/materials-grid";
+import {  Prisma } from "@prisma/client";
 
-export const revalidate = 3600; // Revalidate every hour
+export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
-async function getMaterials(query?: string, category?: string) {
-  const where: Prisma.MaterialWhereInput = {
-    published: true,
-    ...(query && {
-      OR: [
-        {
-          title: {
-            contains: query,
-            mode: "insensitive" as Prisma.QueryMode,
-          },
-        },
-        {
-          description: {
-            contains: query,
-            mode: "insensitive" as Prisma.QueryMode,
-          },
-        },
-      ],
-    }),
-    ...(category && {
-      category: {
-        equals: category,
-        mode: "insensitive" as Prisma.QueryMode,
-      },
-    }),
-  };
-
-  const materials = await prisma.material.findMany({
-    where,
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  const categories = await prisma.material.groupBy({
-    by: ["category"],
-    where: {
-      published: true,
-      category: { not: null },
-    },
-  });
-
-  return {
-    materials,
-    categories: categories.map((c) => c.category).filter(Boolean) as string[],
-  };
+type PageProps = {
+  params: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-interface PageProps {
-  params: { slug?: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+async function getMaterials(query?: string, category?: string) {
+  try {
+    const where: Prisma.MaterialWhereInput = {
+      published: true,
+      ...(query && {
+        OR: [
+          {
+            title: {
+              contains: query,
+              mode: Prisma.QueryMode.insensitive,
+            } as Prisma.StringFilter<"Material">
+          },
+          {
+            description: {
+              contains: query,
+              mode: Prisma.QueryMode.insensitive,
+            } as Prisma.StringFilter<"Material">
+          }
+        ]
+      }),
+      ...(category && {
+        category: {
+          equals: category,
+          mode: Prisma.QueryMode.insensitive,
+        } as Prisma.StringFilter<"Material">
+      }),
+    };
+
+    const [materials, categoriesResult] = await Promise.all([
+      prisma.material.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          type: true,
+          size: true,
+          downloads: true,
+          category: true,
+          filename: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.material.groupBy({
+        by: ['category'],
+        where: {
+          published: true,
+          category: { not: null },
+        },
+      })
+    ]);
+
+    const categories = categoriesResult
+      .map(c => c.category)
+      .filter((category): category is string => Boolean(category));
+
+    return {
+      materials,
+      categories,
+    };
+  } catch (error) {
+    console.error('[GET_MATERIALS]', error);
+    throw new Error('Failed to fetch materials');
+  }
 }
 
 export default async function MaterialsPage({
   searchParams,
 }: PageProps) {
-  // Convert searchParams to the expected types
-  const query = typeof searchParams.query === 'string' ? searchParams.query : undefined;
-  const category = typeof searchParams.category === 'string' ? searchParams.category : undefined;
+  const params = await searchParams;
+  const query = params.query?.toString();
+  const category = params.category?.toString();
 
   const { materials, categories } = await getMaterials(query, category);
 

@@ -9,10 +9,7 @@ import {
   Users,
   LayoutDashboard,
   FileText,
-  BookOpen,
-  Tags,
   FolderTree,
-  Settings,
   ImageIcon,
   GraduationCap,
   BrainCircuit,
@@ -49,13 +46,7 @@ export const routes = [
     color: "text-cyan-500",
     isActive: true,
   },
-  {
-    label: "Pages",
-    icon: BookOpen,
-    href: "/admin/pages",
-    color: "text-orange-500",
-    isActive: false,
-  },
+
   {
     label: "Resources",
     icon: FolderTree,
@@ -63,13 +54,7 @@ export const routes = [
     color: "text-emerald-500",
     isActive: true,
   },
-  {
-    label: "Tags",
-    icon: Tags,
-    href: "/admin/tags",
-    color: "text-green-500",
-    isActive: false,
-  },
+
   {
     label: "Media",
     icon: ImageIcon,
@@ -91,13 +76,7 @@ export const routes = [
     color: "text-purple-500",
     isActive: true,
   },
-  {
-    label: "Settings",
-    icon: Settings,
-    href: "/admin/settings",
-    color: "text-gray-500",
-    isActive: false,
-  },
+
 ];
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {

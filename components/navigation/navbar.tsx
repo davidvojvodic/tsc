@@ -14,7 +14,7 @@ const navigation = [
   { name: "About Us", href: "/" },
   { name: "Our Projects", href: "/projects" },
   { name: "Resources", href: "/materials" },
-  { name: "Online Learning", href: "/learning" },
+  { name: "Online Learning", href: "/quizzes" },
 ];
 
 async function getUserWithRole() {

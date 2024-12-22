@@ -89,7 +89,7 @@ export const routes = [
     icon: BrainCircuit,
     href: "/admin/quizzes",
     color: "text-purple-500",
-    isActive: false,
+    isActive: true,
   },
   {
     label: "Settings",

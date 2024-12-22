@@ -31,6 +31,7 @@ model User {
   Account       Account[]
   posts         Post[]
   pages         Page[] // Relation to static pages
+  quizSubmissions QuizSubmission[]
 
   banned     Boolean?
   banReason  String?
@@ -275,6 +276,7 @@ model Quiz {
   postId      String?
   Project     Project?   @relation(fields: [projectId], references: [id])
   projectId   String?
+  submissions QuizSubmission[]
 
   @@map("quiz")
 }
@@ -282,37 +284,52 @@ model Quiz {
 // Question model for quiz questions
 
 model Question {
-  id      String   @id @default(uuid())
-  text    String   @db.Text
-  quiz    Quiz     @relation(fields: [quizId], references: [id])
-  quizId  String
-  options Option[] @relation("QuestionOptions") // All options related to this question
+  id              String    @id @default(uuid())
+  text            String    @db.Text
+  quiz            Quiz      @relation(fields: [quizId], references: [id])
+  quizId          String
+  options         Option[]  @relation("QuestionOptions") // All options related to this question
 
   // Correct option fields
-  correctOptionId String @unique // Ensures one-to-one relation
-  correctOption   Option @relation("CorrectAnswer", fields: [correctOptionId], references: [id]) // Correct option
+  correctOptionId String?   @unique // Made optional by adding '?'
+  correctOption   Option?   @relation("CorrectAnswer", fields: [correctOptionId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@map("question")
 }
+
 
 // Option model for quiz answer options
 
 model Option {
   id                    String    @id @default(uuid())
   text                  String
-  question              Question  @relation("QuestionOptions", fields: [questionId], references: [id]) // Relation to the parent question
+  question              Question  @relation("QuestionOptions", fields: [questionId], references: [id], onDelete: Cascade)
   questionId            String
-  correctAnswerQuestion Question? @relation("CorrectAnswer") // Reciprocal relation for correctOption
+  correctAnswerQuestion Question? @relation("CorrectAnswer")
+  correct               Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  correct Boolean @default(false) // Indicates if this option is the correct answer
+  @@map("option")
+}
 
+model QuizSubmission {
+  id        String   @id @default(uuid())
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+  quizId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  score     Float
+  answers   Json     // Store array of answer details
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("option")
+  @@map("quiz_submission")
+  @@index([quizId])
+  @@index([userId])
 }
 
 // Project model for organizing different projects or courses (optional)

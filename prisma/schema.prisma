@@ -208,6 +208,7 @@ model Media {
   projectHero    Project[]      @relation("ProjectHero")
   projectGallery Project[]      @relation("ProjectGallery")
   projectPhases  ProjectPhase[]
+  testimonials Testimonial[] // Testimonials using this media
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   Project        Project?       @relation(fields: [projectId], references: [id])
@@ -386,4 +387,19 @@ model ProjectPhase {
   updatedAt DateTime @updatedAt
 
   @@map("project_phase")
+}
+
+model Testimonial {
+  id        String   @id @default(uuid())
+  name      String
+  role      String   // e.g., "Student", "Parent", etc.
+  content   String   @db.Text
+  photo     Media?   @relation(fields: [photoId], references: [id])
+  photoId   String?
+  featured  Boolean  @default(false)
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("testimonial")
 }

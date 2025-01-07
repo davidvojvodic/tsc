@@ -14,6 +14,7 @@ import {
   GraduationCap,
   BrainCircuit,
   FolderKanban,
+  MessageSquareQuote,
 } from "lucide-react";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -54,13 +55,19 @@ export const routes = [
     color: "text-emerald-500",
     isActive: true,
   },
-
+  {
+    label: "Testimonials",
+    icon: MessageSquareQuote,
+    href: "/admin/testimonials",
+    color: "text-amber-500",
+    isActive: true,
+  },
   {
     label: "Media",
     icon: ImageIcon,
     href: "/admin/media",
     color: "text-blue-500",
-    isActive: false,
+    isActive: true,
   },
   {
     label: "Teachers",

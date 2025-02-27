@@ -1,61 +1,76 @@
 // store/language-context.tsx
 "use client";
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { usePathname, useRouter } from "next/navigation";
 
-export type SupportedLanguage = 'en' | 'sl' | 'hr';
+export type SupportedLanguage = "en" | "sl" | "hr";
 
 interface LanguageContextType {
   language: SupportedLanguage;
   setLanguage: (lang: SupportedLanguage) => void;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextType | undefined>(
+  undefined
+);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const router = useRouter();
-  
+
   // Initialize language from URL or localStorage or default to 'en'
-  const [language, setLanguageState] = useState<SupportedLanguage>('en');
-  
-  // Initialize language from URL or localStorage
+  const [language, setLanguageState] = useState<SupportedLanguage>("en");
+
   useEffect(() => {
-    // First check the URL for language
-    const pathLanguage = pathname?.split('/')[1] as SupportedLanguage;
-    if (['en', 'sl', 'hr'].includes(pathLanguage)) {
-      setLanguageState(pathLanguage);
-      localStorage.setItem('preferredLanguage', pathLanguage);
+    // Skip language routing for admin routes
+    if (pathname?.startsWith("/admin")) {
       return;
     }
-    
+
+    // First check the URL for language
+    const pathLanguage = pathname?.split("/")[1] as SupportedLanguage;
+    if (["en", "sl", "hr"].includes(pathLanguage)) {
+      setLanguageState(pathLanguage);
+      localStorage.setItem("preferredLanguage", pathLanguage);
+      return;
+    }
+
     // If not in URL, check localStorage
-    const storedLanguage = localStorage.getItem('preferredLanguage') as SupportedLanguage;
-    if (['en', 'sl', 'hr'].includes(storedLanguage)) {
+    const storedLanguage = localStorage.getItem(
+      "preferredLanguage"
+    ) as SupportedLanguage;
+    if (["en", "sl", "hr"].includes(storedLanguage)) {
       setLanguageState(storedLanguage);
-      
+
       // Redirect to the localized URL if we're using stored language
-      if (pathname) {
+      // BUT NOT FOR ADMIN ROUTES
+      if (pathname && !pathname.startsWith("/admin")) {
         const newPathname = `/${storedLanguage}${pathname}`;
         router.push(newPathname);
       }
     }
   }, [pathname, router]);
-  
-  // When language changes, persist to localStorage and update URL
+
+  // Also modify setLanguage to avoid redirecting admin routes
   const setLanguage = (lang: SupportedLanguage) => {
     setLanguageState(lang);
-    localStorage.setItem('preferredLanguage', lang);
-    
-    // Update URL to reflect language change
-    if (pathname) {
-      const segments = pathname.split('/');
-      if (['en', 'sl', 'hr'].includes(segments[1])) {
+    localStorage.setItem("preferredLanguage", lang);
+
+    // Update URL to reflect language change - skip for admin routes
+    if (pathname && !pathname.startsWith("/admin")) {
+      const segments = pathname.split("/");
+      if (["en", "sl", "hr"].includes(segments[1])) {
         segments[1] = lang;
       } else {
         segments.splice(1, 0, lang);
       }
-      router.push(segments.join('/'));
+      router.push(segments.join("/"));
     }
   };
 
@@ -69,7 +84,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
 };

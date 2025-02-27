@@ -41,7 +41,9 @@ export function LanguageSelector() {
       pathParts.unshift(lang);
     }
 
-    router.push(`/${pathParts.join("/")}`);
+    // Ensure no duplicate language codes in the path
+    const newPath = `/${pathParts.join("/")}`;
+    router.push(newPath);
   };
 
   return (

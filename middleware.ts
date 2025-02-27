@@ -1,26 +1,49 @@
-// middleware.ts
+// middleware.ts - Fixed version
+
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const supportedLanguages = ["en", "sl", "hr"];
-const defaultLanguage = "en";
+const SUPPORTED_LANGUAGES = ["en", "sl", "hr"];
+const DEFAULT_LANGUAGE = "en";
+
+// Add paths that should bypass language routing
+const EXCLUDED_PATHS = ["/admin", "/api", "/_next", "/favicon.ico"];
 
 export function middleware(request: NextRequest) {
-  // Get the pathname from the URL
   const { pathname } = request.nextUrl;
 
-  // Only redirect the root path to the default language
-  if (pathname === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${defaultLanguage}`;
-    return NextResponse.redirect(url);
+  // Skip language routing for admin and other excluded paths - explicit check for admin paths
+  // This is what needs to be fixed
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return NextResponse.next();
   }
 
-  // For all other paths, let Next.js handle it
-  return NextResponse.next();
+  // Check other excluded paths
+  if (EXCLUDED_PATHS.some((path) => pathname.startsWith(path))) {
+    return NextResponse.next();
+  }
+
+  // Check if the pathname already has a language prefix
+  const pathnameHasLanguage = SUPPORTED_LANGUAGES.some(
+    (lang) => pathname.startsWith(`/${lang}/`) || pathname === `/${lang}`
+  );
+
+  if (pathnameHasLanguage) return NextResponse.next();
+
+  // Get language from cookie or localStorage if available
+  const userLang =
+    request.cookies.get("preferredLanguage")?.value || DEFAULT_LANGUAGE;
+
+  // Redirect to the same URL but with language prefix
+  const url = request.nextUrl.clone();
+  url.pathname = `/${userLang}${pathname}`;
+
+  return NextResponse.redirect(url);
 }
 
-// Run middleware only on the homepage
 export const config = {
-  matcher: ["/"],
+  matcher: [
+    // Explicitly exclude admin routes from the matcher
+    "/((?!admin|api|_next/static|_next/image|favicon.ico).*)",
+  ],
 };

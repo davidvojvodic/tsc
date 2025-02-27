@@ -16,10 +16,6 @@ const nextConfig = {
             },
         ]
     },
-    i18n: {
-        locales: ['en', 'sl', 'hr'],
-        defaultLocale: 'en',
-    },
     async headers() {
         return [
             {

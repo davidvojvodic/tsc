@@ -1,44 +1,5 @@
 import { z } from "zod";
 
-export const projectSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  slug: z.string().min(2, "Slug is required"),
-  description: z.string().optional().nullable(),
-  published: z.boolean().default(false),
-  featured: z.boolean().default(false),
-  heroImage: z
-    .object({
-      url: z.string().url(),
-      fileKey: z.string(),
-    })
-    .nullable()
-    .optional(),
-  teacherIds: z.array(z.string()).optional(),
-  tagIds: z.array(z.string()).optional(),
-});
-
-export const projectPhaseSchema = z.object({
-  title: z.string().min(2, "Title is required"),
-  description: z.string().min(2, "Description is required"),
-  startDate: z.date().nullable().optional(),
-  endDate: z.date().nullable().optional(),
-  completed: z.boolean().default(false),
-  order: z.number().int().min(0),
-  media: z
-    .object({
-      url: z.string().url(),
-      fileKey: z.string(),
-    })
-    .nullable()
-    .optional(),
-});
-
-export const galleryImageSchema = z.object({
-  url: z.string().url(),
-  fileKey: z.string(),
-  alt: z.string().optional(),
-});
-
 export const teacherSchema = z.object({
   name: z
     .string()
@@ -49,7 +10,19 @@ export const teacherSchema = z.object({
     .max(100, { message: "Title cannot exceed 100 characters" })
     .optional()
     .nullable(),
+  title_sl: z
+    .string()
+    .max(100, { message: "Title cannot exceed 100 characters" })
+    .optional()
+    .nullable(),
+  title_hr: z
+    .string()
+    .max(100, { message: "Title cannot exceed 100 characters" })
+    .optional()
+    .nullable(),
   bio: z.string().optional().nullable(),
+  bio_sl: z.string().optional().nullable(),
+  bio_hr: z.string().optional().nullable(),
   email: z
     .string()
     .email({ message: "Please enter a valid email address" })
@@ -67,7 +40,25 @@ export const teacherSchema = z.object({
     .optional(),
 });
 
+export const materialSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  title_sl: z.string().optional().nullable(),
+  title_hr: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  description_sl: z.string().optional().nullable(),
+  description_hr: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  published: z.boolean().default(true),
+  file: z
+    .object({
+      url: z.string().url(),
+      key: z.string(),
+      name: z.string(),
+      size: z.number(),
+    })
+    .optional(),
+});
+
+// Similar updates for other schemas like projectSchema, testimonialSchema, etc.
 export type TeacherFormValues = z.infer<typeof teacherSchema>;
-export type ProjectFormValues = z.infer<typeof projectSchema>;
-export type ProjectPhaseFormValues = z.infer<typeof projectPhaseSchema>;
-export type GalleryImageFormValues = z.infer<typeof galleryImageSchema>;
+export type MaterialFormValues = z.infer<typeof materialSchema>;

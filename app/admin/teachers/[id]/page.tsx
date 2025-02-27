@@ -21,7 +21,11 @@ export default async function TeacherPage({
         id: teacher.id,
         name: teacher.name,
         title: teacher.title,
+        title_sl: teacher.title_sl, // Add this
+        title_hr: teacher.title_hr, // Add this
         bio: teacher.bio,
+        bio_sl: teacher.bio_sl, // Add this
+        bio_hr: teacher.bio_hr, // Add this
         email: teacher.email,
         displayOrder: teacher.displayOrder,
         photoId: teacher.photoId,

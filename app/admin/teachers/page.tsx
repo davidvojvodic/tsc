@@ -15,7 +15,12 @@ export default async function TeachersPage() {
   const formattedTeachers = teachers.map((teacher) => ({
     id: teacher.id,
     name: teacher.name,
+    title: teacher.title,
+    title_sl: teacher.title_sl,
+    title_hr: teacher.title_hr,
     bio: teacher.bio,
+    bio_sl: teacher.bio_sl,
+    bio_hr: teacher.bio_hr,
     photoId: teacher.photoId,
     photo: teacher.photo ? { url: teacher.photo.url } : null,
     // Format the date when we prepare the data

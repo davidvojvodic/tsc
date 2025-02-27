@@ -1,3 +1,4 @@
+// components/forms/material-form.tsx
 "use client";
 
 import { useState } from "react";
@@ -29,13 +30,25 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UploadDropzone } from "@/lib/uploadthing";
-import { MaterialColumn } from "@/app/admin/materials/components/columns";
 import { formatBytes } from "@/lib/utils";
+import { Label } from "../ui/label";
+import { LanguageTabs, SupportedLanguage } from "../ui/language-tabs";
 
 // Form validation schema
 const formSchema = z.object({
+  // English fields (required)
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
+
+  // Slovenian fields (optional)
+  title_sl: z.string().optional(),
+  description_sl: z.string().optional(),
+
+  // Croatian fields (optional)
+  title_hr: z.string().optional(),
+  description_hr: z.string().optional(),
+
+  // Common fields
   category: z.string().optional(),
   published: z.boolean().default(true),
 });
@@ -43,7 +56,21 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface MaterialFormProps {
-  initialData?: MaterialColumn;
+  initialData?: {
+    id: string;
+    title: string;
+    title_sl?: string | null;
+    title_hr?: string | null;
+    description: string | null;
+    description_sl?: string | null;
+    description_hr?: string | null;
+    category: string | null;
+    published: boolean;
+    url: string;
+    fileKey: string;
+    filename: string;
+    size: number;
+  };
 }
 
 export function MaterialForm({ initialData }: MaterialFormProps) {
@@ -70,11 +97,21 @@ export function MaterialForm({ initialData }: MaterialFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title || "",
+      title_sl: initialData?.title_sl || "",
+      title_hr: initialData?.title_hr || "",
       description: initialData?.description || "",
+      description_sl: initialData?.description_sl || "",
+      description_hr: initialData?.description_hr || "",
       category: initialData?.category || "",
       published: initialData?.published ?? true,
     },
   });
+
+  // Helper function to get the field name for a specific language
+  const getFieldName = (field: string, lang: SupportedLanguage): string => {
+    if (lang === "en") return field;
+    return `${field}_${lang}`;
+  };
 
   const onRemoveFile = () => {
     setFile(null);
@@ -192,41 +229,89 @@ export function MaterialForm({ initialData }: MaterialFormProps) {
               )}
             </div>
 
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input
-                      disabled={isLoading}
-                      placeholder="Enter resource title"
-                      {...field}
+            {/* Title with language tabs */}
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <LanguageTabs>
+                {(lang) => {
+                  const fieldName = getFieldName(
+                    "title",
+                    lang
+                  ) as keyof FormValues;
+                  return (
+                    <FormField
+                      control={form.control}
+                      name={fieldName}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder={`Enter resource title (${lang.toUpperCase()})`}
+                              {...field}
+                              value={
+                                typeof field.value === "boolean"
+                                  ? ""
+                                  : field.value
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          {lang !== "en" && (
+                            <FormDescription>
+                              Optional: Enter the title in{" "}
+                              {lang === "sl" ? "Slovenian" : "Croatian"}
+                            </FormDescription>
+                          )}
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  );
+                }}
+              </LanguageTabs>
+            </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      disabled={isLoading}
-                      placeholder="Enter resource description"
-                      {...field}
+            {/* Description with language tabs */}
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <LanguageTabs>
+                {(lang) => {
+                  const fieldName = getFieldName(
+                    "description",
+                    lang
+                  ) as keyof FormValues;
+                  return (
+                    <FormField
+                      control={form.control}
+                      name={fieldName}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              disabled={isLoading}
+                              placeholder={`Enter resource description (${lang.toUpperCase()})`}
+                              {...field}
+                              value={
+                                typeof field.value === "boolean"
+                                  ? ""
+                                  : field.value
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          {lang !== "en" && (
+                            <FormDescription>
+                              Optional: Enter the description in{" "}
+                              {lang === "sl" ? "Slovenian" : "Croatian"}
+                            </FormDescription>
+                          )}
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  );
+                }}
+              </LanguageTabs>
+            </div>
 
             <FormField
               control={form.control}

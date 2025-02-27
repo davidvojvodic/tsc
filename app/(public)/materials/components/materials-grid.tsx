@@ -26,6 +26,7 @@ interface Material {
 }
 
 export function MaterialsGrid({ materials }: { materials: Material[] }) {
+  
   if (materials.length === 0) {
     return (
       <div className="text-center py-12">

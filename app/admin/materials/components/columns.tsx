@@ -8,7 +8,11 @@ import { formatBytes } from "@/lib/utils";
 export type MaterialColumn = {
   id: string;
   title: string;
+  title_sl?: string | null;
+  title_hr?: string | null;
   description: string | null;
+  description_sl?: string | null;
+  description_hr?: string | null;
   type: string;
   filename: string;
   size: number;
@@ -16,8 +20,8 @@ export type MaterialColumn = {
   published: boolean;
   category: string | null;
   createdAt: string;
-  url: string; // Add this
-  fileKey: string; // Add this
+  url: string;
+  fileKey: string;
 };
 
 export const columns: ColumnDef<MaterialColumn>[] = [

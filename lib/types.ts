@@ -1,12 +1,21 @@
 // lib/types/index.ts
 
+// lib/types.ts
 export interface Teacher {
   id: string;
   name: string;
+  title?: string | null;
+  title_sl?: string | null;
+  title_hr?: string | null;
   bio?: string | null;
+  bio_sl?: string | null;
+  bio_hr?: string | null;
+  email?: string | null;
+  displayOrder?: number;
   photo?: {
     url: string;
   } | null;
+  createdAt?: string;
 }
 
 export interface ProjectPhase {

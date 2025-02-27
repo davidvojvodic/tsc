@@ -11,24 +11,26 @@ export const revalidate = 3600;
 
 
 
-async function getMaterials(query?: string, category?: string) {
+async function getMaterials(query?: string, category?: string, language: string = 'en') {
   try {
     const where: Prisma.MaterialWhereInput = {
       published: true,
       ...(query && {
         OR: [
           {
-            title: {
-              contains: query,
-              mode: Prisma.QueryMode.insensitive,
-            } as Prisma.StringFilter<"Material">
+            // Use the appropriate language field for title search
+            ...(language === 'sl' ? { title_sl: { contains: query, mode: Prisma.QueryMode.insensitive } as Prisma.StringFilter<"Material"> } : 
+              language === 'hr' ? { title_hr: { contains: query, mode: Prisma.QueryMode.insensitive } as Prisma.StringFilter<"Material"> } :
+              { title: { contains: query, mode: Prisma.QueryMode.insensitive } as Prisma.StringFilter<"Material"> }
+            ),
           },
           {
-            description: {
-              contains: query,
-              mode: Prisma.QueryMode.insensitive,
-            } as Prisma.StringFilter<"Material">
-          }
+            // Use the appropriate language field for description search
+            ...(language === 'sl' ? { description_sl: { contains: query, mode: Prisma.QueryMode.insensitive } as Prisma.StringFilter<"Material"> } : 
+              language === 'hr' ? { description_hr: { contains: query, mode: Prisma.QueryMode.insensitive } as Prisma.StringFilter<"Material"> } :
+              { description: { contains: query, mode: Prisma.QueryMode.insensitive } as Prisma.StringFilter<"Material"> }
+            ),
+          },
         ]
       }),
       ...(category && {

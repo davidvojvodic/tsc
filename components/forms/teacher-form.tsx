@@ -1,3 +1,4 @@
+// components/forms/teacher-form.tsx
 "use client";
 
 import { useState } from "react";
@@ -31,21 +32,37 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { UploadButton } from "@/lib/uploadthing";
 import { Label } from "../ui/label";
+import { LanguageTabs, SupportedLanguage } from "../ui/language-tabs";
 
 // Form validation schema
 const formSchema = z.object({
+  // Core fields (not language specific)
   name: z
     .string()
     .min(2, { message: "Name must be at least 2 characters long" })
     .max(50, { message: "Name cannot exceed 50 characters" }),
+  email: z.string().email().optional().nullable(),
+  displayOrder: z.number().int().default(0),
+
+  // Multilingual fields
   title: z
     .string()
     .max(100, { message: "Title cannot exceed 100 characters" })
     .optional()
     .nullable(),
+  title_sl: z
+    .string()
+    .max(100, { message: "Title cannot exceed 100 characters" })
+    .optional()
+    .nullable(),
+  title_hr: z
+    .string()
+    .max(100, { message: "Title cannot exceed 100 characters" })
+    .optional()
+    .nullable(),
   bio: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable(),
-  displayOrder: z.number().int().default(0),
+  bio_sl: z.string().optional().nullable(),
+  bio_hr: z.string().optional().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -55,7 +72,11 @@ interface TeacherFormProps {
     id: string;
     name: string;
     title: string | null;
+    title_sl?: string | null;
+    title_hr?: string | null;
     bio: string | null;
+    bio_sl?: string | null;
+    bio_hr?: string | null;
     email: string | null;
     displayOrder: number;
     photoId: string | null;
@@ -89,7 +110,11 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
     defaultValues: {
       name: initialData?.name || "",
       title: initialData?.title || "",
+      title_sl: initialData?.title_sl || "",
+      title_hr: initialData?.title_hr || "",
       bio: initialData?.bio || "",
+      bio_sl: initialData?.bio_sl || "",
+      bio_hr: initialData?.bio_hr || "",
       email: initialData?.email || null,
       displayOrder: initialData?.displayOrder || 0,
     },
@@ -136,6 +161,12 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to get the field name for a specific language
+  const getFieldName = (field: string, lang: SupportedLanguage): string => {
+    if (lang === "en") return field;
+    return `${field}_${lang}`;
   };
 
   return (
@@ -202,7 +233,8 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
 
         {/* Form Fields */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* Name field (not language specific) */}
             <FormField
               control={form.control}
               name="name"
@@ -221,27 +253,47 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input
-                      disabled={isLoading}
-                      placeholder="e.g. Senior Mathematics Teacher"
-                      {...field}
-                      value={field.value || ""}
+            {/* Title field with language tabs */}
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <LanguageTabs>
+                {(lang) => {
+                  const fieldName = getFieldName(
+                    "title",
+                    lang
+                  ) as keyof FormValues;
+                  return (
+                    <FormField
+                      control={form.control}
+                      name={fieldName}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder={`e.g. Senior Mathematics Teacher (${lang.toUpperCase()})`}
+                              {...field}
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          {lang === "en" ? (
+                            <FormDescription>
+                              Professional title or role within the institution
+                            </FormDescription>
+                          ) : (
+                            <FormDescription>
+                              Optional: Enter the title in{" "}
+                              {lang === "sl" ? "Slovenian" : "Croatian"}
+                            </FormDescription>
+                          )}
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormDescription>
-                    Professional title or role within the institution
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  );
+                }}
+              </LanguageTabs>
+            </div>
 
             <FormField
               control={form.control}
@@ -263,26 +315,45 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bio</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      disabled={isLoading}
-                      placeholder="Enter teacher's bio"
-                      className="resize-none"
-                      rows={5}
-                      {...field}
-                      value={field.value || ""}
+            {/* Bio field with language tabs */}
+            <div className="space-y-2">
+              <Label>Bio</Label>
+              <LanguageTabs>
+                {(lang) => {
+                  const fieldName = getFieldName(
+                    "bio",
+                    lang
+                  ) as keyof FormValues;
+                  return (
+                    <FormField
+                      control={form.control}
+                      name={fieldName}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              disabled={isLoading}
+                              placeholder={`Enter teacher's bio (${lang.toUpperCase()})`}
+                              className="resize-none"
+                              rows={5}
+                              {...field}
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          {lang !== "en" && (
+                            <FormDescription>
+                              Optional: Enter the bio in{" "}
+                              {lang === "sl" ? "Slovenian" : "Croatian"}
+                            </FormDescription>
+                          )}
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  );
+                }}
+              </LanguageTabs>
+            </div>
 
             <FormField
               control={form.control}

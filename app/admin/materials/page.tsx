@@ -1,3 +1,4 @@
+// app/admin/materials/page.tsx
 import prisma from "@/lib/prisma";
 import { format } from "date-fns";
 import { MaterialsClient } from "./components/client";
@@ -12,7 +13,11 @@ export default async function MaterialsPage() {
   const formattedMaterials = materials.map((material) => ({
     id: material.id,
     title: material.title,
+    title_sl: material.title_sl,
+    title_hr: material.title_hr,
     description: material.description,
+    description_sl: material.description_sl,
+    description_hr: material.description_hr,
     type: material.type,
     filename: material.filename,
     size: material.size,

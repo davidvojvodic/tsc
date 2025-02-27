@@ -46,7 +46,11 @@ export default async function MaterialPage({
     ? {
         id: material.id,
         title: material.title,
+        title_sl: material.title_sl, 
+        title_hr: material.title_hr, 
         description: material.description,
+        description_sl: material.description_sl,
+        description_hr: material.description_hr,
         type: material.type,
         filename: material.filename,
         size: material.size,

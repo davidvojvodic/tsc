@@ -1,3 +1,4 @@
+// app/api/materials/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -6,9 +7,20 @@ import { headers } from "next/headers";
 import { checkAdminAccess } from "@/lib/utils";
 
 const updateMaterialSchema = z.object({
+  // English fields (required)
   title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  category: z.string().optional(),
+  description: z.string().optional().nullable(),
+
+  // Slovenian fields (optional)
+  title_sl: z.string().optional().nullable(),
+  description_sl: z.string().optional().nullable(),
+
+  // Croatian fields (optional)
+  title_hr: z.string().optional().nullable(),
+  description_hr: z.string().optional().nullable(),
+
+  // Common fields
+  category: z.string().optional().nullable(),
   published: z.boolean(),
   file: z
     .object({
@@ -26,9 +38,10 @@ export async function PATCH(
 ) {
   try {
     const headersObj = await headers();
-  const session = await auth.api.getSession({
-    headers: headersObj,
-  });
+    const session = await auth.api.getSession({
+      headers: headersObj,
+    });
+
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -44,7 +57,11 @@ export async function PATCH(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let updateData: any = {
       title: validatedData.title,
+      title_sl: validatedData.title_sl,
+      title_hr: validatedData.title_hr,
       description: validatedData.description,
+      description_sl: validatedData.description_sl,
+      description_hr: validatedData.description_hr,
       category: validatedData.category,
       published: validatedData.published,
     };
@@ -101,15 +118,13 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Similar update for POST route
+export async function POST(req: NextRequest) {
   try {
     const headersObj = await headers();
-  const session = await auth.api.getSession({
-    headers: headersObj,
-  });
+    const session = await auth.api.getSession({
+      headers: headersObj,
+    });
 
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -120,13 +135,65 @@ export async function DELETE(
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    await prisma.material.delete({
-      where: { id: params.id },
+    const body = await req.json();
+    const validatedData = updateMaterialSchema.parse(body);
+
+    if (!validatedData.file) {
+      return new NextResponse("File is required", { status: 400 });
+    }
+
+    // Determine material type from file name
+    const fileExtension = validatedData.file.name
+      .split(".")
+      .pop()
+      ?.toLowerCase();
+    let type = "OTHER";
+
+    switch (fileExtension) {
+      case "pdf":
+        type = "PDF";
+        break;
+      case "doc":
+      case "docx":
+        type = "WORD";
+        break;
+      case "xls":
+      case "xlsx":
+        type = "EXCEL";
+        break;
+      case "ppt":
+      case "pptx":
+        type = "POWERPOINT";
+        break;
+      default:
+        type = "OTHER";
+    }
+
+    const material = await prisma.material.create({
+      data: {
+        title: validatedData.title,
+        title_sl: validatedData.title_sl,
+        title_hr: validatedData.title_hr,
+        description: validatedData.description,
+        description_sl: validatedData.description_sl,
+        description_hr: validatedData.description_hr,
+        category: validatedData.category,
+        published: validatedData.published,
+        url: validatedData.file.url,
+        filename: validatedData.file.name,
+        fileKey: validatedData.file.key,
+        size: validatedData.file.size,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        type: type as any,
+      },
     });
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json(material);
   } catch (error) {
-    console.error("[MATERIAL_DELETE]", error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(error.issues, { status: 422 });
+    }
+    console.error("[MATERIALS_POST]", error);
     return new NextResponse("Internal error", { status: 500 });
   }
 }

@@ -55,12 +55,16 @@ export async function POST(req: NextRequest) {
         };
       }
 
-      // Create the teacher with all fields
+      // Create the teacher with all fields including multilingual ones
       return await tx.teacher.create({
         data: {
           name: validatedData.name,
           title: validatedData.title,
+          title_sl: validatedData.title_sl,
+          title_hr: validatedData.title_hr,
           bio: validatedData.bio,
+          bio_sl: validatedData.bio_sl,
+          bio_hr: validatedData.bio_hr,
           email: validatedData.email,
           displayOrder: validatedData.displayOrder,
           ...photoConnect,

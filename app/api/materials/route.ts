@@ -5,10 +5,22 @@ import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { headers } from "next/headers";
 
+// Updated schema to include multilingual fields
 const materialSchema = z.object({
+  // English fields (required)
   title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  category: z.string().optional(),
+  description: z.string().optional().nullable(),
+
+  // Slovenian fields (optional)
+  title_sl: z.string().optional().nullable(),
+  description_sl: z.string().optional().nullable(),
+
+  // Croatian fields (optional)
+  title_hr: z.string().optional().nullable(),
+  description_hr: z.string().optional().nullable(),
+
+  // Common fields
+  category: z.string().optional().nullable(),
   published: z.boolean().default(true),
   file: z.object({
     url: z.string().url(),
@@ -30,9 +42,9 @@ async function checkAdminAccess(userId: string) {
 export async function POST(req: NextRequest) {
   try {
     const headersObj = await headers();
-  const session = await auth.api.getSession({
-    headers: headersObj,
-  });
+    const session = await auth.api.getSession({
+      headers: headersObj,
+    });
 
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -75,8 +87,19 @@ export async function POST(req: NextRequest) {
 
     const material = await prisma.material.create({
       data: {
+        // English fields
         title: validatedData.title,
         description: validatedData.description,
+
+        // Slovenian fields
+        title_sl: validatedData.title_sl,
+        description_sl: validatedData.description_sl,
+
+        // Croatian fields
+        title_hr: validatedData.title_hr,
+        description_hr: validatedData.description_hr,
+
+        // Common fields
         category: validatedData.category,
         published: validatedData.published,
         url: validatedData.file.url,

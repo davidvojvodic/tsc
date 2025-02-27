@@ -1,9 +1,12 @@
+"use client";
 import * as React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Mail, BookOpen } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
+import { useLanguage } from "@/store/language-context";
+import { getLocalizedContent } from "@/lib/language-utils";
 
 interface Teacher {
   id: string;
@@ -27,12 +30,16 @@ export function TeacherDialog({
   onOpenChange,
 }: TeacherDialogProps) {
   const [imageLoaded, setImageLoaded] = React.useState(false);
+  const { language } = useLanguage();
 
   React.useEffect(() => {
     setImageLoaded(false);
   }, [open, teacher?.id]);
 
   if (!teacher) return null;
+
+  const title = getLocalizedContent(teacher, "title", language);
+  const bio = getLocalizedContent(teacher, "bio", language);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,9 +82,9 @@ export function TeacherDialog({
               <h2 className="text-xl lg:text-2xl font-semibold">
                 {teacher.name}
               </h2>
-              {teacher.title && (
+              {title && (
                 <Badge variant="secondary" className="mt-2">
-                  {teacher.title}
+                  {title}
                 </Badge>
               )}
 
@@ -105,7 +112,7 @@ export function TeacherDialog({
                   </h3>
                   <Separator className="mb-2" />
                   <p className="text-muted-foreground text-justify leading-relaxed">
-                    {teacher.bio || "No bio available"}
+                    {bio || "No bio available"}
                   </p>
                 </div>
                 <Separator />

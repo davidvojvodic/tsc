@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { Container } from "../container";
 import { ProfileDropdown } from "./profile-dropdown";
+import { LanguageSelector } from "@/components/language-selector";
 
 const navigation = [
   { name: "About Us", href: "/" },
@@ -74,6 +75,7 @@ export async function Navbar() {
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-x-4">
+            <LanguageSelector />
             {user ? (
               <ProfileDropdown user={user} />
             ) : (
@@ -106,6 +108,8 @@ export async function Navbar() {
                       {item.name}
                     </Link>
                   ))}
+                  <LanguageSelector />
+
                   {user ? (
                     <ProfileDropdown user={user} />
                   ) : (

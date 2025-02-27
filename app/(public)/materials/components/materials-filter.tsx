@@ -1,3 +1,4 @@
+// components/materials/materials-filter.tsx
 "use client";
 
 import { useCallback, useState } from "react";
@@ -13,12 +14,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import debounce from "lodash/debounce";
+import { SupportedLanguage } from "@/store/language-context";
 
 interface MaterialsFilterProps {
   categories: string[];
+  language: SupportedLanguage;
 }
 
-export function MaterialsFilter({ categories }: MaterialsFilterProps) {
+export function MaterialsFilter({
+  categories,
+  language,
+}: MaterialsFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("query") || "");
@@ -32,9 +38,10 @@ export function MaterialsFilter({ categories }: MaterialsFilterProps) {
       } else {
         params.delete("query");
       }
-      router.push(`/materials?${params.toString()}`);
+
+      router.push(`/${language}/materials?${params.toString()}`);
     }, 300),
-    [searchParams, router]
+    [searchParams, router, language]
   );
 
   const handleSearch = (value: string) => {
@@ -49,12 +56,13 @@ export function MaterialsFilter({ categories }: MaterialsFilterProps) {
     } else {
       params.set("category", value);
     }
-    router.push(`/materials?${params.toString()}`);
+
+    router.push(`/${language}/materials?${params.toString()}`);
   };
 
   const clearFilters = () => {
     setSearch("");
-    router.push("/materials");
+    router.push(`/${language}/materials`);
   };
 
   const hasFilters = search || searchParams.get("category");
@@ -64,7 +72,13 @@ export function MaterialsFilter({ categories }: MaterialsFilterProps) {
       <div className="flex flex-1 gap-4">
         <div className="max-w-sm flex-1">
           <Input
-            placeholder="Search materials..."
+            placeholder={
+              language === "sl"
+                ? "Išči po materialih..."
+                : language === "hr"
+                  ? "Pretraži materijale..."
+                  : "Search materials..."
+            }
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
           />
@@ -74,10 +88,24 @@ export function MaterialsFilter({ categories }: MaterialsFilterProps) {
           onValueChange={handleCategoryChange}
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Category" />
+            <SelectValue
+              placeholder={
+                language === "sl"
+                  ? "Kategorija"
+                  : language === "hr"
+                    ? "Kategorija"
+                    : "Category"
+              }
+            />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">
+              {language === "sl"
+                ? "Vse kategorije"
+                : language === "hr"
+                  ? "Sve kategorije"
+                  : "All Categories"}
+            </SelectItem>
             {categories.map((category) => (
               <SelectItem key={category} value={category}>
                 {category}
@@ -93,7 +121,11 @@ export function MaterialsFilter({ categories }: MaterialsFilterProps) {
           onClick={clearFilters}
         >
           <X className="mr-2 h-4 w-4" />
-          Clear filters
+          {language === "sl"
+            ? "Počisti filtre"
+            : language === "hr"
+              ? "Očisti filtre"
+              : "Clear filters"}
         </Button>
       )}
     </div>

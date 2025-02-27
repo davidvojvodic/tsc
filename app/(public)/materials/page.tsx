@@ -147,10 +147,9 @@ export default async function MaterialsPage(props: {
           </p>
         </div>
 
-        <MaterialsFilter categories={categories} />
-
+        <MaterialsFilter categories={categories} language={language} />
         <Suspense fallback={<MaterialsGridSkeleton />}>
-          <MaterialsGrid materials={materials} />
+          <MaterialsGrid materials={materials} language={language} />
         </Suspense>
       </Container>
     </div>

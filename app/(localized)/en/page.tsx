@@ -3,16 +3,9 @@ import { HeroSection } from "@/components/homepage/hero";
 import TeacherCarousel from "@/components/homepage/teacher-carousel";
 import TestimonialsSection from "@/components/homepage/testimonials";
 import SchoolsSection from "@/components/homepage/schools";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 
 export default async function HomePage() {
-  const headersObj = await headers();
-  const session = await auth.api.getSession({
-    headers: headersObj,
-  });
-
   // Fetch published testimonials
   const testimonials = await prisma.testimonial.findMany({
     where: {

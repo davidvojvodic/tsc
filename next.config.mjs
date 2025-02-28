@@ -24,6 +24,18 @@ const nextConfig = {
         ],
         unoptimized: process.env.NODE_ENV === 'development'
     },
+    // Ensure cookies can be correctly used for language
+    serverRuntimeConfig: {
+        revalidateOnChange: true,
+    },
+    // Force revalidation of content when cookies change
+    experimental: {
+        serverActions: {
+            bodySizeLimit: '5mb',
+        },
+        // Properly handle language detection and server components
+        serverComponentsExternalPackages: ['cookies-next'],
+    },
     async headers() {
         return [
             {

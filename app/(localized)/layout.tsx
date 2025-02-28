@@ -16,7 +16,7 @@ export default function LocalizedLayout({
   return (
     <div className="antialiased min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="my-auto">{children}</main>
       <Footer />
     </div>
   );

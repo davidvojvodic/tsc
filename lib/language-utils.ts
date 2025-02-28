@@ -1,4 +1,4 @@
-import { SupportedLanguage } from "@/components/ui/language-tabs";
+import { SupportedLanguage } from "@/store/language-context";
 
 
 /**
@@ -14,10 +14,18 @@ export function getLocalizedContent<T extends Record<string, any>>(
   field: string,
   language: SupportedLanguage
 ): string | null {
-  if (language === "en") {
-    return content[field] || null;
+  // Check if content is null or undefined
+  if (!content) {
+    return null;
   }
   
+  // For English, first check if there's an explicit English field
+  if (language === "en") {
+    const explicitEnglishField = `${field}_en`;
+    return content[explicitEnglishField] || content[field] || null;
+  }
+  
+  // For other languages, check the localized field
   const localizedField = `${field}_${language}`;
   
   // Return localized content if available, otherwise fall back to English

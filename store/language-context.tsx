@@ -8,6 +8,7 @@ import React, {
   ReactNode,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { setCookie } from 'cookies-next';
 
 export type SupportedLanguage = "en" | "sl" | "hr";
 
@@ -38,6 +39,8 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     if (["en", "sl", "hr"].includes(pathLanguage)) {
       setLanguageState(pathLanguage);
       localStorage.setItem("preferredLanguage", pathLanguage);
+      // Also set cookie for server components
+      setCookie('NEXT_LOCALE', pathLanguage, { path: '/', maxAge: 60 * 60 * 24 * 30 }); // 30 days
       return;
     }
 
@@ -47,6 +50,8 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     ) as SupportedLanguage;
     if (["en", "sl", "hr"].includes(storedLanguage)) {
       setLanguageState(storedLanguage);
+      // Also set cookie for server components
+      setCookie('NEXT_LOCALE', storedLanguage, { path: '/', maxAge: 60 * 60 * 24 * 30 }); // 30 days
 
       // Redirect to the localized URL if we're using stored language
       // BUT NOT FOR ADMIN ROUTES
@@ -61,16 +66,23 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const setLanguage = (lang: SupportedLanguage) => {
     setLanguageState(lang);
     localStorage.setItem("preferredLanguage", lang);
+    // Set cookie for server-side components
+    setCookie('NEXT_LOCALE', lang, { path: '/', maxAge: 60 * 60 * 24 * 30 }); // 30 days
 
     // Update URL to reflect language change - skip for admin routes
     if (pathname && !pathname.startsWith("/admin")) {
-      const segments = pathname.split("/");
-      if (["en", "sl", "hr"].includes(segments[1])) {
-        segments[1] = lang;
+      const segments = pathname.split("/").filter(Boolean);
+      
+      // Check if the first segment is a language code
+      if (segments.length > 0 && ["en", "sl", "hr"].includes(segments[0])) {
+        segments[0] = lang;
       } else {
-        segments.splice(1, 0, lang);
+        segments.unshift(lang);
       }
-      router.push(segments.join("/"));
+      
+      const newPath = `/${segments.join("/")}`;
+      console.log('Language changed to:', lang, 'Redirecting to:', newPath);
+      router.push(newPath);
     }
   };
 

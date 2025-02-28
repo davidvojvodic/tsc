@@ -25,6 +25,9 @@ import { cn } from "@/lib/utils";
 import { GalleryView } from "@/components/project/gallery-view";
 import { ProjectTeam } from "@/components/project/project-team";
 import { RichTextDisplay } from "@/components/rich-text-content";
+import { cookies } from "next/headers";
+import { getLocalizedContent } from "@/lib/language-utils";
+import { SupportedLanguage } from "@/store/language-context";
 
 async function getProject(slug: string) {
   const project = await prisma.project.findUnique({
@@ -37,8 +40,22 @@ async function getProject(slug: string) {
       gallery: true,
       tags: true,
       teachers: {
-        include: {
-          photo: true,
+        select: {
+          id: true,
+          name: true,
+          bio: true,
+          bio_sl: true,
+          bio_hr: true,
+          title: true,
+          title_sl: true,
+          title_hr: true,
+          email: true,
+          displayOrder: true,
+          photo: {
+            select: {
+              url: true,
+            },
+          },
         },
       },
       quizzes: true,
@@ -67,6 +84,15 @@ export default async function ProjectPage({
     notFound();
   }
 
+  // Get the current language from cookies
+  const cookieStore = cookies();
+  const langCookie = cookieStore.get("NEXT_LOCALE");
+  const language = (langCookie?.value || "en") as SupportedLanguage;
+
+  // Get localized content
+  const projectName = getLocalizedContent(project, "name", language);
+  const projectDescription = getLocalizedContent(project, "description", language);
+
   // Calculate project stats
   const completedPhases = project.timeline.filter((p) => p.completed).length;
   const completionPercentage = Math.round(
@@ -80,7 +106,7 @@ export default async function ProjectPage({
         {project.heroImage ? (
           <Image
             src={project.heroImage.url}
-            alt={project.name}
+            alt={projectName || project.name}
             fill
             className="object-cover"
             priority
@@ -94,18 +120,23 @@ export default async function ProjectPage({
           <Button asChild variant="outline" size="sm" className="mb-6">
             <Link href="/projects">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Projects
+              {language === "en" && "Back to Projects"}
+              {language === "sl" && "Nazaj na projekte"}
+              {language === "hr" && "Natrag na projekte"}
             </Link>
           </Button>
           <div className="flex flex-wrap gap-2 mb-4">
-            {project.tags.map((tag) => (
-              <Badge key={tag.id} variant="secondary">
-                {tag.name}
-              </Badge>
-            ))}
+            {project.tags.map((tag) => {
+              const tagName = getLocalizedContent(tag, "name", language);
+              return (
+                <Badge key={tag.id} variant="secondary">
+                  {tagName || tag.name}
+                </Badge>
+              );
+            })}
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-            {project.name}
+            {projectName || project.name}
           </h1>
         </div>
       </div>
@@ -113,38 +144,74 @@ export default async function ProjectPage({
       {/* Project Overview */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>About this Project</CardTitle>
-          <CardDescription>Project overview and details</CardDescription>
+          <CardTitle>
+            {language === "en" && "About this Project"}
+            {language === "sl" && "O tem projektu"}
+            {language === "hr" && "O ovom projektu"}
+          </CardTitle>
+          <CardDescription>
+            {language === "en" && "Project overview and details"}
+            {language === "sl" && "Pregled in podrobnosti projekta"}
+            {language === "hr" && "Pregled i detalji projekta"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <RichTextDisplay
             className="mb-3"
-            content={project.description || ""}
+            content={projectDescription || project.description || ""}
           />
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Start Date</p>
+              <p className="text-sm text-muted-foreground">
+                {language === "en" && "Start Date"}
+                {language === "sl" && "Datum začetka"}
+                {language === "hr" && "Datum početka"}
+              </p>
               <p className="text-xl font-semibold">
                 {project.timeline[0]?.startDate
                   ? format(project.timeline[0].startDate, "MMM yyyy")
-                  : "Not specified"}
+                  : language === "en" 
+                    ? "Not specified"
+                    : language === "sl"
+                    ? "Ni določeno"
+                    : "Nije određeno"}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Team Size</p>
+              <p className="text-sm text-muted-foreground">
+                {language === "en" && "Team Size"}
+                {language === "sl" && "Velikost ekipe"}
+                {language === "hr" && "Veličina tima"}
+              </p>
               <p className="text-xl font-semibold">
-                {project.teachers.length} members
+                {project.teachers.length} {language === "en" 
+                  ? "members" 
+                  : language === "sl" 
+                  ? "članov" 
+                  : "članova"}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Completion</p>
+              <p className="text-sm text-muted-foreground">
+                {language === "en" && "Completion"}
+                {language === "sl" && "Dokončanje"}
+                {language === "hr" && "Završetak"}
+              </p>
               <p className="text-xl font-semibold">{completionPercentage}%</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Resources</p>
+              <p className="text-sm text-muted-foreground">
+                {language === "en" && "Resources"}
+                {language === "sl" && "Viri"}
+                {language === "hr" && "Resursi"}
+              </p>
               <p className="text-xl font-semibold">
-                {project.quizzes.length} quizzes
+                {project.quizzes.length} {language === "en" 
+                  ? "quizzes" 
+                  : language === "sl" 
+                  ? "kvizov" 
+                  : "kvizova"}
               </p>
             </div>
           </div>
@@ -158,84 +225,99 @@ export default async function ProjectPage({
           {project.timeline.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Project Timeline</CardTitle>
+                <CardTitle>
+                  {language === "en" && "Project Timeline"}
+                  {language === "sl" && "Časovnica projekta"}
+                  {language === "hr" && "Vremenski okvir projekta"}
+                </CardTitle>
                 <CardDescription>
-                  Track the project&apos;s progress and milestones
+                  {language === "en" && "Track the project's progress and milestones"}
+                  {language === "sl" && "Sledite napredku in mejnikom projekta"}
+                  {language === "hr" && "Pratite napredak i prekretnice projekta"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-8">
-                  {project.timeline.map((phase, index) => (
-                    <div key={phase.id} className="relative pl-8 pb-8">
-                      {index !== project.timeline.length - 1 && (
-                        <div className="absolute left-[11px] top-3 h-full w-[2px] bg-border" />
-                      )}
-
-                      <div
-                        className={cn(
-                          "absolute left-0 top-[6px] h-6 w-6 rounded-full border-2 transition-colors",
-                          phase.completed
-                            ? "bg-primary border-primary"
-                            : "bg-background border-primary"
+                  {project.timeline.map((phase, index) => {
+                    const phaseTitle = getLocalizedContent(phase, "title", language);
+                    const phaseDescription = getLocalizedContent(phase, "description", language);
+                    
+                    return (
+                      <div key={phase.id} className="relative pl-8 pb-8">
+                        {index !== project.timeline.length - 1 && (
+                          <div className="absolute left-[11px] top-3 h-full w-[2px] bg-border" />
                         )}
-                      />
 
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          {(phase.startDate || phase.endDate) && (
-                            <Badge variant="outline">
-                              <Calendar className="mr-1 h-3 w-3" />
-                              {phase.startDate &&
-                                format(phase.startDate, "MMM d, yyyy")}
-                              {phase.endDate &&
-                                ` - ${format(phase.endDate, "MMM d, yyyy")}`}
-                            </Badge>
+                        <div
+                          className={cn(
+                            "absolute left-0 top-[6px] h-6 w-6 rounded-full border-2 transition-colors",
+                            phase.completed
+                              ? "bg-primary border-primary"
+                              : "bg-background border-primary"
                           )}
-                          {phase.completed && (
-                            <Badge variant="secondary">Completed</Badge>
+                        />
+
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            {(phase.startDate || phase.endDate) && (
+                              <Badge variant="outline">
+                                <Calendar className="mr-1 h-3 w-3" />
+                                {phase.startDate &&
+                                  format(phase.startDate, "MMM d, yyyy")}
+                                {phase.endDate &&
+                                  ` - ${format(phase.endDate, "MMM d, yyyy")}`}
+                              </Badge>
+                            )}
+                            {phase.completed && (
+                              <Badge variant="secondary">
+                                {language === "en" && "Completed"}
+                                {language === "sl" && "Končano"}
+                                {language === "hr" && "Završeno"}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <h3 className="text-xl font-semibold mb-2">
+                            {phaseTitle || phase.title}
+                          </h3>
+                          <p className="text-muted-foreground mb-4">
+                            {phaseDescription || phase.description}
+                          </p>
+
+                          {phase.media && (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <div className="relative h-[200px] w-full sm:w-[300px] rounded-lg overflow-hidden cursor-pointer group">
+                                  <Image
+                                    src={phase.media.url}
+                                    alt={phaseTitle || phase.title}
+                                    fill
+                                    className="object-cover transition-transform group-hover:scale-105"
+                                  />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Expand className="w-8 h-8 text-white" />
+                                  </div>
+                                </div>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-3xl">
+                                <DialogHeader>
+                                  <DialogTitle>{phaseTitle || phase.title}</DialogTitle>
+                                </DialogHeader>
+                                <div className="relative h-[600px] w-full">
+                                  <Image
+                                    src={phase.media.url}
+                                    alt={phaseTitle || phase.title}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                           )}
                         </div>
-
-                        <h3 className="text-xl font-semibold mb-2">
-                          {phase.title}
-                        </h3>
-                        <p className="text-muted-foreground mb-4">
-                          {phase.description}
-                        </p>
-
-                        {phase.media && (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <div className="relative h-[200px] w-full sm:w-[300px] rounded-lg overflow-hidden cursor-pointer group">
-                                <Image
-                                  src={phase.media.url}
-                                  alt={phase.title}
-                                  fill
-                                  className="object-cover transition-transform group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <Expand className="w-8 h-8 text-white" />
-                                </div>
-                              </div>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
-                              <DialogHeader>
-                                <DialogTitle>{phase.title}</DialogTitle>
-                              </DialogHeader>
-                              <div className="relative h-[600px] w-full">
-                                <Image
-                                  src={phase.media.url}
-                                  alt={phase.title}
-                                  fill
-                                  className="object-contain"
-                                />
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -259,28 +341,44 @@ export default async function ProjectPage({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BrainCircuit className="h-5 w-5" />
-                  Learning Resources
+                  {language === "en" && "Learning Resources"}
+                  {language === "sl" && "Učni viri"}
+                  {language === "hr" && "Obrazovni resursi"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {project.quizzes.map((quiz) => (
-                    <div
-                      key={quiz.id}
-                      className="flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="font-medium">{quiz.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {quiz.description ||
-                            "Take this quiz to test your knowledge"}
-                        </p>
+                  {project.quizzes.map((quiz) => {
+                    const quizTitle = getLocalizedContent(quiz, "title", language);
+                    const quizDescription = getLocalizedContent(quiz, "description", language);
+                    
+                    return (
+                      <div
+                        key={quiz.id}
+                        className="flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="font-medium">{quizTitle || quiz.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {quizDescription || quiz.description || (
+                              language === "en" 
+                                ? "Take this quiz to test your knowledge"
+                                : language === "sl"
+                                ? "Rešite ta kviz, da preverite svoje znanje"
+                                : "Riješite ovaj kviz da testirate svoje znanje"
+                            )}
+                          </p>
+                        </div>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/quizzes/${quiz.id}`}>
+                            {language === "en" && "Start Quiz"}
+                            {language === "sl" && "Začni kviz"}
+                            {language === "hr" && "Započni kviz"}
+                          </Link>
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/quizzes/${quiz.id}`}>Start Quiz</Link>
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

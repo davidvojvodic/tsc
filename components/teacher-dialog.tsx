@@ -7,19 +7,10 @@ import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { useLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
-
-interface Teacher {
-  id: string;
-  name: string;
-  title: string | null;
-  bio: string | null;
-  photo: { url: string } | null;
-  createdAt?: Date;
-  email?: string | null;
-}
+import { Teacher as TeacherType } from "@/lib/types";
 
 interface TeacherDialogProps {
-  teacher: Teacher | null;
+  teacher: TeacherType | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -38,8 +29,14 @@ export function TeacherDialog({
 
   if (!teacher) return null;
 
+  console.log("Teacher Dialog - Language:", language);
+  console.log("Teacher Dialog - Teacher data:", teacher);
+  
   const title = getLocalizedContent(teacher, "title", language);
   const bio = getLocalizedContent(teacher, "bio", language);
+  
+  console.log("Teacher Dialog - Title:", title);
+  console.log("Teacher Dialog - Bio:", bio);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,11 +105,19 @@ export function TeacherDialog({
                 <div>
                   <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
                     <BookOpen className="h-5 w-5" />
-                    About
+                    {language === "en" && "About"}
+                    {language === "sl" && "O učitelju"}
+                    {language === "hr" && "O učitelju"}
                   </h3>
                   <Separator className="mb-2" />
                   <p className="text-muted-foreground text-justify leading-relaxed">
-                    {bio || "No bio available"}
+                    {bio || (
+                      <>
+                        {language === "en" && "No bio available"}
+                        {language === "sl" && "Biografija ni na voljo"}
+                        {language === "hr" && "Životopis nije dostupan"}
+                      </>
+                    )}
                   </p>
                 </div>
                 <Separator />

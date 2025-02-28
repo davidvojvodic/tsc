@@ -15,7 +15,6 @@ export default async function Home() {
 
   console.log("Session:", session);
 
-
   // Fetch published testimonials
   const testimonials = await prisma.testimonial.findMany({
     where: {
@@ -34,11 +33,11 @@ export default async function Home() {
     },
     orderBy: [
       {
-        featured: 'desc'
+        featured: "desc",
       },
       {
-        createdAt: 'desc'
-      }
+        createdAt: "desc",
+      },
     ],
     take: 6, // Limit to 6 testimonials
   });

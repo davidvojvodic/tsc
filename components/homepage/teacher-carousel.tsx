@@ -18,16 +18,9 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Container } from "@/components/container";
 import Image from "next/image";
 import { TeacherDialog } from "../teacher-dialog";
-
-interface Teacher {
-  id: string;
-  name: string;
-  title: string | null;
-  bio: string | null;
-  photo: { url: string } | null;
-  createdAt?: Date;
-  email?: string | null;
-}
+import { useLanguage } from "@/store/language-context";
+import { getLocalizedContent } from "@/lib/language-utils";
+import { Teacher } from "@/lib/types";
 
 interface TeacherCarouselProps {
   teachers: Teacher[];
@@ -41,6 +34,7 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
   const [loadedImages, setLoadedImages] = React.useState<Set<string>>(
     new Set()
   );
+  const { language } = useLanguage();
 
   const handleTeacherClick = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
@@ -62,10 +56,14 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
           <div className="space-y-8">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">
-                Meet Our Teachers
+                {language === "en" && "Meet Our Teachers"}
+                {language === "sl" && "Spoznajte naše učitelje"}
+                {language === "hr" && "Upoznajte naše učitelje"}
               </h2>
               <p className="text-muted-foreground mt-2">
-                Learn from our experienced educators
+                {language === "en" && "Learn from our experienced educators"}
+                {language === "sl" && "Učite od naših izkušenih učiteljev"}
+                {language === "hr" && "Učite od naših iskusnih učitelja"}
               </p>
             </div>
 
@@ -79,64 +77,87 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
                 className="w-full"
               >
                 <CarouselContent className="-ml-2 md:-ml-4">
-                  {teachers.map((teacher) => (
-                    <CarouselItem
-                      key={teacher.id}
-                      className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/4"
-                    >
-                      <Card
-                        className="overflow-hidden cursor-pointer transition-colors hover:bg-muted/50"
-                        onClick={() => handleTeacherClick(teacher)}
+                  {teachers.map((teacher) => {
+                    const title = getLocalizedContent(
+                      teacher,
+                      "title",
+                      language
+                    );
+                    const bio = getLocalizedContent(teacher, "bio", language);
+
+                    return (
+                      <CarouselItem
+                        key={teacher.id}
+                        className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/4"
                       >
-                        <div className="p-6">
-                          <AspectRatio
-                            ratio={1 / 1}
-                            className="overflow-hidden rounded-lg bg-muted"
-                          >
-                            {teacher.photo ? (
-                              <Image
-                                src={teacher.photo.url}
-                                alt={teacher.name}
-                                fill
-                                className={`object-cover w-full h-full transition-opacity duration-300 ${
-                                  loadedImages.has(teacher.id)
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                }`}
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                                priority={teachers.indexOf(teacher) < 4}
-                                onLoad={() => handleImageLoad(teacher.id)}
-                                loading={
-                                  teachers.indexOf(teacher) < 4
-                                    ? "eager"
-                                    : "lazy"
-                                }
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-muted">
-                                <span className="text-4xl font-semibold text-muted-foreground">
-                                  {teacher.name[0]}
-                                </span>
-                              </div>
-                            )}
-                          </AspectRatio>
-                        </div>
-                        <CardHeader className="px-6 pb-2 pt-0">
-                          <CardTitle className="text-xl">
-                            {teacher.name}
-                          </CardTitle>
-                          <CardDescription>
-                            {teacher.title || "Teacher"}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="px-6">
-                          <p className="text-muted-foreground line-clamp-3">
-                            {teacher.bio || "No bio available"}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </CarouselItem>
-                  ))}
+                        <Card
+                          className="overflow-hidden cursor-pointer transition-colors hover:bg-muted/50"
+                          onClick={() => handleTeacherClick(teacher)}
+                        >
+                          <div className="p-6">
+                            <AspectRatio
+                              ratio={1 / 1}
+                              className="overflow-hidden rounded-lg bg-muted"
+                            >
+                              {teacher.photo ? (
+                                <Image
+                                  src={teacher.photo.url}
+                                  alt={teacher.name}
+                                  fill
+                                  className={`object-cover w-full h-full transition-opacity duration-300 ${
+                                    loadedImages.has(teacher.id)
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  }`}
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                  priority={teachers.indexOf(teacher) < 4}
+                                  onLoad={() => handleImageLoad(teacher.id)}
+                                  loading={
+                                    teachers.indexOf(teacher) < 4
+                                      ? "eager"
+                                      : "lazy"
+                                  }
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-muted">
+                                  <span className="text-4xl font-semibold text-muted-foreground">
+                                    {teacher.name[0]}
+                                  </span>
+                                </div>
+                              )}
+                            </AspectRatio>
+                          </div>
+                          <CardHeader className="px-6 pb-2 pt-0">
+                            <CardTitle className="text-xl">
+                              {teacher.name}
+                            </CardTitle>
+                            <CardDescription>
+                              {title || (
+                                <>
+                                  {language === "en" && "Teacher"}
+                                  {language === "sl" && "Učitelj"}
+                                  {language === "hr" && "Učitelj"}
+                                </>
+                              )}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="px-6">
+                            <p className="text-muted-foreground line-clamp-3">
+                              {bio || (
+                                <>
+                                  {language === "en" && "No bio available"}
+                                  {language === "sl" &&
+                                    "Biografija ni na voljo"}
+                                  {language === "hr" &&
+                                    "Životopis nije dostupan"}
+                                </>
+                              )}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </CarouselItem>
+                    );
+                  })}
                 </CarouselContent>
                 <CarouselPrevious />
                 <CarouselNext />
@@ -145,9 +166,8 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
           </div>
         </Container>
       </div>
-
       <TeacherDialog
-        teacher={selectedTeacher}
+        teacher={selectedTeacher as Teacher}
         open={open}
         onOpenChange={setOpen}
       />

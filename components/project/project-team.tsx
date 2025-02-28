@@ -5,16 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GraduationCap } from "lucide-react";
 import { TeacherDialog } from "../teacher-dialog";
-
-interface Teacher {
-  id: string;
-  name: string;
-  title: string | null;
-  bio: string | null;
-  photo: { url: string } | null;
-  createdAt?: Date;
-  email?: string | null;
-}
+import { useLanguage } from "@/store/language-context";
+import { getLocalizedContent } from "@/lib/language-utils";
+import { Teacher } from "@/lib/types";
 
 interface ProjectTeamProps {
   teachers: Teacher[];
@@ -25,6 +18,7 @@ export function ProjectTeam({ teachers }: ProjectTeamProps) {
     null
   );
   const [teamDialogOpen, setTeamDialogOpen] = React.useState(false);
+  const { language } = useLanguage();
 
   if (!teachers.length) return null;
 
@@ -34,36 +28,42 @@ export function ProjectTeam({ teachers }: ProjectTeamProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />
-            Project Team
+            {language === "en" && "Project Team"}
+            {language === "sl" && "Projektna ekipa"}
+            {language === "hr" && "Projektni tim"}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4">
-            {teachers.map((teacher) => (
-              <div
-                key={teacher.id}
-                className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors"
-                onClick={() => {
-                  setSelectedTeacher(teacher);
-                  setTeamDialogOpen(true);
-                }}
-              >
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={teacher.photo?.url} />
-                  <AvatarFallback>
-                    {teacher.name[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">{teacher.name}</div>
-                  {teacher.title && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {teacher.title}
-                    </p>
-                  )}
+            {teachers.map((teacher) => {
+              const title = getLocalizedContent(teacher, "title", language);
+              
+              return (
+                <div
+                  key={teacher.id}
+                  className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                  onClick={() => {
+                    setSelectedTeacher(teacher);
+                    setTeamDialogOpen(true);
+                  }}
+                >
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={teacher.photo?.url} />
+                    <AvatarFallback>
+                      {teacher.name[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">{teacher.name}</div>
+                    {title && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {title}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>

@@ -38,7 +38,11 @@ export default async function HomePage() {
       id: true,
       name: true,
       bio: true,
+      bio_sl: true,
+      bio_hr: true,
       title: true,
+      title_sl: true,
+      title_hr: true,
       email: true,
       displayOrder: true,
       photo: {

@@ -10,6 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLanguage } from "@/store/language-context";
+import { useEffect, useState } from "react";
+import { setCookie } from 'cookies-next';
 
 const languages = [
   { code: "en", name: "English" },
@@ -20,17 +23,37 @@ const languages = [
 export function LanguageSelector() {
   const router = useRouter();
   const pathname = usePathname();
+  const { language: contextLanguage, setLanguage: setContextLanguage } = useLanguage();
+  const [currentLang, setCurrentLang] = useState("en");
 
-  // Parse the current language from pathname
-  const pathParts = pathname.split("/").filter(Boolean);
-  const currentLang =
-    pathParts[0] && languages.some((l) => l.code === pathParts[0])
+  // Ensure we have the current language from the URL
+  useEffect(() => {
+    const pathParts = pathname.split("/").filter(Boolean);
+    const pathLanguage = pathParts[0] && languages.some((l) => l.code === pathParts[0])
       ? pathParts[0]
       : "en";
+    
+    setCurrentLang(pathLanguage);
+    
+    // Sync with cookie and context if needed
+    if (pathLanguage !== contextLanguage) {
+      setCookie('NEXT_LOCALE', pathLanguage, { path: '/', maxAge: 60 * 60 * 24 * 30 });
+    }
+  }, [pathname, contextLanguage]);
 
   const handleLanguageChange = (lang: string) => {
     if (lang === currentLang) return;
 
+    // Update context language (which will also set the cookie)
+    setContextLanguage(lang as any);
+    
+    // Also set cookie directly to ensure it takes effect
+    setCookie('NEXT_LOCALE', lang, { path: '/', maxAge: 60 * 60 * 24 * 30 });
+    
+    // Set current display language
+    setCurrentLang(lang);
+
+    // Update URL to reflect language change
     const pathParts = pathname.split("/").filter(Boolean);
 
     // If first part is a language code, replace it
@@ -41,9 +64,17 @@ export function LanguageSelector() {
       pathParts.unshift(lang);
     }
 
-    // Ensure no duplicate language codes in the path
+    // Construct new path and navigate
     const newPath = `/${pathParts.join("/")}`;
+    console.log(`Language changed to: ${lang}, redirecting to: ${newPath}`);
     router.push(newPath);
+    
+    // Force page reload to ensure server components re-render with new language
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        window.location.href = newPath;
+      }, 100);
+    }
   };
 
   return (
@@ -54,12 +85,12 @@ export function LanguageSelector() {
           <span className="uppercase">{currentLang}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-[120px]">
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
             onClick={() => handleLanguageChange(lang.code)}
-            className={lang.code === currentLang ? "bg-muted font-medium" : ""}
+            className={`${lang.code === currentLang ? "bg-muted font-medium" : ""} rounded-md transition-colors`}
           >
             {lang.name}
           </DropdownMenuItem>

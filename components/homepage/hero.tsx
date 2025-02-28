@@ -37,9 +37,10 @@ export function HeroSection() {
           {/* Right column - Hero Image */}
           <div className="relative aspect-square max-h-[600px] w-full">
             <Image
-              src="/hero-upscaled.png" // Make sure to save the image you provided with this name
+              src="/hero-upscaled.png"
               alt="Student Profiles"
-              fill
+              width={1080}
+              height={1080}
               className="object-contain"
               priority
             />

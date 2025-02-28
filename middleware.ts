@@ -7,7 +7,16 @@ const SUPPORTED_LANGUAGES = ["en", "sl", "hr"];
 const DEFAULT_LANGUAGE = "en";
 
 // Add paths that should bypass language routing
-const EXCLUDED_PATHS = ["/admin", "/api", "/_next", "/favicon.ico"];
+const EXCLUDED_PATHS = [
+  "/admin", 
+  "/api", 
+  "/_next", 
+  "/favicon.ico",
+  "/hero-upscaled.png",
+  "/hero.png", 
+  "/school-start-times.jpg", 
+  "/waterwise.png"
+];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -43,7 +52,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Explicitly exclude admin routes from the matcher
-    "/((?!admin|api|_next/static|_next/image|favicon.ico).*)",
+    // Explicitly exclude admin routes and static files from the matcher
+    "/((?!admin|api|_next/static|_next/image|favicon.ico|hero-upscaled.png|hero.png|school-start-times.jpg|waterwise.png).*)",
   ],
 };

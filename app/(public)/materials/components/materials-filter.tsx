@@ -30,19 +30,20 @@ export function MaterialsFilter({
   const [search, setSearch] = useState(searchParams.get("query") || "");
 
   // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
+  const debouncedSearch = useCallback((value: string) => {
+    const debouncedFn = debounce((searchValue: string) => {
       const params = new URLSearchParams(searchParams);
-      if (value) {
-        params.set("query", value);
+      if (searchValue) {
+        params.set("query", searchValue);
       } else {
         params.delete("query");
       }
 
       router.push(`/${language}/materials?${params.toString()}`);
-    }, 300),
-    [searchParams, router, language]
-  );
+    }, 300);
+    
+    debouncedFn(value);
+  }, [searchParams, router, language]);
 
   const handleSearch = (value: string) => {
     setSearch(value);

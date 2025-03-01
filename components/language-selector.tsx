@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useLanguage } from "@/store/language-context";
+import { useLanguage, SupportedLanguage } from "@/store/language-context";
 import { useEffect, useState } from "react";
 import { setCookie } from 'cookies-next';
 
@@ -24,13 +24,13 @@ export function LanguageSelector() {
   const router = useRouter();
   const pathname = usePathname();
   const { language: contextLanguage, setLanguage: setContextLanguage } = useLanguage();
-  const [currentLang, setCurrentLang] = useState("en");
+  const [currentLang, setCurrentLang] = useState<SupportedLanguage>("en");
 
   // Ensure we have the current language from the URL
   useEffect(() => {
     const pathParts = pathname.split("/").filter(Boolean);
     const pathLanguage = pathParts[0] && languages.some((l) => l.code === pathParts[0])
-      ? pathParts[0]
+      ? pathParts[0] as SupportedLanguage
       : "en";
     
     setCurrentLang(pathLanguage);
@@ -45,13 +45,13 @@ export function LanguageSelector() {
     if (lang === currentLang) return;
 
     // Update context language (which will also set the cookie)
-    setContextLanguage(lang as any);
+    setContextLanguage(lang as SupportedLanguage);
     
     // Also set cookie directly to ensure it takes effect
     setCookie('NEXT_LOCALE', lang, { path: '/', maxAge: 60 * 60 * 24 * 30 });
     
     // Set current display language
-    setCurrentLang(lang);
+    setCurrentLang(lang as SupportedLanguage);
 
     // Update URL to reflect language change
     const pathParts = pathname.split("/").filter(Boolean);

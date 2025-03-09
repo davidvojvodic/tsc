@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import {
   GripVertical,
   X,
   Pencil,
+  Upload,
 } from "lucide-react";
 import * as z from "zod";
 
@@ -40,11 +41,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { ProjectPhase } from "@/store/use-project-form";
-import { UploadButton } from "@/lib/uploadthing";
+import { UploadDropzone } from "@/lib/uploadthing";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -71,6 +80,11 @@ export function TimelineEditor({
     url: string;
     fileKey: string;
   } | null>(null);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+
+  // Use refs to prevent re-renders of drag and drop while editing
+  const phaseListRef = useRef(phases);
+  phaseListRef.current = phases;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -87,7 +101,7 @@ export function TimelineEditor({
   const onDragEnd = (result: any) => {
     if (!result.destination) return;
 
-    const items = Array.from(phases);
+    const items = Array.from(phaseListRef.current);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
@@ -179,239 +193,307 @@ export function TimelineEditor({
     }
   };
 
-  const PhaseForm = ({
-    onSubmit,
-    buttonText,
-    onCancel,
-  }: {
-    onSubmit: (values: z.infer<typeof formSchema>) => void;
-    buttonText: string;
-    onCancel: () => void;
-  }) => (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phase Title</FormLabel>
-              <FormControl>
-                <Input
-                  disabled={isLoading}
-                  placeholder="Enter phase title"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onUploadComplete = useCallback((result: any) => {
+    if (result?.[0]) {
+      setPhaseImage({
+        url: result[0].url,
+        fileKey: result[0].key,
+      });
+      setShowUploadDialog(false);
+      toast.success("Image uploaded successfully");
+    }
+  }, []);
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  disabled={isLoading}
-                  placeholder="Describe this phase"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex gap-4">
-          <FormField
-            control={form.control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>Start Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          <span className="flex items-center">
-                            {format(field.value, "PPP")}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              type="button"
-                              className="ml-auto h-6 w-6"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                clearDate("startDate");
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </span>
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value || undefined}
-                      onSelect={field.onChange}
-                      disabled={isLoading}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="endDate"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>End Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          <span className="flex items-center">
-                            {format(field.value, "PPP")}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              type="button"
-                              className="ml-auto h-6 w-6"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                clearDate("endDate");
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </span>
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value || undefined}
-                      onSelect={field.onChange}
-                      disabled={isLoading}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormItem>
-          <FormLabel>Phase Image</FormLabel>
-          <div className="flex items-center gap-x-4">
-            <div className="relative h-24 w-24">
-              {phaseImage ? (
-                <>
-                  <Image
-                    src={phaseImage.url}
-                    alt="Phase image"
-                    fill
-                    className="object-cover rounded-md"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground"
-                    onClick={() => setPhaseImage(null)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <div className="h-full w-full bg-secondary rounded-md" />
-              )}
-            </div>
-            <div className="space-y-2">
-              <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  if (res?.[0]) {
-                    setPhaseImage({
-                      url: res[0].url,
-                      fileKey: res[0].key,
-                    });
-                    toast.success("Image uploaded successfully");
-                  }
-                }}
-                onUploadError={(error: Error) => {
-                  toast.error(`Upload failed: ${error.message}`);
-                }}
-              />
-            </div>
+  // Separate upload dialog component
+  const ImageUploadDialog = useCallback(() => {
+    return (
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload image</DialogTitle>
+            <DialogDescription>
+              Upload an image for this phase
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid w-full gap-4 py-4">
+            <UploadDropzone
+              endpoint="imageUploader"
+              onClientUploadComplete={onUploadComplete}
+              onUploadError={(error: Error) => {
+                toast.error(`Upload failed: ${error.message}`);
+              }}
+            />
           </div>
-        </FormItem>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowUploadDialog(false)}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }, [showUploadDialog, onUploadComplete]);
 
-        <FormField
-          control={form.control}
-          name="completed"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
+  // Separate edit form from the timeline view
+  if (isAddingPhase || editingPhaseId) {
+    return (
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>
+            {isAddingPhase ? "Add New Phase" : "Edit Phase"}
+          </CardTitle>
+          <CardDescription>
+            {isAddingPhase
+              ? "Add a new phase to your project timeline"
+              : "Edit this phase in your project timeline"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(
+                isAddingPhase ? handleAddPhase : handleUpdatePhase
+              )}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phase Title</FormLabel>
+                    <FormControl>
+                      <Input
+                        disabled={isLoading}
+                        placeholder="Enter phase title"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        disabled={isLoading}
+                        placeholder="Describe this phase"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex flex-col md:flex-row gap-4">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Start Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                <span className="flex items-center">
+                                  {format(field.value, "PPP")}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    type="button"
+                                    className="ml-auto h-6 w-6"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      clearDate("startDate");
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </span>
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value || undefined}
+                            onSelect={field.onChange}
+                            disabled={isLoading}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Mark as completed</FormLabel>
-              </div>
-            </FormItem>
-          )}
-        />
 
-        <div className="flex gap-2 justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {buttonText}
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>End Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                <span className="flex items-center">
+                                  {format(field.value, "PPP")}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    type="button"
+                                    className="ml-auto h-6 w-6"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      clearDate("endDate");
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </span>
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value || undefined}
+                            onSelect={field.onChange}
+                            disabled={isLoading}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormItem>
+                <FormLabel>Phase Image</FormLabel>
+                <div className="flex items-center gap-x-4">
+                  <div className="relative h-24 w-24">
+                    {phaseImage ? (
+                      <>
+                        <Image
+                          src={phaseImage.url}
+                          alt="Phase image"
+                          fill
+                          className="object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground"
+                          onClick={() => {
+                            setPhaseImage(null);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="h-full w-full bg-secondary rounded-md flex items-center justify-center">
+                        <Upload className="h-10 w-10 text-muted-foreground/40" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowUploadDialog(true)}
+                    >
+                      Upload Image
+                    </Button>
+                  </div>
+                </div>
+              </FormItem>
+
+              <FormField
+                control={form.control}
+                name="completed"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Mark as completed</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingPhaseId(null);
+                    setIsAddingPhase(false);
+                    setPhaseImage(null);
+                    form.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {isAddingPhase ? "Add Phase" : "Update Phase"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+          <ImageUploadDialog />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -423,37 +505,27 @@ export function TimelineEditor({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="timeline">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="space-y-4"
-              >
-                {phases.map((phase, index) => (
-                  <Draggable
-                    key={phase.id}
-                    draggableId={phase.id}
-                    index={index}
-                  >
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className="relative rounded-lg border bg-card p-4"
-                      >
-                        {editingPhaseId === phase.id ? (
-                          <PhaseForm
-                            onSubmit={handleUpdatePhase}
-                            buttonText="Update Phase"
-                            onCancel={() => {
-                              setEditingPhaseId(null);
-                              setPhaseImage(null);
-                              form.reset();
-                            }}
-                          />
-                        ) : (
+        {phases.length > 0 && (
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="timeline">
+              {(provided) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="space-y-4"
+                >
+                  {phases.map((phase, index) => (
+                    <Draggable
+                      key={phase.id}
+                      draggableId={phase.id}
+                      index={index}
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="relative rounded-lg border bg-card p-4"
+                        >
                           <div className="flex items-center gap-4">
                             <div
                               {...provided.dragHandleProps}
@@ -514,33 +586,21 @@ export function TimelineEditor({
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-
-        {isAddingPhase ? (
-          <PhaseForm
-            onSubmit={handleAddPhase}
-            buttonText="Add Phase"
-            onCancel={() => {
-              setIsAddingPhase(false);
-              setPhaseImage(null);
-              form.reset();
-            }}
-          />
-        ) : (
-          <Button onClick={() => setIsAddingPhase(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Phase
-          </Button>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         )}
+
+        <Button onClick={() => setIsAddingPhase(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Phase
+        </Button>
       </CardContent>
     </Card>
   );

@@ -1,277 +1,435 @@
 "use client";
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+
+import React, { useState } from "react";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
+
 import { Progress } from "@/components/ui/progress";
+
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { Label } from "@/components/ui/label";
+
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2,  Trophy } from "lucide-react";
+
+import { AlertCircle, CheckCircle2, Trophy } from "lucide-react";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+import { Badge } from "@/components/ui/badge";
+
+import Link from "next/link";
+
+import { SupportedLanguage } from "@/store/language-context";
 
 interface Option {
   id: string;
+
   text: string;
+
+  isCorrect: boolean;
 }
 
 interface Question {
   id: string;
+
   text: string;
+
   options: Option[];
 }
 
-interface QuizResult {
-  score: number;
-  totalQuestions: number;
-  correctAnswers: number;
-  results: Array<{
-    questionId: string;
-    selectedOptionId: string;
-    correctOptionId: string;
-    isCorrect: boolean;
-  }>;
-}
-
-interface QuizProps {
+interface Quiz {
   id: string;
+
   title: string;
-  description?: string | null;
+
+  description: string | null;
+
   questions: Question[];
 }
 
-export default function QuizComponent({ id, title, description, questions }: QuizProps) {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
-  const [quizComplete, setQuizComplete] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<QuizResult | null>(null);
+interface QuizComponentProps {
+  quiz: Quiz;
 
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  language?: SupportedLanguage;
+}
 
-  const handleAnswerSelect = (optionId: string) => {
-    setSelectedAnswers(prev => ({
+const getTranslations = (language: SupportedLanguage) => {
+  const translations = {
+    en: {
+      quizComplete: "Quiz Complete!",
+
+      hereIsHowYouDid: "Here's how you did on the quiz:",
+
+      correctAnswers: "Correct Answers",
+
+      perfectScore: "Perfect Score!",
+
+      wellDone: "Well Done!",
+
+      keepPracticing: "Keep Practicing!",
+
+      question: "Question",
+
+      of: "of",
+
+      backToQuizzes: "Back to Quizzes",
+
+      tryAgain: "Try Again",
+
+      previous: "Previous",
+
+      next: "Next",
+
+      submitQuiz: "Submit Quiz",
+
+      correct: "Correct",
+
+      incorrect: "Incorrect",
+    },
+
+    sl: {
+      quizComplete: "Kviz zaključen!",
+
+      hereIsHowYouDid: "Tako ste se odrezali na kvizu:",
+
+      correctAnswers: "Pravilni odgovori",
+
+      perfectScore: "Odličen rezultat!",
+
+      wellDone: "Dobro opravljeno!",
+
+      keepPracticing: "Vadite naprej!",
+
+      question: "Vprašanje",
+
+      of: "od",
+
+      backToQuizzes: "Nazaj na kvize",
+
+      tryAgain: "Poskusi znova",
+
+      previous: "Prejšnje",
+
+      next: "Naslednje",
+
+      submitQuiz: "Oddaj kviz",
+
+      correct: "Pravilno",
+
+      incorrect: "Nepravilno",
+    },
+
+    hr: {
+      quizComplete: "Kviz završen!",
+
+      hereIsHowYouDid: "Evo kako ste riješili kviz:",
+
+      correctAnswers: "Točni odgovori",
+
+      perfectScore: "Savršen rezultat!",
+
+      wellDone: "Odlično!",
+
+      keepPracticing: "Nastavite vježbati!",
+
+      question: "Pitanje",
+
+      of: "od",
+
+      backToQuizzes: "Natrag na kvizove",
+
+      tryAgain: "Pokušaj ponovno",
+
+      previous: "Prethodno",
+
+      next: "Sljedeće",
+
+      submitQuiz: "Predaj kviz",
+
+      correct: "Točno",
+
+      incorrect: "Netočno",
+    },
+  };
+
+  return translations[language];
+};
+
+export default function QuizComponent({
+  quiz,
+  language = "en",
+}: QuizComponentProps) {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  const [selectedOptions, setSelectedOptions] = useState<
+    Record<string, string>
+  >({});
+
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+
+  const t = getTranslations(language);
+
+  const prefix = language === "en" ? "" : `/${language}`;
+
+  const currentQuestion = quiz.questions[currentQuestionIndex];
+
+  const totalQuestions = quiz.questions.length;
+
+  const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+
+  const handleOptionChange = (questionId: string, optionId: string) => {
+    setSelectedOptions((prev) => ({
       ...prev,
-      [questions[currentQuestion].id]: optionId
+
+      [questionId]: optionId,
     }));
   };
 
-  const handleNext = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(prev => prev + 1);
-    }
-  };
-
   const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(prev => prev - 1);
-    }
+    setCurrentQuestionIndex((prev) => Math.max(0, prev - 1));
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setError(null);
+  const handleNext = () => {
+    setCurrentQuestionIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
+  };
 
-    try {
-      const response = await fetch(`/api/quizzes/${id}/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          answers: selectedAnswers
-        }),
-      });
+  const handleSubmit = () => {
+    // Calculate score
 
-      if (!response.ok) {
-        throw new Error('Failed to submit quiz');
+    let score = 0;
+
+    Object.keys(selectedOptions).forEach((questionId) => {
+      const question = quiz.questions.find((q) => q.id === questionId);
+
+      if (question) {
+        const selectedOption = question.options.find(
+          (o) => o.id === selectedOptions[questionId]
+        );
+
+        if (selectedOption?.isCorrect) {
+          score++;
+        }
       }
+    });
 
-      const result = await response.json();
-      setResults(result);
-      setQuizComplete(true);
-    } catch (err) {
-      console.error('Error submitting quiz:', err);
-      setError(err instanceof Error ? err.message : 'Failed to submit quiz');
-    } finally {
-      setIsSubmitting(false);
+    setCorrectAnswers(score);
+
+    setQuizSubmitted(true);
+  };
+
+  const handleTryAgain = () => {
+    setSelectedOptions({});
+
+    setCurrentQuestionIndex(0);
+
+    setQuizSubmitted(false);
+
+    setCorrectAnswers(0);
+  };
+
+  const renderResultMessage = () => {
+    const percentage = (correctAnswers / totalQuestions) * 100;
+
+    if (percentage === 100) {
+      return (
+        <Alert className="bg-green-50 border-green-200 mb-6">
+          <Trophy className="h-5 w-5 text-green-600" />
+
+          <AlertTitle className="text-green-800 font-bold">
+            {t.perfectScore}
+          </AlertTitle>
+
+          <AlertDescription className="text-green-700">
+            {correctAnswers} / {totalQuestions} {t.correctAnswers}
+          </AlertDescription>
+        </Alert>
+      );
+    } else if (percentage >= 70) {
+      return (
+        <Alert className="bg-blue-50 border-blue-200 mb-6">
+          <CheckCircle2 className="h-5 w-5 text-blue-600" />
+
+          <AlertTitle className="text-blue-800 font-bold">
+            {t.wellDone}
+          </AlertTitle>
+
+          <AlertDescription className="text-blue-700">
+            {correctAnswers} / {totalQuestions} {t.correctAnswers}
+          </AlertDescription>
+        </Alert>
+      );
+    } else {
+      return (
+        <Alert className="bg-amber-50 border-amber-200 mb-6">
+          <AlertCircle className="h-5 w-5 text-amber-600" />
+
+          <AlertTitle className="text-amber-800 font-bold">
+            {t.keepPracticing}
+          </AlertTitle>
+
+          <AlertDescription className="text-amber-700">
+            {correctAnswers} / {totalQuestions} {t.correctAnswers}
+          </AlertDescription>
+        </Alert>
+      );
     }
   };
 
-  const currentQuestionData = questions[currentQuestion];
-  const hasSelectedAnswer = Boolean(selectedAnswers[currentQuestionData.id]);
-  const isLastQuestion = currentQuestion === questions.length - 1;
-  const allQuestionsAnswered = questions.every(q => selectedAnswers[q.id]);
-
-  if (quizComplete && results) {
-    const scorePercentage = (results.score).toFixed(1);
-    const isPerfect = results.score === 100;
-    const isGood = results.score >= 70;
-    const isFailing = results.score < 50;
-
+  if (quizSubmitted) {
     return (
-      <Card className="w-full max-w-3xl mx-auto">
-        <CardHeader className="text-center">
-          <CardTitle>Quiz Complete!</CardTitle>
-          <CardDescription>
-            Here&apos;s how you did on the quiz
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Score Display */}
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="relative w-32 h-32">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Trophy className={cn(
-                  "w-16 h-16",
-                  isPerfect ? "text-yellow-500" :
-                  isGood ? "text-green-500" :
-                  isFailing ? "text-red-500" : "text-blue-500"
-                )} />
-              </div>
-              <Progress
-                value={results.score}
-                className="h-32 w-32 rounded-full [transform:rotate(-90deg)]"
-              />
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{scorePercentage}%</div>
-              <div className="text-sm text-muted-foreground">
-                {results.correctAnswers} out of {results.totalQuestions} questions correct
-              </div>
-            </div>
-          </div>
+      <Card className="max-w-3xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">{t.quizComplete}</CardTitle>
 
-          <Alert
-            variant={isPerfect ? "default" : isGood ? "default" : "destructive"}
-          >
-            {isPerfect ? (
-              <CheckCircle2 className="h-4 w-4" />
-            ) : isGood ? (
-              <CheckCircle2 className="h-4 w-4" />
-            ) : (
-              <AlertCircle className="h-4 w-4" />
-            )}
-            <AlertTitle>
-              {isPerfect
-                ? "Perfect Score!"
-                : isGood
-                ? "Well Done!"
-                : "Keep Practicing"}
-            </AlertTitle>
-            <AlertDescription>
-              {isPerfect
-                ? "Congratulations! You've achieved a perfect score."
-                : isGood
-                ? "Great job! You've shown a good understanding of the material."
-                : "Don't worry! Learning is a journey. Review the material and try again."}
-            </AlertDescription>
-          </Alert>
+          <CardDescription>{t.hereIsHowYouDid}</CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          {renderResultMessage()}
+
+          <div className="space-y-6">
+            {quiz.questions.map((question) => {
+              const selectedOptionId = selectedOptions[question.id];
+
+              const isCorrect = !!question.options.find(
+                (o) => o.id === selectedOptionId && o.isCorrect
+              );
+
+              return (
+                <div key={question.id} className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium">{question.text}</h3>
+
+                    {selectedOptionId && (
+                      <Badge variant={isCorrect ? "default" : "destructive"}>
+                        {isCorrect ? t.correct : t.incorrect}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="ml-6 space-y-2">
+                    {question.options.map((option) => {
+                      const isSelected = selectedOptionId === option.id;
+
+                      return (
+                        <div
+                          key={option.id}
+                          className={cn(
+                            "p-3 rounded-md border text-sm",
+
+                            isSelected &&
+                              option.isCorrect &&
+                              "bg-green-50 border-green-200",
+
+                            isSelected &&
+                              !option.isCorrect &&
+                              "bg-red-50 border-red-200",
+
+                            !isSelected &&
+                              option.isCorrect &&
+                              "bg-blue-50 border-blue-200",
+
+                            !isSelected && !option.isCorrect && "bg-muted"
+                          )}
+                        >
+                          {option.text}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
-        <CardFooter className="flex gap-2 justify-center">
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/quizzes'}
-          >
-            Back to Quizzes
+
+        <CardFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
+          <Button asChild variant="outline">
+            <Link href={`${prefix}/quizzes`}>{t.backToQuizzes}</Link>
           </Button>
-          <Button 
-            variant="default"
-            onClick={() => window.location.reload()}
-          >
-            Try Again
-          </Button>
+
+          <Button onClick={handleTryAgain}>{t.tryAgain}</Button>
         </CardFooter>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
+    <Card className="max-w-3xl mx-auto">
       <CardHeader>
-        <div className="space-y-2">
-          <CardTitle>{title}</CardTitle>
-          {description && (
-            <CardDescription>{description}</CardDescription>
-          )}
-          <Progress value={progress} className="h-2" />
+        <div className="flex justify-between items-center flex-wrap gap-2">
+          <CardTitle className="text-2xl">{quiz.title}</CardTitle>
+
           <div className="text-sm text-muted-foreground">
-            Question {currentQuestion + 1} of {questions.length}
+            {t.question} {currentQuestionIndex + 1} {t.of} {totalQuestions}
           </div>
         </div>
+
+        <Progress value={progress} className="mt-2" />
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-4">
-          <h3 className="font-medium text-lg">
-            {currentQuestionData.text}
-          </h3>
+
+      <CardContent>
+        <div className="mb-6">
+          <h3 className="text-xl font-medium mb-4">{currentQuestion.text}</h3>
+
           <RadioGroup
-            value={selectedAnswers[currentQuestionData.id]}
-            onValueChange={handleAnswerSelect}
+            value={selectedOptions[currentQuestion.id] || ""}
+            onValueChange={(value) =>
+              handleOptionChange(currentQuestion.id, value)
+            }
+            className="space-y-3"
           >
-            <div className="grid gap-4">
-              {currentQuestionData.options.map((option) => (
-                <div
-                  key={option.id}
-                  className={cn(
-                    "relative flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-accent",
-                    selectedAnswers[currentQuestionData.id] === option.id && "border-primary"
-                  )}
-                  onClick={() => handleAnswerSelect(option.id)}
-                >
-                  <RadioGroupItem value={option.id} id={option.id} />
-                  <Label
-                    htmlFor={option.id}
-                    className="flex-grow cursor-pointer"
-                  >
-                    {option.text}
-                  </Label>
-                </div>
-              ))}
-            </div>
+            {currentQuestion.options.map((option) => (
+              <div
+                key={option.id}
+                className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-muted/50"
+              >
+                <RadioGroupItem value={option.id} id={option.id} />
+
+                <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                  {option.text}
+                </Label>
+              </div>
+            ))}
           </RadioGroup>
         </div>
-
-        {!hasSelectedAnswer && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Required</AlertTitle>
-            <AlertDescription>
-              Please select an answer before proceeding.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
       </CardContent>
-      <CardFooter className="flex justify-between">
+
+      <CardFooter className="flex flex-wrap gap-2 justify-between">
         <Button
           variant="outline"
           onClick={handlePrevious}
-          disabled={currentQuestion === 0}
+          disabled={currentQuestionIndex === 0}
         >
-          Previous
+          {t.previous}
         </Button>
+
         <div className="flex gap-2">
-          {!isLastQuestion ? (
+          {currentQuestionIndex < totalQuestions - 1 ? (
             <Button
               onClick={handleNext}
-              disabled={!hasSelectedAnswer}
+              disabled={!selectedOptions[currentQuestion.id]}
             >
-              Next
+              {t.next}
             </Button>
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={!allQuestionsAnswered || isSubmitting}
+              disabled={Object.keys(selectedOptions).length < totalQuestions}
             >
-              {isSubmitting ? "Submitting..." : "Submit Quiz"}
+              {t.submitQuiz}
             </Button>
           )}
         </div>

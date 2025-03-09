@@ -41,7 +41,7 @@ const getTranslations = (language: string) => {
       signingOut: "Signing out...",
       signOutSuccess: "Signed out successfully",
       account: "Account",
-      admin: "Admin Dashboard"
+      admin: "Admin Dashboard",
     },
     sl: {
       dashboard: "Nadzorna plošča",
@@ -51,7 +51,7 @@ const getTranslations = (language: string) => {
       signingOut: "Odjavljanje...",
       signOutSuccess: "Uspešna odjava",
       account: "Račun",
-      admin: "Skrbniška plošča"
+      admin: "Skrbniška plošča",
     },
     hr: {
       dashboard: "Nadzorna ploča",
@@ -61,26 +61,30 @@ const getTranslations = (language: string) => {
       signingOut: "Odjava u tijeku...",
       signOutSuccess: "Uspješna odjava",
       account: "Račun",
-      admin: "Administratorska ploča"
-    }
+      admin: "Administratorska ploča",
+    },
   };
-  
+
   return translations[language as keyof typeof translations] || translations.en;
 };
 
-export function ProfileDropdown({ user, language: serverLanguage }: ProfileDropdownProps) {
+export function ProfileDropdown({
+  user,
+  language: serverLanguage,
+}: ProfileDropdownProps) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const router = useRouter();
   const languageContext = useLanguage();
-  
+
   // Use server-provided language (for server components) or client context language
   const language = serverLanguage || languageContext.language;
   const t = getTranslations(language);
 
-  // Generate language-specific links
+  // Generate language-specific links for account
   const prefix = language === "en" ? "" : `/${language}`;
   const accountLink = `${prefix}/account`;
-  const adminLink = `${prefix}/admin`;
+  // Admin dashboard should always go to /admin (non-localized)
+  const adminLink = "/admin";
 
   const handleSignOut = async () => {
     try {

@@ -8,20 +8,26 @@ import Image from "next/image";
 import { useLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { Teacher as TeacherType } from "@/lib/types";
+import { SupportedLanguage } from "@/store/language-context";
 
 interface TeacherDialogProps {
   teacher: TeacherType | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  language?: SupportedLanguage;
 }
 
 export function TeacherDialog({
   teacher,
   open,
   onOpenChange,
+  language: propLanguage,
 }: TeacherDialogProps) {
   const [imageLoaded, setImageLoaded] = React.useState(false);
-  const { language } = useLanguage();
+  const languageContext = useLanguage();
+
+  // Use language from props if provided, otherwise use context
+  const language = propLanguage || languageContext.language;
 
   React.useEffect(() => {
     setImageLoaded(false);
@@ -29,14 +35,8 @@ export function TeacherDialog({
 
   if (!teacher) return null;
 
-  console.log("Teacher Dialog - Language:", language);
-  console.log("Teacher Dialog - Teacher data:", teacher);
-  
   const title = getLocalizedContent(teacher, "title", language);
   const bio = getLocalizedContent(teacher, "bio", language);
-  
-  console.log("Teacher Dialog - Title:", title);
-  console.log("Teacher Dialog - Bio:", bio);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -121,8 +121,6 @@ export function TeacherDialog({
                   </p>
                 </div>
                 <Separator />
-
-                {/* Additional sections could go here */}
               </div>
             </div>
           </div>

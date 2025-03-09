@@ -8,17 +8,25 @@ import { TeacherDialog } from "../teacher-dialog";
 import { useLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { Teacher } from "@/lib/types";
+import { SupportedLanguage } from "@/store/language-context";
 
 interface ProjectTeamProps {
   teachers: Teacher[];
+  language?: SupportedLanguage;
 }
 
-export function ProjectTeam({ teachers }: ProjectTeamProps) {
+export function ProjectTeam({
+  teachers,
+  language: propLanguage,
+}: ProjectTeamProps) {
   const [selectedTeacher, setSelectedTeacher] = React.useState<Teacher | null>(
     null
   );
   const [teamDialogOpen, setTeamDialogOpen] = React.useState(false);
-  const { language } = useLanguage();
+  const languageContext = useLanguage();
+
+  // Use language from props if provided (for server components), otherwise use context
+  const language = propLanguage || languageContext.language;
 
   if (!teachers.length) return null;
 
@@ -37,7 +45,7 @@ export function ProjectTeam({ teachers }: ProjectTeamProps) {
           <div className="flex flex-col gap-4">
             {teachers.map((teacher) => {
               const title = getLocalizedContent(teacher, "title", language);
-              
+
               return (
                 <div
                   key={teacher.id}
@@ -72,6 +80,7 @@ export function ProjectTeam({ teachers }: ProjectTeamProps) {
         teacher={selectedTeacher}
         open={teamDialogOpen}
         onOpenChange={setTeamDialogOpen}
+        language={language}
       />
     </>
   );

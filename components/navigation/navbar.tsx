@@ -69,6 +69,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
     quizzes: "/quizzes",
     login: "/login",
     register: "/register",
+    account: "/account",
   };
 
   // If we're not in English, prefix all paths with language code
@@ -81,6 +82,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
     quizzes: `${prefix}${basePaths.quizzes}`,
     login: `${prefix}${basePaths.login}`,
     register: `${prefix}${basePaths.register}`,
+    account: `${prefix}${basePaths.account}`,
   };
 
   // Create navigation items with translated names and language-aware paths

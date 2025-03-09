@@ -1,6 +1,9 @@
+"use client";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Container } from "../container";
+import { useLanguage } from "@/store/language-context";
+import { useEffect, useState } from "react";
 
 const stats = [
   { number: "250+", label: "Lorem ipsum" },
@@ -9,7 +12,39 @@ const stats = [
   { number: "2400+", label: "Lorem ipsum" },
 ];
 
+// Content for different languages
+const content = {
+  en: {
+    title: "Waterwise",
+    subtitle: "Smart irrigation for a sustainable future",
+    description:
+      'Waterwise is an Erasmus+ KA2 project (small partnerships) connecting TŠC Maribor and PTŠ Dubrovnik to develop a modular curriculum on smart irrigation systems. The goal is to promote innovative teaching, exchanges, and digital solutions such as a system prototype, web application, and e-textbook. The project also addresses the priority "Common values, civic engagement and participation" and raises awareness about sustainable water resource management.',
+    buttonText: "Learn More",
+  },
+  sl: {
+    title: "Waterwise",
+    subtitle: "Pametno namakanje za trajnostno prihodnost",
+    description:
+      "Waterwise je Erasmus+ KA2 projekt (manjša partnerstva), ki povezuje TŠC Maribor in PTŠ Dubrovnik pri razvoju modularnega kurikula o pametnih namakalnih sistemih. Cilj je spodbujati inovativno poučevanje, izmenjave ter digitalne rešitve, kot so prototip sistema, spletna aplikacija in e-učbenik. Hkrati projekt nagovarja prednostno nalogo »Skupne vrednote, državljansko udejstvovanje in udeležba« ter krepi ozaveščenost o trajnostnem ravnanju z vodnimi viri.",
+    buttonText: "Več informacij",
+  },
+  hr: {
+    title: "Waterwise",
+    subtitle: "Pametno navodnjavanje za održivu budućnost",
+    description:
+      'Waterwise je Erasmus+ KA2 projekt (mala partnerstva) koji povezuje TŠC Maribor i PTŠ Dubrovnik u razvoju modularnog kurikuluma o pametnim sustavima navodnjavanja. Cilj je poticati inovativno poučavanje, razmjene i digitalna rješenja poput prototipa sustava, web aplikacije i e-udžbenika. Projekt također adresira prioritet "Zajedničke vrijednosti, građanski angažman i sudjelovanje" te podiže svijest o održivom upravljanju vodnim resursima.',
+    buttonText: "Saznaj više",
+  },
+};
+
 export function HeroSection() {
+  const { language } = useLanguage();
+  const [localContent, setLocalContent] = useState(content.en);
+
+  useEffect(() => {
+    setLocalContent(content[language] || content.en);
+  }, [language]);
+
   return (
     <Container>
       <div className="relative">
@@ -17,19 +52,17 @@ export function HeroSection() {
           {/* Left column - Text content */}
           <div className="flex flex-col gap-6">
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-              Welcome to
-              <br />
-              Lorem ipsum
+              {localContent.title}
             </h1>
+            <h2 className="text-2xl font-semibold text-primary md:text-3xl">
+              {localContent.subtitle}
+            </h2>
             <p className="text-lg text-muted-foreground">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat.
+              {localContent.description}
             </p>
             <div>
               <Button size="lg" className="h-12 px-8">
-                Lorem Ipsum
+                {localContent.buttonText}
               </Button>
             </div>
           </div>

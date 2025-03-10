@@ -59,6 +59,7 @@ export default async function MaterialPage({
         category: material.category,
         url: material.url,
         fileKey: material.fileKey,
+        language: material.language || "en", // Include language field with default
         createdAt: format(material.createdAt, "MMMM do, yyyy"),
       }
     : undefined;

@@ -2,13 +2,14 @@
 import { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import { Container } from "@/components/container";
-
 import { Prisma } from "@prisma/client";
 import { SupportedLanguage } from "@/store/language-context";
-import { MaterialsFilter } from "@/app/(public)/materials/components/materials-filter";
 import MaterialsGridSkeleton, {
   MaterialsGrid,
 } from "@/app/(public)/materials/components/materials-grid";
+
+// Client components need to be imported separately
+import { LocalizedMaterialsFilter } from "./materials-filter";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
@@ -16,11 +17,19 @@ export const revalidate = 3600;
 async function getMaterials(
   query?: string,
   category?: string,
+  materialLang?: string,
   language: SupportedLanguage = "en"
 ) {
   try {
     const where: Prisma.MaterialWhereInput = {
       published: true,
+      // Filter by specific material language if selected in URL params
+      ...(materialLang
+        ? { language: materialLang }
+        : {
+            // Otherwise show only resources matching the current page language
+            language: language,
+          }),
       ...(query && {
         OR: [
           {
@@ -67,6 +76,7 @@ async function getMaterials(
           category_sl: true,
           category_hr: true,
           filename: true,
+          language: true,
         },
         orderBy: {
           createdAt: "desc",
@@ -110,10 +120,15 @@ export default async function MaterialsPage(props: {
     typeof searchParams.category === "string"
       ? searchParams.category
       : undefined;
+  const materialLang =
+    typeof searchParams.materialLang === "string"
+      ? searchParams.materialLang
+      : undefined;
 
   const { materials, categories } = await getMaterials(
     query,
     category,
+    materialLang,
     language
   );
 
@@ -137,7 +152,7 @@ export default async function MaterialsPage(props: {
           </p>
         </div>
 
-        <MaterialsFilter categories={categories} language={language} />
+        <LocalizedMaterialsFilter categories={categories} language={language} />
 
         <Suspense fallback={<MaterialsGridSkeleton />}>
           <MaterialsGrid materials={materials} language={language} />

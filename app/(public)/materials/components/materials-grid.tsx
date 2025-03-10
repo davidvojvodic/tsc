@@ -12,7 +12,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, File } from "lucide-react";
+import { Download, File, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { SupportedLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
@@ -32,6 +32,7 @@ interface Material {
   category_sl?: string | null;
   category_hr?: string | null;
   filename: string;
+  language: string;
 }
 
 interface MaterialsGridProps {
@@ -89,6 +90,21 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
     }
   };
 
+  // Function to get language display name
+  const getLanguageName = (langCode: string, currentLang: string): string => {
+    if (langCode === "en") {
+      return currentLang === "sl" ? "Angleščina" : 
+             currentLang === "hr" ? "Engleski" : "English";
+    } else if (langCode === "sl") {
+      return currentLang === "sl" ? "Slovenščina" : 
+             currentLang === "hr" ? "Slovenski" : "Slovenian";
+    } else if (langCode === "hr") {
+      return currentLang === "sl" ? "Hrvaščina" : 
+             currentLang === "hr" ? "Hrvatski" : "Croatian";
+    }
+    return langCode;
+  };
+
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {materials.map((material) => {
@@ -103,7 +119,13 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
         return (
           <Card key={material.id} className="flex flex-col">
             <CardHeader>
-              <CardTitle className="line-clamp-2">{title}</CardTitle>
+              <div className="flex justify-between items-start mb-2">
+                <CardTitle className="line-clamp-2">{title}</CardTitle>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Globe className="h-3 w-3" />
+                  {getLanguageName(material.language, language)}
+                </Badge>
+              </div>
               {category && (
                 <Badge variant="secondary" className="w-fit">
                   {category}

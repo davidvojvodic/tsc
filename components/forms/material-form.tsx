@@ -29,10 +29,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UploadDropzone } from "@/lib/uploadthing";
 import { formatBytes } from "@/lib/utils";
 import { Label } from "../ui/label";
-import { LanguageTabs, SupportedLanguage } from "../ui/language-tabs";
+import { LanguageTabs, SupportedLanguage, languageOptions } from "../ui/language-tabs";
 
 // Form validation schema
 const formSchema = z.object({
@@ -51,6 +52,7 @@ const formSchema = z.object({
   // Common fields
   category: z.string().optional(),
   published: z.boolean().default(true),
+  language: z.enum(["en", "sl", "hr"]).default("en"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -66,6 +68,7 @@ interface MaterialFormProps {
     description_hr?: string | null;
     category: string | null;
     published: boolean;
+    language?: string;
     url: string;
     fileKey: string;
     filename: string;
@@ -104,6 +107,7 @@ export function MaterialForm({ initialData }: MaterialFormProps) {
       description_hr: initialData?.description_hr || "",
       category: initialData?.category || "",
       published: initialData?.published ?? true,
+      language: (initialData?.language as "en" | "sl" | "hr") || "en",
     },
   });
 
@@ -228,6 +232,42 @@ export function MaterialForm({ initialData }: MaterialFormProps) {
                 </div>
               )}
             </div>
+
+            {/* Language selection */}
+            <FormField
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Primary Language</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      {languageOptions.map((option) => (
+                        <FormItem
+                          key={option.id}
+                          className="flex items-center space-x-3 space-y-0"
+                        >
+                          <FormControl>
+                            <RadioGroupItem value={option.id} />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {option.label}
+                          </FormLabel>
+                        </FormItem>
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormDescription>
+                    Select the primary language for this resource
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Title with language tabs */}
             <div className="space-y-2">

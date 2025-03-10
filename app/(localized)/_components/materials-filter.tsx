@@ -1,4 +1,3 @@
-// components/materials/materials-filter.tsx
 "use client";
 
 import { useCallback, useState } from "react";
@@ -21,7 +20,7 @@ interface MaterialsFilterProps {
   language: SupportedLanguage;
 }
 
-export function MaterialsFilter({
+export function LocalizedMaterialsFilter({
   categories,
   language,
 }: MaterialsFilterProps) {
@@ -66,7 +65,7 @@ export function MaterialsFilter({
     router.push(`/${language}/materials`);
   };
 
-  const hasFilters = search || searchParams.get("category") || searchParams.get("materialLang");
+  const hasFilters = search || searchParams.get("category");
 
   return (
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -88,7 +87,7 @@ export function MaterialsFilter({
           defaultValue={searchParams.get("category") || "all"}
           onValueChange={handleCategoryChange}
         >
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[180px]">
             <SelectValue
               placeholder={
                 language === "sl"
@@ -112,60 +111,6 @@ export function MaterialsFilter({
                 {category}
               </SelectItem>
             ))}
-          </SelectContent>
-        </Select>
-        <Select
-          defaultValue={searchParams.get("materialLang") || "all"}
-          onValueChange={(value) => {
-            const params = new URLSearchParams(searchParams);
-            if (value === "all") {
-              params.delete("materialLang");
-            } else {
-              params.set("materialLang", value);
-            }
-            router.push(`/${language}/materials?${params.toString()}`);
-          }}
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue
-              placeholder={
-                language === "sl"
-                  ? "Jezik virov"
-                  : language === "hr"
-                    ? "Jezik materijala"
-                    : "Resource Language"
-              }
-            />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              {language === "sl"
-                ? "Vsi jeziki"
-                : language === "hr"
-                  ? "Svi jezici"
-                  : "All Languages"}
-            </SelectItem>
-            <SelectItem value="en">
-              {language === "sl"
-                ? "Angleščina"
-                : language === "hr"
-                  ? "Engleski"
-                  : "English"}
-            </SelectItem>
-            <SelectItem value="sl">
-              {language === "sl"
-                ? "Slovenščina"
-                : language === "hr"
-                  ? "Slovenski"
-                  : "Slovenian"}
-            </SelectItem>
-            <SelectItem value="hr">
-              {language === "sl"
-                ? "Hrvaščina"
-                : language === "hr"
-                  ? "Hrvatski"
-                  : "Croatian"}
-            </SelectItem>
           </SelectContent>
         </Select>
       </div>

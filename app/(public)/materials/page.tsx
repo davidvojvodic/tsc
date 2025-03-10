@@ -15,11 +15,22 @@ export const revalidate = 3600;
 async function getMaterials(
   query?: string,
   category?: string,
+  materialLang?: string,
   language: string = "en"
 ) {
   try {
     const where: Prisma.MaterialWhereInput = {
       published: true,
+      // Filter by specific material language if selected
+      ...(materialLang
+        ? { language: materialLang }
+        : {
+            // Otherwise include the current UI language and English as fallback
+            OR: [
+              { language: language },
+              { language: "en" } // Always include English materials as fallback
+            ],
+          }),
       ...(query && {
         OR: [
           // Use language-specific fields for search
@@ -83,12 +94,19 @@ async function getMaterials(
         select: {
           id: true,
           title: true,
+          title_sl: true,
+          title_hr: true,
           description: true,
+          description_sl: true,
+          description_hr: true,
           type: true,
           size: true,
           downloads: true,
           category: true,
+          category_sl: true,
+          category_hr: true,
           filename: true,
+          language: true,
         },
         orderBy: {
           createdAt: "desc",
@@ -127,11 +145,13 @@ export default async function MaterialsPage(props: {
   const searchParams = await props.searchParams;
   const query = searchParams.query?.toString();
   const category = searchParams.category?.toString();
+  const materialLang = searchParams.materialLang?.toString();
   const language = (searchParams.lang?.toString() || "en") as SupportedLanguage;
 
   const { materials, categories } = await getMaterials(
     query,
     category,
+    materialLang,
     language
   );
   return (
@@ -139,11 +159,18 @@ export default async function MaterialsPage(props: {
       <Container>
         <div className="mb-16 text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            Learning Resources
+            {language === "sl" 
+              ? "Učni materiali"
+              : language === "hr"
+                ? "Nastavni materijali"
+                : "Learning Resources"}
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Access our collection of educational resources and documents to
-            support your learning journey.
+            {language === "sl"
+              ? "Dostopajte do naše zbirke izobraževalnih virov in dokumentov za podporo vaši učni poti."
+              : language === "hr"
+                ? "Pristupite našoj zbirci obrazovnih resursa i dokumenata za podršku vašem obrazovnom putovanju."
+                : "Access our collection of educational resources and documents to support your learning journey."}
           </p>
         </div>
 

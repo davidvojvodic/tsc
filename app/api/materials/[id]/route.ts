@@ -22,6 +22,7 @@ const updateMaterialSchema = z.object({
   // Common fields
   category: z.string().optional().nullable(),
   published: z.boolean(),
+  language: z.enum(["en", "sl", "hr"]).default("en"),
   file: z
     .object({
       url: z.string().url(),
@@ -64,6 +65,7 @@ export async function PATCH(
       description_hr: validatedData.description_hr,
       category: validatedData.category,
       published: validatedData.published,
+      language: validatedData.language,
     };
 
     if (validatedData.file) {
@@ -179,6 +181,7 @@ export async function POST(req: NextRequest) {
         description_hr: validatedData.description_hr,
         category: validatedData.category,
         published: validatedData.published,
+        language: validatedData.language,
         url: validatedData.file.url,
         filename: validatedData.file.name,
         fileKey: validatedData.file.key,
@@ -194,6 +197,47 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(error.issues, { status: 422 });
     }
     console.error("[MATERIALS_POST]", error);
+    return new NextResponse("Internal error", { status: 500 });
+  }
+}
+
+// DELETE Route Handler
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const headersObj = await headers();
+    const session = await auth.api.getSession({
+      headers: headersObj,
+    });
+
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const isAdmin = await checkAdminAccess(session.user.id);
+    if (!isAdmin) {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    // Find the material to be deleted
+    const material = await prisma.material.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!material) {
+      return new NextResponse("Material not found", { status: 404 });
+    }
+
+    // Delete the material
+    await prisma.material.delete({
+      where: { id: params.id },
+    });
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error("[MATERIAL_DELETE]", error);
     return new NextResponse("Internal error", { status: 500 });
   }
 }

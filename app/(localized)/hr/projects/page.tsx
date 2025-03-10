@@ -19,7 +19,11 @@ async function getProjects() {
     orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
   });
 
-  return projects;
+  // Add empty tags array to each project to fix type error
+  return projects.map(project => ({
+    ...project,
+    tags: [],
+  }));
 }
 
 export default async function ProjectsPageRoute() {

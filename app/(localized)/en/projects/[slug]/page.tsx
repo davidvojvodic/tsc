@@ -11,7 +11,6 @@ async function getProject(slug: string) {
     include: {
       heroImage: true,
       gallery: true,
-      tags: true,
       teachers: {
         select: {
           id: true,

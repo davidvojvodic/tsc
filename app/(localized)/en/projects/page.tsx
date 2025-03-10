@@ -8,7 +8,6 @@ async function getProjects() {
     },
     include: {
       heroImage: true,
-      tags: true,
       teachers: true,
       timeline: {
         select: {
@@ -25,6 +24,6 @@ async function getProjects() {
 
 export default async function ProjectsPageRoute() {
   const projects = await getProjects();
-  
+
   return <ProjectsPage projects={projects} language="en" />;
 }

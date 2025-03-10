@@ -1,75 +1,163 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
+
 import prisma from "@/lib/prisma";
+
 import { z } from "zod";
+
 import { headers } from "next/headers";
+
 import { MediaType } from "@prisma/client";
 
 // Define schema for each part of the project
+
 const heroImageSchema = z
+
   .object({
     url: z.string().url(),
+
     fileKey: z.string(),
   })
+
   .nullable();
 
 // const mediaSchema = z
+
 //   .object({
+
 //     url: z.string(),
+
 //     fileKey: z.string().optional(), // Make fileKey optional
+
 //   })
+
 //   .nullable();
 
 const timelinePhaseSchema = z.object({
   id: z.string(),
+
   title: z.string(),
+
   description: z.string(),
+
   startDate: z.preprocess(
     (val) => (val ? new Date(val as string) : null),
+
     z.date().nullable().optional()
   ),
+
   endDate: z.preprocess(
     (val) => (val ? new Date(val as string) : null),
+
     z.date().nullable().optional()
   ),
+
   completed: z.boolean(),
+
   order: z.number(),
+
   media: z
+
     .object({
       url: z.string(),
+
       fileKey: z.string().optional(),
     })
+
     .nullable(),
 });
 
 const galleryImageSchema = z.object({
   id: z.string(),
+
   url: z.string(),
+
   fileKey: z.string(),
+
   alt: z.string().nullable(),
 });
 
 const projectSchema = z.object({
   basicInfo: z.object({
     name: z.string().min(1, "Name is required"),
+
     slug: z.string().min(1, "Slug is required"),
+
     description: z.string().nullable(),
+
     published: z.boolean(),
+
     featured: z.boolean(),
+
     heroImage: heroImageSchema,
   }),
+
   timeline: z.array(timelinePhaseSchema),
+
   gallery: z.array(galleryImageSchema),
+
   teacherIds: z.array(z.string()),
 });
 
 async function checkAdminAccess(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
+
     select: { role: true },
   });
 
   return user?.role === "ADMIN";
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const take = parseInt(url.searchParams.get("take") || "50");
+    const skip = parseInt(url.searchParams.get("skip") || "0");
+    const featured = url.searchParams.get("featured") === "true";
+    const published = url.searchParams.get("published") === "true";
+
+    const projects = await prisma.project.findMany({
+      take,
+      skip,
+      where: {
+        ...(featured ? { featured: true } : {}),
+        ...(published ? { published: true } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        name_sl: true,
+        name_hr: true,
+        slug: true,
+        description: true,
+        published: true,
+        featured: true,
+        heroImage: {
+          select: {
+            id: true,
+            url: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const total = await prisma.project.count({
+      where: {
+        ...(featured ? { featured: true } : {}),
+        ...(published ? { published: true } : {}),
+      },
+    });
+
+    return NextResponse.json({ projects, total });
+  } catch (error) {
+    console.error("[PROJECTS_GET]", error);
+    return new NextResponse("Internal error", { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -83,14 +171,17 @@ export async function POST(req: NextRequest) {
     }
 
     const isAdmin = await checkAdminAccess(session.user.id);
+
     if (!isAdmin) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
     const body = await req.json();
+
     const validatedData = projectSchema.parse(body);
 
     // Check if slug is unique
+
     const existingProject = await prisma.project.findUnique({
       where: { slug: validatedData.basicInfo.slug },
     });
@@ -100,32 +191,46 @@ export async function POST(req: NextRequest) {
     }
 
     // Create project with all related data
+
     const project = await prisma.$transaction(async (tx) => {
       // Create hero image if provided
+
       let heroImageId: string | undefined;
+
       if (validatedData.basicInfo.heroImage) {
         const media = await tx.media.create({
           data: {
             filename: validatedData.basicInfo.heroImage.fileKey,
+
             url: validatedData.basicInfo.heroImage.url,
+
             type: MediaType.IMAGE,
+
             mimeType: "image/jpeg",
+
             size: 0,
           },
         });
+
         heroImageId = media.id;
       }
 
       // Create gallery images
+
       const galleryImages = await Promise.all(
         validatedData.gallery.map((img) =>
           tx.media.create({
             data: {
               filename: img.fileKey,
+
               url: img.url,
+
               type: MediaType.IMAGE,
+
               mimeType: "image/jpeg",
+
               size: 0,
+
               alt: img.alt,
             },
           })
@@ -133,42 +238,62 @@ export async function POST(req: NextRequest) {
       );
 
       // Create the project with all relations
+
       const newProject = await tx.project.create({
         data: {
           name: validatedData.basicInfo.name,
+
           slug: validatedData.basicInfo.slug,
+
           description: validatedData.basicInfo.description,
+
           published: validatedData.basicInfo.published,
+
           featured: validatedData.basicInfo.featured,
+
           ...(heroImageId && { heroImageId }),
+
           gallery: {
             connect: galleryImages.map((img) => ({ id: img.id })),
           },
+
           teachers: {
             connect: validatedData.teacherIds.map((id) => ({ id })),
           },
+
           // Inside the project creation:
+
           timeline: {
             create: validatedData.timeline.map((phase) => {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const phaseData: any = {
                 title: phase.title,
+
                 description: phase.description,
+
                 completed: phase.completed,
+
                 order: phase.order,
+
                 startDate: null, // Default to null
+
                 endDate: null, // Default to null
               };
 
               // Only set dates if they exist
+
               if (phase.startDate) {
                 phaseData.startDate = phase.startDate;
               }
+
               if (phase.endDate) {
                 phaseData.endDate = phase.endDate;
               }
 
               // Handle media if it exists
+
               if (phase.media) {
                 phaseData.media = {
                   create: {
@@ -176,9 +301,13 @@ export async function POST(req: NextRequest) {
                       phase.media.fileKey ||
                       phase.media.url.split("/").pop() ||
                       "unknown",
+
                     url: phase.media.url,
+
                     type: MediaType.IMAGE,
+
                     mimeType: "image/jpeg",
+
                     size: 0,
                   },
                 };
@@ -188,18 +317,23 @@ export async function POST(req: NextRequest) {
             }),
           },
         },
+
         include: {
           heroImage: true,
+
           gallery: true,
+
           teachers: {
             include: {
               photo: true,
             },
           },
+
           timeline: {
             include: {
               media: true,
             },
+
             orderBy: {
               order: "asc",
             },
@@ -215,7 +349,9 @@ export async function POST(req: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(error.issues, { status: 422 });
     }
+
     console.error("[PROJECTS_POST]", error);
+
     return new NextResponse("Internal error", { status: 500 });
   }
 }

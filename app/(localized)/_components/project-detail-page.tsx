@@ -47,12 +47,6 @@ interface Project {
     id: string;
     url: string;
   }[];
-  tags: {
-    id: string;
-    name: string;
-    name_sl?: string | null;
-    name_hr?: string | null;
-  }[];
   teachers: {
     id: string;
     name: string;
@@ -118,7 +112,7 @@ const getTranslations = (language: SupportedLanguage) => {
       completed: "Completed",
       learningResources: "Learning Resources",
       takeQuiz: "Take this quiz to test your knowledge",
-      startQuiz: "Start Quiz"
+      startQuiz: "Start Quiz",
     },
     sl: {
       backToProjects: "Nazaj na projekte",
@@ -136,7 +130,7 @@ const getTranslations = (language: SupportedLanguage) => {
       completed: "Končano",
       learningResources: "Učni viri",
       takeQuiz: "Rešite ta kviz, da preverite svoje znanje",
-      startQuiz: "Začni kviz"
+      startQuiz: "Začni kviz",
     },
     hr: {
       backToProjects: "Natrag na projekte",
@@ -154,20 +148,27 @@ const getTranslations = (language: SupportedLanguage) => {
       completed: "Završeno",
       learningResources: "Obrazovni resursi",
       takeQuiz: "Riješite ovaj kviz da testirate svoje znanje",
-      startQuiz: "Započni kviz"
-    }
+      startQuiz: "Započni kviz",
+    },
   };
-  
+
   return translations[language];
 };
 
-export function ProjectDetailPage({ project, language }: ProjectDetailPageProps) {
+export function ProjectDetailPage({
+  project,
+  language,
+}: ProjectDetailPageProps) {
   const t = getTranslations(language);
   const prefix = language === "en" ? "" : `/${language}`;
-  
+
   // Get localized content
   const projectName = getLocalizedContent(project, "name", language);
-  const projectDescription = getLocalizedContent(project, "description", language);
+  const projectDescription = getLocalizedContent(
+    project,
+    "description",
+    language
+  );
 
   // Calculate project stats
   const completedPhases = project.timeline.filter((p) => p.completed).length;
@@ -199,16 +200,6 @@ export function ProjectDetailPage({ project, language }: ProjectDetailPageProps)
               {t.backToProjects}
             </Link>
           </Button>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {project.tags.map((tag) => {
-              const tagName = getLocalizedContent(tag, "name", language);
-              return (
-                <Badge key={tag.id} variant="secondary">
-                  {tagName || tag.name}
-                </Badge>
-              );
-            })}
-          </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
             {projectName || project.name}
           </h1>
@@ -233,8 +224,7 @@ export function ProjectDetailPage({ project, language }: ProjectDetailPageProps)
               <p className="text-xl font-semibold">
                 {project.timeline[0]?.startDate
                   ? format(project.timeline[0].startDate, "MMM yyyy")
-                  : t.notSpecified
-                }
+                  : t.notSpecified}
               </p>
             </div>
             <div className="space-y-1">
@@ -270,9 +260,17 @@ export function ProjectDetailPage({ project, language }: ProjectDetailPageProps)
               <CardContent>
                 <div className="space-y-8">
                   {project.timeline.map((phase, index) => {
-                    const phaseTitle = getLocalizedContent(phase, "title", language);
-                    const phaseDescription = getLocalizedContent(phase, "description", language);
-                    
+                    const phaseTitle = getLocalizedContent(
+                      phase,
+                      "title",
+                      language
+                    );
+                    const phaseDescription = getLocalizedContent(
+                      phase,
+                      "description",
+                      language
+                    );
+
                     return (
                       <div key={phase.id} className="relative pl-8 pb-8">
                         {index !== project.timeline.length - 1 && (
@@ -300,9 +298,7 @@ export function ProjectDetailPage({ project, language }: ProjectDetailPageProps)
                               </Badge>
                             )}
                             {phase.completed && (
-                              <Badge variant="default">
-                                {t.completed}
-                              </Badge>
+                              <Badge variant="default">{t.completed}</Badge>
                             )}
                           </div>
 
@@ -330,7 +326,9 @@ export function ProjectDetailPage({ project, language }: ProjectDetailPageProps)
                               </DialogTrigger>
                               <DialogContent className="max-w-3xl">
                                 <DialogHeader>
-                                  <DialogTitle>{phaseTitle || phase.title}</DialogTitle>
+                                  <DialogTitle>
+                                    {phaseTitle || phase.title}
+                                  </DialogTitle>
                                 </DialogHeader>
                                 <div className="relative h-[600px] w-full">
                                   <Image
@@ -362,12 +360,12 @@ export function ProjectDetailPage({ project, language }: ProjectDetailPageProps)
 
           {/* Gallery */}
           {project.gallery.length > 0 && (
-            <GalleryView 
-              images={project.gallery.map(img => ({
+            <GalleryView
+              images={project.gallery.map((img) => ({
                 id: img.id,
                 url: img.url,
-                alt: null
-              }))} 
+                alt: null,
+              }))}
             />
           )}
           {/* Resources */}
@@ -382,16 +380,26 @@ export function ProjectDetailPage({ project, language }: ProjectDetailPageProps)
               <CardContent>
                 <div className="space-y-4">
                   {project.quizzes.map((quiz) => {
-                    const quizTitle = getLocalizedContent(quiz, "title", language);
-                    const quizDescription = getLocalizedContent(quiz, "description", language);
-                    
+                    const quizTitle = getLocalizedContent(
+                      quiz,
+                      "title",
+                      language
+                    );
+                    const quizDescription = getLocalizedContent(
+                      quiz,
+                      "description",
+                      language
+                    );
+
                     return (
                       <div
                         key={quiz.id}
                         className="flex items-center justify-between"
                       >
                         <div>
-                          <p className="font-medium">{quizTitle || quiz.title}</p>
+                          <p className="font-medium">
+                            {quizTitle || quiz.title}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {quizDescription || quiz.description || t.takeQuiz}
                           </p>

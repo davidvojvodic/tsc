@@ -36,7 +36,6 @@ export default async function ProjectPage({ params }: PageParams) {
               order: "asc",
             },
           },
-          tags: true,
         },
       })
     : null;

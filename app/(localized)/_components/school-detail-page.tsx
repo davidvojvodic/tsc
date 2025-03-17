@@ -91,18 +91,51 @@ const schoolContent = {
   },
   "ptz-dubrovnik": {
     en: {
-      title: "About School 2",
-      description: "Information about the second school will be added here.",
+      title: "Dubrovnik Maritime Technical School",
+      description: `The Dubrovnik Maritime Technical School is a secondary vocational school founded in 1852, where students are educated in four vocational professions:
+
+      • Marine Navigator
+      • Marine Engineering Technician
+      • Mechanical Computer Technician
+      • Electrical Technician
+
+      According to the school curricula, practical classes are held in workshops, cabinets with simulators and specialized classrooms. Students have the opportunity to attend optional robotics classes. Students and teachers collaborate in editing the school magazine Albatros and organizing various cultural, educational, sports and volunteer activities.
+
+      The school has an international quality system in accordance with the ISO 9001:2015 standard, certified by Croatian Register of Shipping (CRS) and Bureau Veritas Quality International (BVQI).
+
+      The school collaborates with various institutions and organizations at local, national and international levels, which enables the implementation of numerous activities and projects. Since 2017, it has been implementing Erasmus+ projects. Vocational education and training projects are particularly notable, among which the Erasmus+ project Cybernetic Advanced Technology from 2018 received a high quality assessment due to successful implementation and sustainability of results. In 2022, the school started implementing its first Erasmus+ KA2 project Yellow Dwarf, aimed at modernizing teaching in the field of renewable energy sources. Since 2023, the school has been the holder of the Erasmus+ accreditation for vocational education and training, which enables continuous international cooperation with various institutions.`,
       imageUrl: "/school-start-times.jpg",
     },
     sl: {
-      title: "O šoli 2",
-      description: "Informacije o drugi šoli bodo dodane tukaj.",
+      title: "Pomorsko-tehniška šola Dubrovnik",
+      description: `Pomorsko-tehniška šola Dubrovnik je srednja poklicna šola, ustanovljena leta 1852, kjer se dijaki izobražujejo v štirih strokovnih smereh:
+
+      • Pomorski navtik
+      • Pomorski strojni tehnik
+      • Strojni računalniški tehnik
+      • Elektrotehnik
+
+      V skladu s šolskimi programi poteka praktični pouk v delavnicah, kabinetih s simulatorji in specializiranih učilnicah. Dijakom je na voljo izbirni pouk robotike. Dijaki in učitelji sodelujejo pri urejanju šolskega časopisa Albatros ter pri organizaciji različnih kulturnih, izobraževalnih, športnih in prostovoljskih aktivnosti.
+
+      Šola ima mednarodni sistem kakovosti v skladu s standardom ISO 9001:2015, certificiran pri Hrvatski registar brodova (CRS) in Bureau Veritas Quality International (BVQI).
+
+      Šola sodeluje z različnimi ustanovami in organizacijami na lokalni, nacionalni in mednarodni ravni, kar omogoča izvajanje številnih aktivnosti in projektov. Od leta 2017 izvaja Erasmus+ projekte. Posebej izstopajo projekti poklicnega izobraževanja in usposabljanja, med katerimi je Erasmus+ projekt Cybernetic Advanced Technology iz leta 2018 prejel visoko oceno kakovosti zaradi uspešne izvedbe in trajnosti rezultatov. Leta 2022 je šola začela izvajati svoj prvi Erasmus+ KA2 projekt Žuti patuljak, ki je namenjen modernizaciji poučevanja na področju obnovljivih virov energije. Od leta 2023 je šola nosilka Erasmus+ akreditacije za poklicno izobraževanje in usposabljanje, kar omogoča stalno mednarodno sodelovanje z različnimi institucijami.`,
       imageUrl: "/school-start-times.jpg",
     },
     hr: {
-      title: "O školi 2",
-      description: "Informacije o drugoj školi bit će dodane ovdje.",
+      title: "Pomorsko-tehnička škola Dubrovnik",
+      description: `Pomorsko-tehnička škola Dubrovnik je srednja strukovna škola osnovana 1852. godine, gdje se učenici obrazuju u četiri strukovna zanimanja:
+
+      • Pomorski nautičar
+      • Tehničar za brodostrojarstvo
+      • Računalni tehničar za strojarstvo
+      • Elektrotehničar
+
+      Prema školskom kurikulumu, praktična nastava se održava u radionici, kabinetima sa simulatorima i specijaliziranim učionicama. Učenici imaju mogućnost pohađati izbornu nastavu robotike. Učenici i nastavnici surađuju u uređivanju školskog časopisa Albatros i organiziranju raznih kulturnih, obrazovnih, sportskih i volonterskih aktivnosti.
+
+      Škola ima međunarodni sustav kvalitete prema normi ISO 9001:2015, certificiran od strane Hrvatskog registra brodova (CRS) i Bureau Veritas Quality International (BVQI).
+
+      Škola surađuje s različitim institucijama i organizacijama na lokalnoj, nacionalnoj i međunarodnoj razini, što omogućuje provedbu brojnih aktivnosti i projekata. Od 2017. provodi Erasmus+ projekte. Posebno se ističu projekti strukovnog obrazovanja i osposobljavanja, među kojima je Erasmus+ projekt Cybernetic Advanced Technology iz 2018. dobio visoku ocjenu kvalitete zbog uspješne provedbe i održivosti rezultata. 2022. škola je započela provedbu prvog Erasmus+ KA2 projekta Žuti patuljak, namijenjenog modernizaciji poučavanja u području obnovljivih izvora energije. Od 2023. škola je nositeljica Erasmus+ akreditacije za strukovno obrazovanje i osposobljavanje, što omogućuje kontinuiranu međunarodnu suradnju s različitim institucijama.`,
       imageUrl: "/school-start-times.jpg",
     },
   },

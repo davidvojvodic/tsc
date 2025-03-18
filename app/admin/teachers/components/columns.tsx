@@ -7,6 +7,14 @@ import { TeacherCellAction } from "./cell-action";
 
 export const columns: ColumnDef<Teacher>[] = [
   {
+    accessorKey: "displayOrder",
+    header: "Order",
+    cell: ({ row }) => {
+      const order = row.getValue("displayOrder") as number;
+      return <div className="font-medium text-center">{order}</div>;
+    },
+  },
+  {
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => {
@@ -23,11 +31,36 @@ export const columns: ColumnDef<Teacher>[] = [
     },
   },
   {
+    accessorKey: "title",
+    header: "Title",
+    cell: ({ row }) => {
+      const title = row.getValue("title") as string;
+      return <div className="max-w-[200px] truncate">{title || "-"}</div>;
+    },
+  },
+  {
+    accessorKey: "school",
+    header: "School",
+    cell: ({ row }) => {
+      const school = row.getValue("school") as string | null;
+      if (!school) return <div>-</div>;
+      return (
+        <div className="font-medium">
+          {school === "pts" ? (
+            <span className="px-2 py-1 rounded-md bg-blue-100 text-blue-800">PTS</span>
+          ) : (
+            <span className="px-2 py-1 rounded-md bg-green-100 text-green-800">TSC</span>
+          )}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "bio",
     header: "Bio",
     cell: ({ row }) => {
       const bio = row.getValue("bio") as string;
-      return <div className="line-clamp-2">{bio || "No bio provided"}</div>;
+      return <div className="line-clamp-2 max-w-[300px]">{bio || "No bio provided"}</div>;
     },
   },
   {

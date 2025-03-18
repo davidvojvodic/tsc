@@ -237,6 +237,7 @@ model Teacher {
   photoId      String?
   email        String?
   displayOrder Int       @default(0)
+  school       String? // Can be "tsc" or "pts"
   quizzes      Quiz[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

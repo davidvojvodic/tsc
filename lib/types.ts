@@ -23,6 +23,8 @@ export interface Teacher {
 
   displayOrder?: number;
 
+  school?: string | null;
+
   photo?: {
     url: string;
   } | null;

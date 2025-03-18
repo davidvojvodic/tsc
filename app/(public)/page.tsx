@@ -50,6 +50,7 @@ export default async function Home() {
       title: true,
       email: true,
       displayOrder: true,
+      school: true,
       photo: {
         select: {
           url: true,
@@ -57,7 +58,7 @@ export default async function Home() {
       },
     },
     orderBy: {
-      createdAt: "desc",
+      displayOrder: "asc", // Order by displayOrder instead of createdAt
     },
   });
 

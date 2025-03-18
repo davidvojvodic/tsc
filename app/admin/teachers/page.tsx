@@ -7,9 +7,10 @@ export default async function TeachersPage() {
     include: {
       photo: true,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [
+      { displayOrder: "asc" },
+      { name: "asc" }
+    ],
   });
 
   const formattedTeachers = teachers.map((teacher) => ({
@@ -22,7 +23,10 @@ export default async function TeachersPage() {
     bio_sl: teacher.bio_sl,
     bio_hr: teacher.bio_hr,
     photoId: teacher.photoId,
+    displayOrder: teacher.displayOrder,
     photo: teacher.photo ? { url: teacher.photo.url } : null,
+    school: teacher.school,
+    email: teacher.email,
     // Format the date when we prepare the data
     createdAt: format(teacher.createdAt, "PPP"),
   }));

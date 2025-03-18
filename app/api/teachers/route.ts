@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
           bio_hr: validatedData.bio_hr,
           email: validatedData.email,
           displayOrder: validatedData.displayOrder,
+          school: validatedData.school,
           ...photoConnect,
         },
         include: {

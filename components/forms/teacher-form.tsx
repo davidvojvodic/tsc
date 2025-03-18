@@ -33,6 +33,7 @@ import { Separator } from "@/components/ui/separator";
 import { UploadButton } from "@/lib/uploadthing";
 import { Label } from "../ui/label";
 import { LanguageTabs, SupportedLanguage } from "../ui/language-tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 // Form validation schema
 const formSchema = z.object({
@@ -43,6 +44,7 @@ const formSchema = z.object({
     .max(50, { message: "Name cannot exceed 50 characters" }),
   email: z.string().email().optional().nullable(),
   displayOrder: z.number().int().default(0),
+  school: z.enum(["tsc", "pts"]).optional().nullable(),
 
   // Multilingual fields
   title: z
@@ -79,6 +81,7 @@ interface TeacherFormProps {
     bio_hr?: string | null;
     email: string | null;
     displayOrder: number;
+    school?: string | null;
     photoId: string | null;
     photo?: {
       url: string;
@@ -117,6 +120,7 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
       bio_hr: initialData?.bio_hr || "",
       email: initialData?.email || null,
       displayOrder: initialData?.displayOrder || 0,
+      school: (initialData?.school as "tsc" | "pts") || null,
     },
   });
 
@@ -372,6 +376,37 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
                   <FormDescription>
                     Controls the order in which teachers are displayed (lower
                     numbers appear first)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="school"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>School</FormLabel>
+                  <Select
+                    disabled={isLoading}
+                    onValueChange={(val) => field.onChange(val === "none" ? null : val)}
+                    defaultValue={field.value || "none"}
+                    value={field.value || "none"}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select school" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Not specified</SelectItem>
+                      <SelectItem value="tsc">TSC (Tehniški šolski center)</SelectItem>
+                      <SelectItem value="pts">PTS (Poslovno-tehniška šola)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Specify which school the teacher belongs to
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

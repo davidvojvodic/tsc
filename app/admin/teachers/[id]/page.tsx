@@ -21,13 +21,14 @@ export default async function TeacherPage({
         id: teacher.id,
         name: teacher.name,
         title: teacher.title,
-        title_sl: teacher.title_sl, // Add this
-        title_hr: teacher.title_hr, // Add this
+        title_sl: teacher.title_sl,
+        title_hr: teacher.title_hr,
         bio: teacher.bio,
-        bio_sl: teacher.bio_sl, // Add this
-        bio_hr: teacher.bio_hr, // Add this
+        bio_sl: teacher.bio_sl,
+        bio_hr: teacher.bio_hr,
         email: teacher.email,
         displayOrder: teacher.displayOrder,
+        school: teacher.school,
         photoId: teacher.photoId,
         photo: teacher.photo ? { url: teacher.photo.url } : null,
         createdAt: teacher.createdAt.toISOString(),

@@ -45,6 +45,7 @@ export default async function HomePage() {
       title_hr: true,
       email: true,
       displayOrder: true,
+      school: true,
       photo: {
         select: {
           url: true,
@@ -52,7 +53,7 @@ export default async function HomePage() {
       },
     },
     orderBy: {
-      createdAt: "desc",
+      displayOrder: "asc", // Order by displayOrder instead of createdAt
     },
   });
 

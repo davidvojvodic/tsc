@@ -4,6 +4,7 @@ import TeacherCarousel from "@/components/homepage/teacher-carousel";
 import TestimonialsSection from "@/components/homepage/testimonials";
 import SchoolsSection from "@/components/homepage/schools";
 import prisma from "@/lib/prisma";
+import LiveStreams from "@/components/live-streams";
 
 export default async function HomePage() {
   // Fetch published testimonials
@@ -63,6 +64,12 @@ export default async function HomePage() {
       <TeacherCarousel teachers={teachers} />
       <TestimonialsSection testimonials={testimonials} />
       <SchoolsSection />
+      <LiveStreams
+        youtubeIds={{
+          mbLocation: "cmVd2UE3sxE",
+          // dubrovnikLocation will be added later when available
+        }}
+      />
     </>
   );
 }

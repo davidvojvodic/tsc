@@ -21,6 +21,7 @@ import { TeacherDialog } from "../teacher-dialog";
 import { useLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { Teacher } from "@/lib/types";
+import Autoplay from "embla-carousel-autoplay";
 
 interface TeacherCarouselProps {
   teachers: Teacher[];
@@ -63,9 +64,7 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
   );
 
   // Render a teacher carousel section
-  const renderTeacherCarousel = (
-    schoolTeachers: Teacher[]
-  ) => {
+  const renderTeacherCarousel = (schoolTeachers: Teacher[]) => {
     if (schoolTeachers.length === 0) return null;
 
     return (
@@ -77,15 +76,16 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
               loop: true,
               slidesToScroll: 1,
             }}
+            plugins={[
+              Autoplay({
+                delay: 2500,
+              }),
+            ]}
             className="w-full"
           >
             <CarouselContent className="-ml-2 md:-ml-4">
               {schoolTeachers.map((teacher) => {
-                const title = getLocalizedContent(
-                  teacher,
-                  "title",
-                  language
-                );
+                const title = getLocalizedContent(teacher, "title", language);
                 const bio = getLocalizedContent(teacher, "bio", language);
 
                 return (
@@ -149,10 +149,8 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
                           {bio || (
                             <>
                               {language === "en" && "No bio available"}
-                              {language === "sl" &&
-                                "Biografija ni na voljo"}
-                              {language === "hr" &&
-                                "Životopis nije dostupan"}
+                              {language === "sl" && "Biografija ni na voljo"}
+                              {language === "hr" && "Životopis nije dostupan"}
                             </>
                           )}
                         </p>

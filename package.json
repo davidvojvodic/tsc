@@ -54,6 +54,7 @@
     "cookies-next": "^4.1.1",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
+    "embla-carousel-auto-scroll": "^8.5.2",
     "embla-carousel-autoplay": "^8.5.2",
     "embla-carousel-react": "^8.5.2",
     "lucide-react": "^0.453.0",

@@ -21,7 +21,7 @@ import { TeacherDialog } from "../teacher-dialog";
 import { useLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { Teacher } from "@/lib/types";
-import Autoplay from "embla-carousel-autoplay";
+import AutoScroll from "embla-carousel-auto-scroll";
 
 interface TeacherCarouselProps {
   teachers: Teacher[];
@@ -64,12 +64,19 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
   );
 
   // Render a teacher carousel section
-  const renderTeacherCarousel = (schoolTeachers: Teacher[]) => {
+  const renderTeacherCarousel = (
+    schoolTeachers: Teacher[],
+    isReverse: boolean = false
+  ) => {
     if (schoolTeachers.length === 0) return null;
 
     return (
       <div className="space-y-8 mb-12">
         <div className="relative">
+          {/* Left gradient overlay */}
+          <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-background to-transparent z-10" />
+          {/* Right gradient overlay */}
+          <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-background to-transparent z-10" />
           <Carousel
             opts={{
               align: "start",
@@ -77,8 +84,9 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
               slidesToScroll: 1,
             }}
             plugins={[
-              Autoplay({
-                delay: 4500,
+              AutoScroll({
+                speed: 0.5,
+                direction: isReverse ? "backward" : "forward",
               }),
             ]}
             className="w-full"
@@ -191,7 +199,7 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
           {renderTeacherCarousel(tscTeachers)}
 
           {/* PTS Teachers Carousel */}
-          {renderTeacherCarousel(ptsTeachers)}
+          {renderTeacherCarousel(ptsTeachers, true)}
         </Container>
       </div>
       <TeacherDialog

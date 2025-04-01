@@ -1,18 +1,10 @@
 // components/project/teacher-selector.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ChevronsUpDown, X } from "lucide-react";
 
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
@@ -52,12 +44,19 @@ export function TeacherSelector({
 }: TeacherSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const selectedTeachers = availableTeachers.filter((teacher) =>
     value.includes(teacher.id)
   );
 
   const handleTeacherToggle = (teacherId: string) => {
+    if (isLoading) return; // Don't allow changes when loading
+
     const isSelected = value.includes(teacherId);
     if (isSelected) {
       onChange(value.filter((id) => id !== teacherId));
@@ -66,7 +65,12 @@ export function TeacherSelector({
       onChange([...value, teacherId]);
       toast.success("Teacher added to project");
     }
-    setOpen(false);
+
+    // Leave the dropdown open to allow selecting multiple teachers
+    // and close it only if there are no more unselected teachers
+    if (unselectedTeachers.length <= 1) {
+      setOpen(false);
+    }
   };
 
   // Filter out already selected teachers from the available list
@@ -81,12 +85,18 @@ export function TeacherSelector({
       )
     : unselectedTeachers;
 
+  if (!mounted) {
+    return null; // Don't render anything until component is mounted
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Project Teachers</CardTitle>
         <CardDescription>
-          Assign teachers to collaborate on this project
+          {availableTeachers.length > 0
+            ? "Assign teachers to collaborate on this project"
+            : "No teachers available to assign to this project"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -107,34 +117,44 @@ export function TeacherSelector({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[300px] p-0" align="start">
-              <Command shouldFilter={false}>
-                <CommandInput
-                  placeholder="Search teachers..."
-                  value={searchQuery}
-                  onValueChange={setSearchQuery}
-                />
-                <CommandList>
-                  <CommandEmpty>No teachers found.</CommandEmpty>
-                  <CommandGroup>
+              <div className="max-h-[300px] overflow-y-auto p-2">
+                {/* Search input */}
+                <div className="flex items-center border-b px-3 mb-2">
+                  <input
+                    className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                    placeholder="Search teachers..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Teacher list */}
+                {filteredTeachers.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    {selectedTeachers.length === availableTeachers.length
+                      ? "All teachers have been selected."
+                      : "No matching teachers found."}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
                     {filteredTeachers.map((teacher) => (
-                      <CommandItem
+                      <div
                         key={teacher.id}
-                        value={teacher.id}
-                        onSelect={() => handleTeacherToggle(teacher.id)}
-                        className="flex items-center gap-2"
+                        onClick={() => handleTeacherToggle(teacher.id)}
+                        className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                       >
-                        <Avatar className="h-8 w-8">
+                        <Avatar className="h-8 w-8 mr-2">
                           <AvatarImage src={teacher.photo?.url} />
                           <AvatarFallback>
                             {teacher.name.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
                         <span>{teacher.name}</span>
-                      </CommandItem>
+                      </div>
                     ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
+                  </div>
+                )}
+              </div>
             </PopoverContent>
           </Popover>
 

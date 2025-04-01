@@ -38,8 +38,12 @@ const timelinePhaseSchema = z.object({
   id: z.string(),
 
   title: z.string(),
+  title_sl: z.string().nullable(),
+  title_hr: z.string().nullable(),
 
   description: z.string(),
+  description_sl: z.string().nullable(),
+  description_hr: z.string().nullable(),
 
   startDate: z.preprocess(
     (val) => (val ? new Date(val as string) : null),
@@ -57,15 +61,21 @@ const timelinePhaseSchema = z.object({
 
   order: z.number(),
 
-  media: z
-
-    .object({
+  media: z.union([
+    z.array(
+      z.object({
+        id: z.string(),
+        url: z.string(),
+        fileKey: z.string(),
+        alt: z.string().nullable(),
+      })
+    ),
+    z.object({
       url: z.string(),
-
       fileKey: z.string().optional(),
-    })
-
-    .nullable(),
+    }),
+    z.null(),
+  ]),
 });
 
 const galleryImageSchema = z.object({
@@ -81,10 +91,14 @@ const galleryImageSchema = z.object({
 const projectSchema = z.object({
   basicInfo: z.object({
     name: z.string().min(1, "Name is required"),
+    name_sl: z.string().nullable(),
+    name_hr: z.string().nullable(),
 
     slug: z.string().min(1, "Slug is required"),
 
     description: z.string().nullable(),
+    description_sl: z.string().nullable(),
+    description_hr: z.string().nullable(),
 
     published: z.boolean(),
 
@@ -201,13 +215,9 @@ export async function POST(req: NextRequest) {
         const media = await tx.media.create({
           data: {
             filename: validatedData.basicInfo.heroImage.fileKey,
-
             url: validatedData.basicInfo.heroImage.url,
-
             type: MediaType.IMAGE,
-
             mimeType: "image/jpeg",
-
             size: 0,
           },
         });
@@ -216,21 +226,17 @@ export async function POST(req: NextRequest) {
       }
 
       // Create gallery images
-
-      const galleryImages = await Promise.all(
+      // Create a mutable array to hold all gallery images
+      // eslint-disable-next-line prefer-const
+      let galleryImages = await Promise.all(
         validatedData.gallery.map((img) =>
           tx.media.create({
             data: {
               filename: img.fileKey,
-
               url: img.url,
-
               type: MediaType.IMAGE,
-
               mimeType: "image/jpeg",
-
               size: 0,
-
               alt: img.alt,
             },
           })
@@ -242,10 +248,14 @@ export async function POST(req: NextRequest) {
       const newProject = await tx.project.create({
         data: {
           name: validatedData.basicInfo.name,
+          name_sl: validatedData.basicInfo.name_sl,
+          name_hr: validatedData.basicInfo.name_hr,
 
           slug: validatedData.basicInfo.slug,
 
           description: validatedData.basicInfo.description,
+          description_sl: validatedData.basicInfo.description_sl,
+          description_hr: validatedData.basicInfo.description_hr,
 
           published: validatedData.basicInfo.published,
 
@@ -264,14 +274,16 @@ export async function POST(req: NextRequest) {
           // Inside the project creation:
 
           timeline: {
-            create: validatedData.timeline.map((phase) => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+            create: await Promise.all(validatedData.timeline.map(async (phase) => {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const phaseData: any = {
                 title: phase.title,
+                title_sl: phase.title_sl,
+                title_hr: phase.title_hr,
 
                 description: phase.description,
+                description_sl: phase.description_sl,
+                description_hr: phase.description_hr,
 
                 completed: phase.completed,
 
@@ -283,7 +295,6 @@ export async function POST(req: NextRequest) {
               };
 
               // Only set dates if they exist
-
               if (phase.startDate) {
                 phaseData.startDate = phase.startDate;
               }
@@ -292,29 +303,50 @@ export async function POST(req: NextRequest) {
                 phaseData.endDate = phase.endDate;
               }
 
-              // Handle media if it exists
-
-              if (phase.media) {
-                phaseData.media = {
-                  create: {
-                    filename:
-                      phase.media.fileKey ||
-                      phase.media.url.split("/").pop() ||
-                      "unknown",
-
-                    url: phase.media.url,
-
-                    type: MediaType.IMAGE,
-
-                    mimeType: "image/jpeg",
-
-                    size: 0,
-                  },
-                };
+              // Handle media if it exists (multiple images per phase)
+              if (phase.media && Array.isArray(phase.media) && phase.media.length > 0) {
+                console.log(`Processing phase with ${phase.media.length} media items`);
+                
+                const phaseMediaItems = [];
+                
+                // Create all media items for this phase
+                for(let i = 0; i < phase.media.length; i++) {
+                  const img = phase.media[i];
+                  try {
+                    const media = await tx.media.create({
+                      data: {
+                        filename: img.fileKey || img.id || "unknown",
+                        url: img.url,
+                        type: MediaType.IMAGE,
+                        mimeType: "image/jpeg", 
+                        size: 0,
+                        alt: img.alt || null,
+                      },
+                    });
+                    
+                    // Add to phase media collection
+                    phaseMediaItems.push(media);
+                    
+                    // Set the first image as the primary phase media 
+                    if (i === 0) {
+                      phaseData.mediaId = media.id;
+                    }
+                  } catch (error) {
+                    console.error("Error creating phase media:", error);
+                  }
+                }
+                
+                // Handle additional images (beyond the primary one)
+                if (phaseMediaItems.length > 1) {
+                  // Store gallery connection data for all non-primary images
+                  phaseData.gallery = {
+                    connect: phaseMediaItems.slice(1).map(media => ({ id: media.id }))
+                  };
+                }
               }
 
               return phaseData;
-            }),
+            })),
           },
         },
 
@@ -332,6 +364,7 @@ export async function POST(req: NextRequest) {
           timeline: {
             include: {
               media: true,
+              gallery: true,
             },
 
             orderBy: {

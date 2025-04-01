@@ -3,8 +3,12 @@ import { create } from "zustand";
 
 export interface ProjectBasicInfo {
   name: string;
+  name_sl: string | null;
+  name_hr: string | null;
   slug: string;
   description: string | null;
+  description_sl: string | null;
+  description_hr: string | null;
   published: boolean;
   featured: boolean;
   heroImage: { url: string; fileKey: string } | null;
@@ -13,19 +17,22 @@ export interface ProjectBasicInfo {
 export interface ProjectPhase {
   id: string;
   title: string;
+  title_sl: string | null;
+  title_hr: string | null;
   description: string;
+  description_sl: string | null;
+  description_hr: string | null;
   startDate: Date | null | undefined;
   endDate: Date | null | undefined;
   completed: boolean;
   order: number;
-  media: {
-    url: string;
-  } | null;
+  media: ProjectImage[] | null;
 }
 
 export interface ProjectImage {
   id: string;
   url: string;
+  ufsUrl?: string;
   fileKey: string;
   alt: string | null;
 }
@@ -54,8 +61,12 @@ const initialState: ProjectFormState = {
   isLoading: false,
   basicInfo: {
     name: "",
+    name_sl: null,
+    name_hr: null,
     slug: "",
     description: null,
+    description_sl: null,
+    description_hr: null,
     published: false,
     featured: false,
     heroImage: null,

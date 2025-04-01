@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useCallback, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -13,7 +14,6 @@ import {
   GripVertical,
   X,
   Pencil,
-  Upload,
 } from "lucide-react";
 import * as z from "zod";
 
@@ -41,23 +41,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
-import { ProjectPhase } from "@/store/use-project-form";
-import { UploadDropzone } from "@/lib/uploadthing";
+import { ProjectPhase, ProjectImage } from "@/store/use-project-form";
+import { uploadFiles } from "@/lib/uploadthing";
+import { useDropzone } from "react-dropzone";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  title_sl: z.string().nullable(),
+  title_hr: z.string().nullable(),
   description: z.string().min(1, "Description is required"),
+  description_sl: z.string().nullable(),
+  description_hr: z.string().nullable(),
   startDate: z.date().optional().nullable(),
   endDate: z.date().optional().nullable(),
   completed: z.boolean().default(false),
@@ -76,21 +75,31 @@ export function TimelineEditor({
 }: TimelineEditorProps) {
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
-  const [phaseImage, setPhaseImage] = useState<{
-    url: string;
-    fileKey: string;
-  } | null>(null);
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [phaseImages, setPhaseImages] = useState<ProjectImage[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
 
   // Use refs to prevent re-renders of drag and drop while editing
   const phaseListRef = useRef(phases);
   phaseListRef.current = phases;
+  
+  // Debug current phases
+  useEffect(() => {
+    console.log("Current phases:", phases);
+  }, [phases]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
+      title_sl: null,
+      title_hr: null,
       description: "",
+      description_sl: null,
+      description_hr: null,
       startDate: null,
       endDate: null,
       completed: false,
@@ -116,10 +125,14 @@ export function TimelineEditor({
   const startEditing = (phase: ProjectPhase) => {
     setEditingPhaseId(phase.id);
     setIsAddingPhase(false);
-    setPhaseImage(phase.media ? { url: phase.media.url, fileKey: "" } : null);
+    setPhaseImages(phase.media || []);
     form.reset({
       title: phase.title,
+      title_sl: phase.title_sl || null,
+      title_hr: phase.title_hr || null,
       description: phase.description,
+      description_sl: phase.description_sl || null,
+      description_hr: phase.description_hr || null,
       startDate: phase.startDate ? new Date(phase.startDate) : null,
       endDate: phase.endDate ? new Date(phase.endDate) : null,
       completed: phase.completed,
@@ -131,14 +144,14 @@ export function TimelineEditor({
       id: crypto.randomUUID(),
       ...values,
       order: phases.length,
-      media: phaseImage ? { url: phaseImage.url } : null,
+      media: phaseImages.length > 0 ? phaseImages : null,
       startDate: values.startDate || undefined,
       endDate: values.endDate || undefined,
     };
 
     onChange([...phases, newPhase]);
     setIsAddingPhase(false);
-    setPhaseImage(null);
+    setPhaseImages([]);
     form.reset();
     toast.success("Phase added successfully");
   };
@@ -151,7 +164,7 @@ export function TimelineEditor({
         return {
           ...phase,
           ...values,
-          media: phaseImage ? { url: phaseImage.url } : null,
+          media: phaseImages.length > 0 ? phaseImages : null,
           startDate: values.startDate || undefined,
           endDate: values.endDate || undefined,
         };
@@ -161,7 +174,7 @@ export function TimelineEditor({
 
     onChange(updatedPhases);
     setEditingPhaseId(null);
-    setPhaseImage(null);
+    setPhaseImages([]);
     form.reset();
     toast.success("Phase updated successfully");
   };
@@ -193,51 +206,115 @@ export function TimelineEditor({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onUploadComplete = useCallback((result: any) => {
-    if (result?.[0]) {
-      setPhaseImage({
-        url: result[0].url,
-        fileKey: result[0].key,
-      });
-      setShowUploadDialog(false);
-      toast.success("Image uploaded successfully");
+  // Function to handle file selection via react-dropzone
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      // Optional: Limit the total number of images
+      if (phaseImages.length + acceptedFiles.length > 10) {
+        toast.error("You can upload a maximum of 10 images per phase");
+        return;
+      }
+      setSelectedFiles((prev) => [...prev, ...acceptedFiles]);
+    },
+    [phaseImages.length]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { "image/*": [] },
+    multiple: true,
+  });
+
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) {
+      toast.error("No files selected for upload");
+      return;
     }
-  }, []);
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setTotalFiles(selectedFiles.length);
+    setCurrentFileIndex(0);
+
+    try {
+      const uploadedImages: ProjectImage[] = [];
+      const failedUploads: string[] = [];
+      const maxRetries = 2;
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        setCurrentFileIndex(i);
+        // Calculate progress percentage based on current file index
+        setUploadProgress(Math.round((i / selectedFiles.length) * 100));
+        
+        let uploaded = false;
+        let retries = 0;
+
+        while (!uploaded && retries < maxRetries) {
+          try {
+            const res = await uploadFiles("imageUploader", {
+              files: [file], // Upload one file at a time
+            });
+
+            if (res && res.length > 0) {
+              const uploadedFile = res[0];
+              const newImage: ProjectImage = {
+                id: crypto.randomUUID(),
+                url: uploadedFile.ufsUrl || uploadedFile.url,
+                fileKey:
+                  uploadedFile.key ||
+                  (uploadedFile.ufsUrl || uploadedFile.url).split("/").pop() ||
+                  crypto.randomUUID(),
+                alt: null,
+              };
+              uploadedImages.push(newImage);
+              uploaded = true;
+            }
+          } catch (error: any) {
+            console.error(
+              `Failed to upload file ${file.name} (attempt ${retries + 1}):`,
+              error
+            );
+            retries++;
+
+            // Last retry failed
+            if (retries >= maxRetries) {
+              failedUploads.push(file.name);
+            }
+
+            // Small delay before retry
+            if (!uploaded && retries < maxRetries) {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+        }
+      }
+
+      // Set to 100% when complete
+      setUploadProgress(100);
+
+      // Handle results
+      if (uploadedImages.length > 0) {
+        setPhaseImages((prev) => [...prev, ...uploadedImages]);
+        toast.success(
+          `${uploadedImages.length} image(s) uploaded successfully`
+        );
+      }
+
+      if (failedUploads.length > 0) {
+        toast.error(`Failed to upload: ${failedUploads.join(", ")}`);
+      }
+
+      setSelectedFiles([]);
+    } catch (error: any) {
+      console.error("Upload failed:", error);
+      toast.error(`Upload process error: ${error.message || "Unknown error"}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // Separate upload dialog component
-  const ImageUploadDialog = useCallback(() => {
-    return (
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Upload image</DialogTitle>
-            <DialogDescription>
-              Upload an image for this phase
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid w-full gap-4 py-4">
-            <UploadDropzone
-              endpoint="imageUploader"
-              onClientUploadComplete={onUploadComplete}
-              onUploadError={(error: Error) => {
-                toast.error(`Upload failed: ${error.message}`);
-              }}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setShowUploadDialog(false)}
-            >
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }, [showUploadDialog, onUploadComplete]);
 
   // Separate edit form from the timeline view
   if (isAddingPhase || editingPhaseId) {
@@ -261,41 +338,157 @@ export function TimelineEditor({
               )}
               className="space-y-4"
             >
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phase Title</FormLabel>
-                    <FormControl>
-                      <Input
-                        disabled={isLoading}
-                        placeholder="Enter phase title"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Phase Title</h3>
+                <Tabs defaultValue="en" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="sl">Slovenian</TabsTrigger>
+                    <TabsTrigger value="hr">Croatian</TabsTrigger>
+                  </TabsList>
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        disabled={isLoading}
-                        placeholder="Describe this phase"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <TabsContent value="en" className="mt-0">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="Enter phase title"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="sl" className="mt-0">
+                    <FormField
+                      control={form.control}
+                      name="title_sl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="Enter Slovenian phase title"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) =>
+                                field.onChange(e.target.value || null)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="hr" className="mt-0">
+                    <FormField
+                      control={form.control}
+                      name="title_hr"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="Enter Croatian phase title"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) =>
+                                field.onChange(e.target.value || null)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Phase Description</h3>
+                <Tabs defaultValue="en" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="sl">Slovenian</TabsTrigger>
+                    <TabsTrigger value="hr">Croatian</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="en" className="mt-0">
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              disabled={isLoading}
+                              placeholder="Describe this phase"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="sl" className="mt-0">
+                    <FormField
+                      control={form.control}
+                      name="description_sl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              disabled={isLoading}
+                              placeholder="Describe this phase in Slovenian"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) =>
+                                field.onChange(e.target.value || null)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="hr" className="mt-0">
+                    <FormField
+                      control={form.control}
+                      name="description_hr"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              disabled={isLoading}
+                              placeholder="Describe this phase in Croatian"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) =>
+                                field.onChange(e.target.value || null)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
 
               <div className="flex flex-col md:flex-row gap-4">
                 <FormField
@@ -408,43 +601,95 @@ export function TimelineEditor({
               </div>
 
               <FormItem>
-                <FormLabel>Phase Image</FormLabel>
-                <div className="flex items-center gap-x-4">
-                  <div className="relative h-24 w-24">
-                    {phaseImage ? (
-                      <>
-                        <Image
-                          src={phaseImage.url}
-                          alt="Phase image"
-                          fill
-                          className="object-cover rounded-md"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground"
-                          onClick={() => {
-                            setPhaseImage(null);
-                          }}
+                <FormLabel>Phase Images</FormLabel>
+                <div className="space-y-6">
+                  {/* Gallery Grid */}
+                  {phaseImages.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {phaseImages.map((image) => (
+                        <div
+                          key={image.id}
+                          className="group relative aspect-square rounded-lg overflow-hidden border"
                         >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <div className="h-full w-full bg-secondary rounded-md flex items-center justify-center">
-                        <Upload className="h-10 w-10 text-muted-foreground/40" />
+                          <Image
+                            src={image.url}
+                            alt={image.alt || "Phase image"}
+                            fill
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="h-8 px-2"
+                              onClick={() => {
+                                setPhaseImages(
+                                  phaseImages.filter(
+                                    (img) => img.id !== image.id
+                                  )
+                                );
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload Section */}
+                  <div className="flex flex-col items-center border-2 border-dashed rounded-lg p-6">
+                    <div
+                      {...getRootProps()}
+                      className="w-full h-32 flex flex-col items-center justify-center cursor-pointer"
+                    >
+                      <input {...getInputProps()} />
+                      {isDragActive ? (
+                        <p>Drop the files here ...</p>
+                      ) : (
+                        <p>
+                          Drag & drop some files here, or click to select files
+                        </p>
+                      )}
+                    </div>
+                    {selectedFiles.length > 0 && (
+                      <div className="mt-4 w-full">
+                        <h4 className="text-sm font-medium">Selected Files:</h4>
+                        <ul className="list-disc list-inside">
+                          {selectedFiles.map((file, index) => (
+                            <li key={index}>
+                              {file.name} - {(file.size / 1024).toFixed(2)} KB
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="space-y-2 w-full">
+                          <Button
+                            onClick={handleUpload}
+                            disabled={isUploading || isLoading}
+                            className="mt-4 w-full"
+                          >
+                            {isUploading ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Uploading {uploadProgress}% - File {currentFileIndex + 1}/{totalFiles}
+                              </>
+                            ) : (
+                              "Upload Selected Images"
+                            )}
+                          </Button>
+                          
+                          {isUploading && (
+                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary transition-all duration-300 ease-in-out" 
+                                style={{ width: `${uploadProgress}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
-                  </div>
-                  <div className="space-y-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowUploadDialog(true)}
-                    >
-                      Upload Image
-                    </Button>
                   </div>
                 </div>
               </FormItem>
@@ -474,7 +719,7 @@ export function TimelineEditor({
                   onClick={() => {
                     setEditingPhaseId(null);
                     setIsAddingPhase(false);
-                    setPhaseImage(null);
+                    setPhaseImages([]);
                     form.reset();
                   }}
                 >
@@ -489,7 +734,6 @@ export function TimelineEditor({
               </div>
             </form>
           </Form>
-          <ImageUploadDialog />
         </CardContent>
       </Card>
     );
@@ -575,14 +819,19 @@ export function TimelineEditor({
                                 )}
                               </div>
                             </div>
-                            {phase.media && (
+                            {phase.media && phase.media.length > 0 && (
                               <div className="relative h-16 w-16 rounded-md overflow-hidden">
                                 <Image
-                                  src={phase.media.url}
-                                  alt={phase.title}
+                                  src={phase.media[0].url}
+                                  alt={phase.media[0].alt || phase.title}
                                   fill
                                   className="object-cover"
                                 />
+                                {phase.media.length > 1 && (
+                                  <div className="absolute bottom-0 right-0 bg-black/70 text-white text-xs px-1 rounded-tl">
+                                    +{phase.media.length - 1}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

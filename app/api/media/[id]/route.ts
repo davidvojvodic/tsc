@@ -40,7 +40,9 @@ export async function DELETE(
         teachers: true,
         projectHero: true,
         projectGallery: true,
-        projectPhases: true,
+        primaryForPhases: true,
+        phaseGalleries: true,
+        testimonials: true,
       },
     });
 
@@ -55,7 +57,9 @@ export async function DELETE(
       media.teachers.length > 0 ||
       media.projectHero.length > 0 ||
       media.projectGallery.length > 0 ||
-      media.projectPhases.length > 0;
+      media.primaryForPhases.length > 0 ||
+      media.phaseGalleries.length > 0 ||
+      media.testimonials.length > 0;
 
     if (isInUse) {
       return new NextResponse(

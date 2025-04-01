@@ -30,7 +30,8 @@ export default async function ProjectPage({ params }: PageParams) {
           },
           timeline: {
             include: {
-              media: true, // Ensure 'media' includes 'id' and 'url'
+              media: true, // Primary media
+              gallery: true, // Gallery of images (new relation)
             },
             orderBy: {
               order: "asc",
@@ -78,7 +79,14 @@ export default async function ProjectPage({ params }: PageParams) {
           startDate: phase.startDate ?? undefined, // Convert 'null' to 'undefined'
           endDate: phase.endDate ?? undefined, // Convert 'null' to 'undefined'
           completed: phase.completed,
-          mediaId: phase.media?.url, // Map 'media.id' to 'mediaId'
+          mediaId: phase.media?.id, // Primary media ID
+          mediaUrl: phase.media?.url, // Primary media URL
+          // Include gallery images if available
+          galleryImages: phase.gallery?.map(img => ({
+            id: img.id,
+            url: img.url,
+            alt: img.alt
+          })) || []
           // Removed 'order' since it's not defined in ProjectFormData
         })),
         teachers: project.teachers.map((teacher) => ({

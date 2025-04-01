@@ -34,6 +34,7 @@ async function getProject(slug: string) {
       timeline: {
         include: {
           media: true,
+          gallery: true,
         },
         orderBy: {
           order: "asc",

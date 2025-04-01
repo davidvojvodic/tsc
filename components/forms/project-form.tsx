@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ProjectFormData, Teacher } from "@/lib/types";
+import { ProjectPhase as StoreProjectPhase, ProjectImage } from "@/store/use-project-form";
 import { Check, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useProjectForm } from "@/store/use-project-form";
 import { BasicForm } from "../project/basic-form";
@@ -73,8 +74,12 @@ export function ProjectForm({
     if (initialData) {
       setBasicInfo({
         name: initialData.name,
+        name_sl: initialData.name_sl || null,
+        name_hr: initialData.name_hr || null,
         slug: initialData.slug,
         description: initialData.description || "",
+        description_sl: initialData.description_sl || null,
+        description_hr: initialData.description_hr || null,
         published: initialData.published,
         featured: initialData.featured,
         heroImage: initialData.heroImage
@@ -86,17 +91,46 @@ export function ProjectForm({
       });
 
       // Transform timeline data
-      const transformedTimeline = initialData.timeline.map((phase, index) => ({
-        ...phase,
-        startDate: phase.startDate ? new Date(phase.startDate) : null,
-        endDate: phase.endDate ? new Date(phase.endDate) : null,
-        order: index,
-        media: phase.mediaId ? { url: phase.mediaId } : null,
-      }));
+      const transformedTimeline = initialData.timeline.map((phase, index) => {
+        // Create a properly typed ProjectPhase object
+        const typedPhase: StoreProjectPhase = {
+          id: phase.id,
+          title: phase.title,
+          title_sl: phase.title_sl || null,
+          title_hr: phase.title_hr || null,
+          description: phase.description,
+          description_sl: phase.description_sl || null,
+          description_hr: phase.description_hr || null,
+          startDate: phase.startDate ? new Date(phase.startDate) : null,
+          endDate: phase.endDate ? new Date(phase.endDate) : null,
+          completed: phase.completed,
+          order: index,
+          // Combine primary media and gallery images
+          media: [
+            // Add primary media if exists
+            ...(phase.mediaId && phase.mediaUrl ? [{ 
+              id: phase.mediaId,
+              url: phase.mediaUrl,
+              fileKey: phase.mediaId,
+              alt: null
+            }] : []),
+            // Add gallery images if any
+            ...(phase.galleryImages && phase.galleryImages.length > 0 ? 
+              phase.galleryImages.map(img => ({
+                id: img.id,
+                url: img.url,
+                fileKey: img.id,
+                alt: img.alt || null
+              })) 
+              : [])
+          ]
+        };
+        return typedPhase;
+      });
       setTimeline(transformedTimeline);
 
       // Transform gallery data
-      const transformedGallery = initialData.gallery.map((img) => ({
+      const transformedGallery: ProjectImage[] = initialData.gallery.map((img) => ({
         id: img.id,
         url: img.url,
         fileKey: img.id,
@@ -118,7 +152,8 @@ export function ProjectForm({
       case 1:
         return timeline.length > 0;
       case 2:
-        return gallery.length > 0;
+        // Allow proceeding even without images
+        return true;
       case 3:
         return teachers.length > 0;
       default:
@@ -145,9 +180,12 @@ export function ProjectForm({
     try {
       setIsLoading(true);
 
+      // Do NOT combine phase media into the main gallery
+      // Keep gallery and timeline media separate
       const formData = {
         basicInfo,
         timeline,
+        // Only include explicitly added gallery images
         gallery: gallery.map(({ ...rest }) => rest),
         teacherIds: teachers,
       };

@@ -6,13 +6,6 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, ArrowLeft, Calendar, Expand } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -20,13 +13,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { GalleryView } from "@/components/project/gallery-view";
+import { GalleryView, GalleryImage } from "@/components/project/gallery-view";
 import { ProjectTeam } from "@/components/project/project-team";
 import { RichTextDisplay } from "@/components/rich-text-content";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 // Define types for the project and related data
 interface Project {
@@ -83,9 +84,20 @@ interface Project {
     endDate: Date | null;
     completed: boolean;
     order: number;
-    media: {
+    media:
+      | {
+          id: string;
+          url: string;
+        }[]
+      | {
+          id: string;
+          url: string;
+        }
+      | null;
+    gallery?: {
+      id: string;
       url: string;
-    } | null;
+    }[];
   }[];
 }
 
@@ -113,6 +125,7 @@ const getTranslations = (language: SupportedLanguage) => {
       learningResources: "Learning Resources",
       takeQuiz: "Take this quiz to test your knowledge",
       startQuiz: "Start Quiz",
+      projectGallery: "Project Gallery",
     },
     sl: {
       backToProjects: "Nazaj na projekte",
@@ -131,6 +144,7 @@ const getTranslations = (language: SupportedLanguage) => {
       learningResources: "Učni viri",
       takeQuiz: "Rešite ta kviz, da preverite svoje znanje",
       startQuiz: "Začni kviz",
+      projectGallery: "Galerija projekta",
     },
     hr: {
       backToProjects: "Natrag na projekte",
@@ -149,6 +163,7 @@ const getTranslations = (language: SupportedLanguage) => {
       learningResources: "Obrazovni resursi",
       takeQuiz: "Riješite ovaj kviz da testirate svoje znanje",
       startQuiz: "Započni kviz",
+      projectGallery: "Galerija projekta",
     },
   };
 
@@ -176,33 +191,124 @@ export function ProjectDetailPage({
     (completedPhases / project.timeline.length) * 100
   );
 
+  // Combine all project media for the gallery - no need to separate by phase for the main gallery
+  const allProjectImages: GalleryImage[] = [
+    // Regular gallery images
+    ...(project.gallery || []).map((img) => ({
+      id: img.id,
+      url: img.url,
+      alt: projectName || project.name,
+    })),
+
+    // Get all phase images in a flat list
+    ...(project.timeline || []).flatMap((phase) => {
+      const images: GalleryImage[] = [];
+
+      // Add primary media if it exists
+      if (phase.media) {
+        if (
+          !Array.isArray(phase.media) &&
+          typeof phase.media === "object" &&
+          phase.media.url
+        ) {
+          images.push({
+            id: phase.id + "-media",
+            url: phase.media.url,
+            alt: getLocalizedContent(phase, "title", language) || phase.title,
+          });
+        } else if (Array.isArray(phase.media)) {
+          phase.media.forEach((img) => {
+            images.push({
+              id: img.id,
+              url: img.url,
+              alt: getLocalizedContent(phase, "title", language) || phase.title,
+            });
+          });
+        }
+      }
+
+      // Add gallery images
+      if (
+        phase.gallery &&
+        Array.isArray(phase.gallery) &&
+        phase.gallery.length > 0
+      ) {
+        phase.gallery.forEach((img) => {
+          images.push({
+            id: img.id,
+            url: img.url,
+            alt: getLocalizedContent(phase, "title", language) || phase.title,
+          });
+        });
+      }
+
+      return images;
+    }),
+  ];
+
   return (
     <Container>
-      {/* Hero Section */}
-      <div className="relative h-[50vh] min-h-[400px] w-full mb-10 rounded-xl overflow-hidden">
-        {project.heroImage ? (
-          <Image
-            src={project.heroImage.url}
-            alt={projectName || project.name}
-            fill
-            className="object-cover"
-            priority
-          />
-        ) : (
-          <div className="absolute inset-0 bg-muted" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
-
-        <div className="absolute bottom-0 left-0 right-0 p-8">
-          <Button asChild variant="outline" size="sm" className="mb-6">
-            <Link href={`${prefix}/projects`}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
+      {/* Improved Hero Section with better text visibility */}
+      <div className="relative w-full my-12">
+        {/* Back button - placed outside for visibility and consistency */}
+        <div className="mb-4">
+          <Button asChild variant="outline" size="sm" className="group">
+            <Link
+              href={`${prefix}/projects`}
+              className="flex items-center text-sm font-medium"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
               {t.backToProjects}
             </Link>
           </Button>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-            {projectName || project.name}
-          </h1>
+        </div>
+
+        {/* Hero container */}
+        <div className="w-full rounded-xl overflow-hidden shadow-lg">
+          {/* Project title card - always visible regardless of image color */}
+          <div className="relative z-10 bg-card border-b">
+            <div className="container px-6 py-6">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                {project.timeline.length > 0 &&
+                  project.timeline[0].startDate && (
+                    <Badge variant="secondary">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {format(project.timeline[0].startDate, "MMM yyyy")}
+                    </Badge>
+                  )}
+
+                <Badge variant="secondary">
+                  <BrainCircuit className="h-3 w-3 mr-1" />
+                  {completionPercentage}% {t.completed}
+                </Badge>
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
+                {projectName || project.name}
+              </h1>
+            </div>
+          </div>
+
+          {/* Hero image section */}
+          <div className="relative h-[40vh] md:h-[50vh] w-full">
+            {project.heroImage ? (
+              <Image
+                src={project.heroImage.url}
+                alt={projectName || project.name}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, 1200px"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-muted flex items-center justify-center">
+                <div className="p-8 text-center text-muted-foreground">
+                  <BrainCircuit className="mx-auto h-16 w-16 mb-4 opacity-20" />
+                  <p>{t.projectOverview}</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -305,41 +411,173 @@ export function ProjectDetailPage({
                           <h3 className="text-xl font-semibold mb-2">
                             {phaseTitle || phase.title}
                           </h3>
-                          <p className="text-muted-foreground mb-4">
-                            {phaseDescription || phase.description}
-                          </p>
 
-                          {phase.media && (
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <div className="relative h-[200px] w-full sm:w-[300px] rounded-lg overflow-hidden cursor-pointer group">
-                                  <Image
-                                    src={phase.media.url}
-                                    alt={phaseTitle || phase.title}
-                                    fill
-                                    className="object-cover transition-transform group-hover:scale-105"
-                                  />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <Expand className="w-8 h-8 text-white" />
+                          <div className="mb-4">
+                            <RichTextDisplay
+                              content={
+                                phaseDescription || phase.description || ""
+                              }
+                              className="text-muted-foreground prose-sm"
+                            />
+                          </div>
+
+                          {/* Phase images - matching gallery style from project details page */}
+                          {(phase.media ||
+                            (phase.gallery && phase.gallery.length > 0)) && (
+                            <div className="mt-4">
+                              {(() => {
+                                // Collect all images for this phase
+                                const phaseImages = [
+                                  // Include primary media (handle both array and single object forms)
+                                  ...(phase.media
+                                    ? Array.isArray(phase.media)
+                                      ? phase.media
+                                      : [
+                                          {
+                                            id:
+                                              typeof phase.media === "object" &&
+                                              phase.media !== null
+                                                ? phase.media.id
+                                                : `${phase.id}-media`,
+                                            url:
+                                              typeof phase.media === "object" &&
+                                              phase.media !== null
+                                                ? phase.media.url
+                                                : "",
+                                          },
+                                        ].filter((img) => img.url) // Filter out empty URLs
+                                    : []),
+                                  // Include gallery images
+                                  ...(phase.gallery || []),
+                                ].filter((img) => img && img.url);
+
+                                if (phaseImages.length === 0) return null;
+
+                                // Format images for gallery
+                                const galleryImages = phaseImages.map(
+                                  (img) => ({
+                                    id: img.id,
+                                    url: img.url,
+                                    alt: phaseTitle || phase.title,
+                                  })
+                                );
+
+                                // If only 1 image, display a simple thumbnail
+                                if (phaseImages.length === 1) {
+                                  return (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <div className="group relative aspect-square w-40 rounded-md overflow-hidden bg-muted cursor-pointer">
+                                          <Image
+                                            src={phaseImages[0].url}
+                                            alt={phaseTitle || phase.title}
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, 160px"
+                                            className="object-cover transition-transform group-hover:scale-105"
+                                            loading="lazy"
+                                          />
+                                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Expand className="w-6 h-6 text-white" />
+                                          </div>
+                                        </div>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-4xl">
+                                        <div className="py-1">
+                                          <h3 className="text-lg font-medium">
+                                            {phaseTitle || phase.title}
+                                          </h3>
+                                        </div>
+                                        <Carousel className="w-full">
+                                          <CarouselContent>
+                                            {galleryImages.map((img) => (
+                                              <CarouselItem key={img.id}>
+                                                <div className="relative h-[60vh] max-h-[600px] w-full">
+                                                  <Image
+                                                    src={img.url}
+                                                    alt={
+                                                      img.alt || "Project image"
+                                                    }
+                                                    fill
+                                                    sizes="(max-width: 768px) 100vw, 80vw"
+                                                    className="object-contain"
+                                                  />
+                                                </div>
+                                              </CarouselItem>
+                                            ))}
+                                          </CarouselContent>
+                                          <CarouselPrevious />
+                                          <CarouselNext />
+                                        </Carousel>
+                                      </DialogContent>
+                                    </Dialog>
+                                  );
+                                }
+
+                                // For multiple images, use a grid of thumbnails
+                                return (
+                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-w-xl">
+                                    {phaseImages
+                                      .slice(0, 4)
+                                      .map((image, index) => (
+                                        <Dialog key={image.id}>
+                                          <DialogTrigger asChild>
+                                            <div className="group relative aspect-square rounded-md overflow-hidden bg-muted cursor-pointer">
+                                              <Image
+                                                src={image.url}
+                                                alt={phaseTitle || phase.title}
+                                                fill
+                                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                                className="object-cover transition-transform group-hover:scale-105"
+                                                loading="lazy"
+                                              />
+                                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <Expand className="w-6 h-6 text-white" />
+                                              </div>
+
+                                              {/* Show +X more on last visible thumbnail if needed */}
+                                              {index === 3 &&
+                                                phaseImages.length > 4 && (
+                                                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-medium">
+                                                    +{phaseImages.length - 4}
+                                                  </div>
+                                                )}
+                                            </div>
+                                          </DialogTrigger>
+                                          <DialogContent className="max-w-4xl">
+                                            <div className="py-1">
+                                              <h3 className="text-lg font-medium">
+                                                {phaseTitle || phase.title}
+                                              </h3>
+                                            </div>
+                                            <Carousel className="w-full">
+                                              <CarouselContent>
+                                                {galleryImages.map((img) => (
+                                                  <CarouselItem key={img.id}>
+                                                    <div className="relative h-[60vh] max-h-[600px] w-full">
+                                                      <Image
+                                                        src={img.url}
+                                                        alt={
+                                                          img.alt ||
+                                                          "Project image"
+                                                        }
+                                                        fill
+                                                        sizes="(max-width: 768px) 100vw, 80vw"
+                                                        className="object-contain"
+                                                      />
+                                                    </div>
+                                                  </CarouselItem>
+                                                ))}
+                                              </CarouselContent>
+                                              <CarouselPrevious />
+                                              <CarouselNext />
+                                            </Carousel>
+                                          </DialogContent>
+                                        </Dialog>
+                                      ))}
                                   </div>
-                                </div>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-3xl">
-                                <DialogHeader>
-                                  <DialogTitle>
-                                    {phaseTitle || phase.title}
-                                  </DialogTitle>
-                                </DialogHeader>
-                                <div className="relative h-[600px] w-full">
-                                  <Image
-                                    src={phase.media.url}
-                                    alt={phaseTitle || phase.title}
-                                    fill
-                                    className="object-contain"
-                                  />
-                                </div>
-                              </DialogContent>
-                            </Dialog>
+                                );
+                              })()}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -358,14 +596,12 @@ export function ProjectDetailPage({
             <ProjectTeam teachers={project.teachers} language={language} />
           )}
 
-          {/* Gallery */}
-          {project.gallery.length > 0 && (
+          {/* Combined Gallery - optimized version */}
+          {allProjectImages.length > 0 && (
             <GalleryView
-              images={project.gallery.map((img) => ({
-                id: img.id,
-                url: img.url,
-                alt: null,
-              }))}
+              images={allProjectImages}
+              title={t.projectGallery}
+              columns={4} // We now handle responsive columns inside the component
             />
           )}
           {/* Resources */}

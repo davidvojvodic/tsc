@@ -179,7 +179,11 @@ model Media {
   teachers       Teacher[]
   projectHero    Project[]      @relation("ProjectHero")
   projectGallery Project[]      @relation("ProjectGallery")
-  projectPhases  ProjectPhase[]
+  
+  // Project phase relations
+  primaryForPhases  ProjectPhase[] @relation("PhasePrimaryMedia")
+  phaseGalleries    ProjectPhase[] @relation("PhaseGallery")
+  
   testimonials   Testimonial[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -365,8 +369,12 @@ model ProjectPhase {
   completed      Boolean   @default(false)
   order          Int
 
-  media   Media?  @relation(fields: [mediaId], references: [id])
+  // Primary media (for backwards compatibility)
+  media   Media?  @relation("PhasePrimaryMedia", fields: [mediaId], references: [id])
   mediaId String?
+  
+  // Gallery of media items for this phase
+  gallery Media[] @relation("PhaseGallery")
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId String

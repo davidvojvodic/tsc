@@ -1,13 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // components/project/gallery-editor.tsx
 
 "use client";
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { uploadFiles } from "@/lib/uploadthing"; // Ensure this is correctly exported
 import { useDropzone } from "react-dropzone";
-import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -16,32 +16,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ProjectImage } from "@/store/use-project-form";
 
-const altTextSchema = z.object({
-  alt: z.string().max(100, "Alt text cannot exceed 100 characters").nullable(),
-});
+import { ProjectImage } from "@/store/use-project-form";
 
 interface GalleryEditorProps {
   value: ProjectImage[];
@@ -54,16 +30,11 @@ export function GalleryEditor({
   onChange,
   isLoading = false,
 }: GalleryEditorProps) {
-  const [selectedImage, setSelectedImage] = useState<ProjectImage | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-
-  const form = useForm<z.infer<typeof altTextSchema>>({
-    resolver: zodResolver(altTextSchema),
-    defaultValues: {
-      alt: null,
-    },
-  });
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
 
   // Function to handle file selection via react-dropzone
   const onDrop = useCallback(
@@ -91,33 +62,68 @@ export function GalleryEditor({
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setTotalFiles(selectedFiles.length);
+    setCurrentFileIndex(0);
 
     try {
       const uploadedImages: ProjectImage[] = [];
+      const failedUploads: string[] = [];
+      const maxRetries = 2;
 
-      for (const file of selectedFiles) {
-        try {
-          const res = await uploadFiles("imageUploader", {
-            files: [file], // Upload one file at a time
-          });
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        setCurrentFileIndex(i);
+        // Calculate progress percentage based on current file index
+        setUploadProgress(Math.round((i / selectedFiles.length) * 100));
 
-          if (res && res.length > 0) {
-            const uploadedFile = res[0];
-            const newImage: ProjectImage = {
-              id: crypto.randomUUID(),
-              url: uploadedFile.url,
-              fileKey: uploadedFile.key,
-              alt: null,
-            };
-            uploadedImages.push(newImage);
+        let uploaded = false;
+        let retries = 0;
+
+        while (!uploaded && retries < maxRetries) {
+          try {
+            const res = await uploadFiles("imageUploader", {
+              files: [file], // Upload one file at a time
+            });
+
+            if (res && res.length > 0) {
+              const uploadedFile = res[0];
+              const newImage: ProjectImage = {
+                id: crypto.randomUUID(),
+                url: uploadedFile.ufsUrl || uploadedFile.url,
+                fileKey:
+                  uploadedFile.key ||
+                  (uploadedFile.ufsUrl || uploadedFile.url).split("/").pop() ||
+                  crypto.randomUUID(),
+                alt: null,
+              };
+              uploadedImages.push(newImage);
+              uploaded = true;
+            }
+          } catch (error: any) {
+            console.error(
+              `Failed to upload file ${file.name} (attempt ${retries + 1}):`,
+              error
+            );
+            retries++;
+
+            // Last retry failed
+            if (retries >= maxRetries) {
+              failedUploads.push(file.name);
+            }
+
+            // Small delay before retry
+            if (!uploaded && retries < maxRetries) {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
           }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-          console.error(`Failed to upload file ${file.name}:`, error);
-          toast.error(`Failed to upload ${file.name}: ${error.message}`);
         }
       }
 
+      // Set to 100% when done
+      setUploadProgress(100);
+
+      // Handle results
       if (uploadedImages.length > 0) {
         onChange([...value, ...uploadedImages]);
         toast.success(
@@ -125,31 +131,17 @@ export function GalleryEditor({
         );
       }
 
+      if (failedUploads.length > 0) {
+        toast.error(`Failed to upload: ${failedUploads.join(", ")}`);
+      }
+
       setSelectedFiles([]);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Upload failed:", error);
-      toast.error(`Upload failed: ${error.message}`);
+      toast.error(`Upload process error: ${error.message || "Unknown error"}`);
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const handleImageDelete = (imageId: string) => {
-    onChange(value.filter((img) => img.id !== imageId));
-    toast.success("Image deleted successfully");
-  };
-
-  const handleUpdateAltText = (values: z.infer<typeof altTextSchema>) => {
-    if (!selectedImage) return;
-
-    const updatedImages = value.map((img) =>
-      img.id === selectedImage.id ? { ...img, alt: values.alt } : img
-    );
-
-    onChange(updatedImages);
-    toast.success("Image updated successfully");
-    setSelectedImage(null);
   };
 
   return (
@@ -193,7 +185,8 @@ export function GalleryEditor({
                   {isUploading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Uploading...
+                      Uploading {uploadProgress}% - File {currentFileIndex + 1}/
+                      {totalFiles}
                     </>
                   ) : (
                     "Upload Selected Images"
@@ -203,104 +196,38 @@ export function GalleryEditor({
             )}
           </div>
 
-          {/* Gallery Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {value.map((image) => (
-              <div
-                key={image.id}
-                className="group relative aspect-square rounded-lg overflow-hidden border"
-              >
-                <Image
-                  src={image.url}
-                  alt={image.alt || "Gallery image"}
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  {/* Edit Image Details */}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => {
-                          setSelectedImage(image);
-                          form.reset({ alt: image.alt });
-                        }}
-                      >
-                        Edit
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <Form {...form}>
-                        <form onSubmit={form.handleSubmit(handleUpdateAltText)}>
-                          <DialogHeader>
-                            <DialogTitle>Edit Image Details</DialogTitle>
-                            <DialogDescription>
-                              Update the alternative text for this image
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="relative aspect-video">
-                              <Image
-                                src={image.url}
-                                alt={image.alt || "Gallery image"}
-                                fill
-                                className="object-cover rounded-lg"
-                              />
-                            </div>
-                            <FormField
-                              control={form.control}
-                              name="alt"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Alternative Text</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      placeholder="Describe this image"
-                                      {...field}
-                                      value={field.value || ""}
-                                      onChange={(e) =>
-                                        field.onChange(e.target.value || null)
-                                      }
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button type="button" variant="outline">
-                                Cancel
-                              </Button>
-                            </DialogClose>
-                            <Button type="submit" disabled={isLoading}>
-                              {isLoading && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              )}
-                              Save Changes
-                            </Button>
-                          </DialogFooter>
-                        </form>
-                      </Form>
-                    </DialogContent>
-                  </Dialog>
-                  {/* Delete Image */}
+          {/* Simple Gallery Status Message */}
+          <div className="space-y-2">
+            {value.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">
+                No images uploaded yet. Upload images using the area above.
+              </p>
+            ) : (
+              <div className="border rounded-lg p-4 text-center">
+                <h3 className="font-medium">
+                  {value.length} {value.length === 1 ? "image" : "images"}{" "}
+                  uploaded successfully
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Images will be displayed on the project page after saving.
+                </p>
+
+                {/* Hidden button to manage images if needed */}
+                <div className="mt-4">
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
-                    className="h-8 px-2"
-                    onClick={() => handleImageDelete(image.id)}
-                    disabled={isLoading}
-                    aria-label={`Delete image ${image.id}`}
+                    type="button"
+                    onClick={() => {
+                      toast.info(`Removed all ${value.length} images`);
+                      onChange([]);
+                    }}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    Clear All Images
                   </Button>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </CardContent>

@@ -55,6 +55,8 @@ export interface GalleryImage {
 
   url: string;
 
+  ufsUrl?: string;
+
   alt: string | null; // Changed to match your Prisma schema
 }
 
@@ -62,10 +64,14 @@ export interface ProjectFormData {
   id: string;
 
   name: string;
+  name_sl?: string | null;
+  name_hr?: string | null;
 
   slug: string;
 
   description: string | null;
+  description_sl?: string | null;
+  description_hr?: string | null;
 
   published: boolean;
 
@@ -81,8 +87,12 @@ export interface ProjectFormData {
     id: string;
 
     title: string;
+    title_sl?: string | null;
+    title_hr?: string | null;
 
     description: string;
+    description_sl?: string | null;
+    description_hr?: string | null;
 
     startDate: Date | null | undefined | string;
 
@@ -91,6 +101,12 @@ export interface ProjectFormData {
     completed: boolean;
 
     mediaId?: string;
+    mediaUrl?: string;
+    galleryImages?: Array<{
+      id: string;
+      url: string;
+      alt?: string | null;
+    }>;
   }>;
 
   gallery: Array<{

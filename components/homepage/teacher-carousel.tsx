@@ -78,7 +78,7 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
             }}
             plugins={[
               Autoplay({
-                delay: 2500,
+                delay: 4500,
               }),
             ]}
             className="w-full"

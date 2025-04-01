@@ -34,7 +34,7 @@ export default function LiveStreams({
       ) : (
         <iframe
           src={`https://www.youtube.com/embed/${youtubeIds.mbLocation}?autoplay=1&mute=0`}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           referrerPolicy="strict-origin-when-cross-origin"
           allowFullScreen
           className="absolute inset-0 h-full w-full"

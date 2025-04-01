@@ -16,6 +16,18 @@ const nextConfig = {
                 pathname: '/**',
             },
             {
+                protocol: 'https', 
+                hostname: '*.ufs.sh',
+                port: '',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'ymmxz2wp1b.ufs.sh',
+                port: '',
+                pathname: '/**',
+            },
+            {
                 protocol: 'http',
                 hostname: 'localhost',
                 port: '3000',

@@ -101,7 +101,7 @@ const getTranslations = (language: SupportedLanguage) => {
 // Function to generate localized routes
 const getLocalizedRoutes = (language: SupportedLanguage) => {
   const prefix = language === "en" ? "" : `/${language}`;
-  
+
   return {
     forgotPassword: `${prefix}/forgot-password`,
     register: `${prefix}/register`,
@@ -111,11 +111,15 @@ const getLocalizedRoutes = (language: SupportedLanguage) => {
   };
 };
 
-export default function LoginPage({ language = "en" }: { language: SupportedLanguage }) {
+export default function LoginPage({
+  language = "en",
+}: {
+  language: SupportedLanguage;
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  
+
   // Get translations and routes
   const t = getTranslations(language);
   const routes = getLocalizedRoutes(language);
@@ -183,12 +187,10 @@ export default function LoginPage({ language = "en" }: { language: SupportedLang
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto my-20">
       <CardHeader>
         <CardTitle>{t.title}</CardTitle>
-        <CardDescription>
-          {t.description}
-        </CardDescription>
+        <CardDescription>{t.description}</CardDescription>
       </CardHeader>
 
       <CardContent>

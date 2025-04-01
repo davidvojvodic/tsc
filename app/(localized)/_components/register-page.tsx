@@ -190,7 +190,7 @@ export default function RegisterPage({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center my-20">
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
           <CardTitle>{t.title}</CardTitle>

@@ -66,7 +66,7 @@ export default async function HomePage() {
       <SchoolsSection />
       <LiveStreams
         youtubeIds={{
-          mbLocation: "cmVd2UE3sxE",
+          mbLocation: "-janKd7NDLM",
           // dubrovnikLocation will be added later when available
         }}
       />

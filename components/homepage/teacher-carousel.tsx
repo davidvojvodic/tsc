@@ -36,6 +36,7 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
     new Set()
   );
   const { language } = useLanguage();
+  const [key, setKey] = React.useState(0);
 
   const handleTeacherClick = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
@@ -44,6 +45,13 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
 
   const handleImageLoad = (teacherId: string) => {
     setLoadedImages((prev) => new Set(prev).add(teacherId));
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setOpen(open);
+    if (!open) {
+      setKey((prev) => prev + 1);
+    }
   };
 
   if (!teachers.length) {
@@ -78,6 +86,7 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
           {/* Right gradient overlay */}
           <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-background to-transparent z-10" />
           <Carousel
+            key={key}
             opts={{
               align: "start",
               loop: true,
@@ -205,7 +214,7 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
       <TeacherDialog
         teacher={selectedTeacher as Teacher}
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={handleOpenChange}
       />
     </>
   );

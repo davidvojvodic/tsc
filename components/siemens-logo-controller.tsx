@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-comment-textnodes */
 "use client";
 import React, { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -46,32 +47,15 @@ export default function SiemensLogoController({
         `Testing connection to ${controller.hostname}:${controller.port}...`
       );
 
-      // Intentionally use an invalid URL to trigger the error
-      const badURL = controllerUrl.replace(
-        "194.249.165.38",
-        "invalid.host.name"
-      );
+      // Simply display a simulated error message instead of actually making a failing request
+      setTimeout(() => {
+        setConnectionError(
+          "Connection error: Failed to connect to Siemens LOGO controller. The server returned status code 403 (Forbidden)."
+        );
+      }, 2000);
 
-      // Attempt to connect via proxy to avoid CORS issues
-      const response = await fetch(
-        `/api/controller-proxy?url=${encodeURIComponent(badURL)}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          signal: AbortSignal.timeout(5000), // 5 second timeout
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Connection failed with status: ${response.status}`);
-      }
-
-      // Set a success message instead of null
-      setConnectionError(
-        "Connection successful! Controller is online and accessible."
-      );
+      // Note: We're not making a real request to avoid the 403 error in Vercel
+      // This simulates the experience without actually triggering the failing network request
     } catch (err) {
       setConnectionError(
         `Connection error: ${err instanceof Error ? err.message : String(err)}`
@@ -113,216 +97,82 @@ export default function SiemensLogoController({
               <span className="font-medium">Controller Diagnostic Console</span>
             </div>
           </div>
-          <iframe
-            srcDoc={`
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <style>
-                    body {
-                      font-family: 'Monaco', 'Consolas', monospace;
-                      padding: 0;
-                      margin: 0;
-                      background-color: #1e1e1e;
-                      color: #d4d4d4;
-                      overflow: auto;
-                      height: 100vh;
-                      font-size: 14px;
-                    }
-                    .terminal {
-                      padding: 1.5rem;
-                      height: 100%;
-                      box-sizing: border-box;
-                    }
-                    .command {
-                      color: #569cd6;
-                      margin-bottom: 0.75rem;
-                      font-size: 1.1em;
-                    }
-                    .command::before {
-                      content: "$ ";
-                      color: #608b4e;
-                    }
-                    .output {
-                      color: #ce9178;
-                      margin-bottom: 1.5rem;
-                      white-space: pre-wrap;
-                      word-wrap: break-word;
-                      line-height: 1.5;
-                    }
-                    .error-text {
-                      color: #f14c4c;
-                      font-weight: bold;
-                    }
-                    .highlight {
-                      color: #4ec9b0;
-                    }
-                    .success {
-                      color: #6A9955;
-                      font-weight: bold;
-                    }
-                    .warning {
-                      color: #DCDCAA;
-                    }
-                    .blink {
-                      animation: blink-animation 1s steps(2, start) infinite;
-                    }
-                    @keyframes blink-animation {
-                      to { visibility: hidden; }
-                    }
-                    .header {
-                      color: #569cd6;
-                      font-weight: bold;
-                      margin-bottom: 0.5rem;
-                      font-size: 1.1em;
-                      border-bottom: 1px solid #565656;
-                      padding-bottom: 0.5rem;
-                    }
-                    .indent {
-                      padding-left: 1.5rem;
-                    }
-                    .timestamp {
-                      color: #888888;
-                      font-size: 0.85em;
-                    }
-                  </style>
-                </head>
-                <body>
-                  <div class="terminal">
-                    <div class="header">SIEMENS LOGO CONTROLLER CONNECTION DIAGNOSTIC</div>
-                    <div class="timestamp">${new Date().toISOString()}</div>
-                    
-                    ${
-                      connectionError?.includes("successful")
-                        ? `
-                    <div class="command">ping ${new URL(controllerUrl).hostname}</div>
-                    <div class="output">Pinging ${new URL(controllerUrl).hostname} [${new URL(controllerUrl).hostname}] with 32 bytes of data:
-Reply from ${new URL(controllerUrl).hostname}: bytes=32 time=42ms TTL=64
-Reply from ${new URL(controllerUrl).hostname}: bytes=32 time=45ms TTL=64
-Reply from ${new URL(controllerUrl).hostname}: bytes=32 time=38ms TTL=64
-Reply from ${new URL(controllerUrl).hostname}: bytes=32 time=41ms TTL=64
+          <div className="h-full w-full border-t bg-[#1e1e1e] text-[#d4d4d4] font-mono overflow-auto p-6">
+            <div className="font-bold text-[#569cd6] text-lg border-b border-[#565656] pb-2 mb-4">
+              SIEMENS LOGO CONTROLLER CONNECTION DIAGNOSTIC
+            </div>
+            <div className="text-[#888888] text-sm mb-6">
+              {new Date().toISOString()}
+            </div>
 
-Ping statistics for ${new URL(controllerUrl).hostname}:
-    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)
-Average round-trip time = 41.5ms</div>
-                    
-                    <div class="command">curl -v ${controllerUrl}</div>
-                    <div class="output">*   Trying ${new URL(controllerUrl).hostname}:${new URL(controllerUrl).port || 443}...
-* Connected to ${new URL(controllerUrl).hostname} (${new URL(controllerUrl).hostname}) port ${new URL(controllerUrl).port || 443}
-* HTTPS certificate validation:
-*   Warning: self-signed certificate but continuing anyway
-* Connection established
-* TLSv1.2 (IN), TLS handshake, Certificate (11):
-* TLSv1.2 (IN), TLS handshake, Server finished (14):
-* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
-* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
-* TLSv1.2 (OUT), TLS handshake, Finished (20):
-* TLSv1.2 (IN), TLS handshake, Finished (20):
-* SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384
-* Server certificate:
-*  Issuer: Siemens LOGO!
-*  Expires: 2033-12-31
-* <span class="success">SSL verification successful</span>
-* Request sent, awaiting response...
-* <span class="success">HTTP/1.1 200 OK</span>
-* Content-Type: text/html
-* Content-Length: 2845
-* Accept-Ranges: bytes
-* <span class="success">Connection successful!</span></div>
-                    
-                    <div class="command">telnet ${new URL(controllerUrl).hostname} ${new URL(controllerUrl).port || 443}</div>
-                    <div class="output">Connecting to ${new URL(controllerUrl).hostname}:${new URL(controllerUrl).port || 443}...
-<span class="success">Connected to ${new URL(controllerUrl).hostname}</span>
-Escape character is '^]'.
-Connection closed by foreign host.</div>
-                    
-                    <div class="header">DIAGNOSIS SUMMARY</div>
-                    <div class="output indent">
-Connection target: <span class="highlight">${new URL(controllerUrl).protocol}//${new URL(controllerUrl).hostname}:${new URL(controllerUrl).port || 443}</span>
-Status: <span class="success">SUCCESSFUL</span>
-Details:
-- Controller is online and accessible
-- Self-signed certificate accepted
-- Login page successfully loaded
-- Connection established via proxy
-                    </div>
-                    `
-                        : connectionError?.includes("Testing")
-                          ? `
-                    <div class="command">ping ${new URL(controllerUrl).hostname}</div>
-                    <div class="output">Pinging ${new URL(controllerUrl).hostname} [${new URL(controllerUrl).hostname}] with 32 bytes of data:
-<span class="blink">...</span></div>
-                    
-                    <div class="command">curl -v ${controllerUrl}</div>
-                    <div class="output">*   Trying ${new URL(controllerUrl).hostname}:${new URL(controllerUrl).port || 443}...
-<span class="warning">* Establishing connection...</span>
-<span class="blink">...</span></div>
-                    
-                    <div class="header">DIAGNOSIS SUMMARY</div>
-                    <div class="output indent">
-Connection target: <span class="highlight">${new URL(controllerUrl).protocol}//${new URL(controllerUrl).hostname}:${new URL(controllerUrl).port || 443}</span>
-Status: <span class="warning">TESTING</span>
-Details:
-- Attempting to connect to controller
-- This may take a few seconds
-- Testing connection via proxy API
-<span class="blink">...</span>
-                    </div>
-                    `
-                          : `
-                    <div class="command">ping ${new URL(controllerUrl).hostname}</div>
-                    <div class="output">Pinging ${new URL(controllerUrl).hostname} [${new URL(controllerUrl).hostname}] with 32 bytes of data:
-Request timed out.
-Request timed out.
-Request timed out.
-Request timed out.
+            <div className="text-[#569cd6] font-medium mb-2">
+              <span className="text-[#608b4e]">$ </span>ping{" "}
+              {new URL(controllerUrl).hostname}
+            </div>
+            <pre className="text-[#ce9178] mb-6 whitespace-pre-wrap">
+              Pinging {new URL(controllerUrl).hostname} [
+              {new URL(controllerUrl).hostname}] with 32 bytes of data: Request
+              timed out. Request timed out. Request timed out. Request timed
+              out. Ping statistics for {new URL(controllerUrl).hostname}:
+              Packets: Sent = 4, Received = 0, Lost = 4 (100% loss)
+            </pre>
 
-Ping statistics for ${new URL(controllerUrl).hostname}:
-    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss)</div>
-                    
-                    <div class="command">curl -v ${controllerUrl}</div>
-                    <div class="output">*   Trying ${new URL(controllerUrl).hostname}:${new URL(controllerUrl).port || 443}...
-* Connected to ${new URL(controllerUrl).hostname} (${new URL(controllerUrl).hostname}) port ${new URL(controllerUrl).port || 443}
-* HTTPS certificate validation:
-<span class="error-text">*   Error: self-signed certificate
-*   Error: certificate verification failed</span>
-* Connection failed
-* <span class="error-text">Error details: ${connectionError}</span></div>
-                    
-                    <div class="command">telnet ${new URL(controllerUrl).hostname} ${new URL(controllerUrl).port || 443}</div>
-                    <div class="output">Connecting to ${new URL(controllerUrl).hostname}:${new URL(controllerUrl).port || 443}...
-<span class="warning">Connection timeout after 15 seconds</span></div>
-                    
-                    <div class="command">nslookup ${new URL(controllerUrl).hostname}</div>
-                    <div class="output">Server:  dns.google
-Address:  8.8.8.8
+            <div className="text-[#569cd6] font-medium mb-2">
+              <span className="text-[#608b4e]">$ </span>curl -v {controllerUrl}
+            </div>
+            <pre className="text-[#ce9178] mb-6 whitespace-pre-wrap">
+              * Trying {new URL(controllerUrl).hostname}:
+              {new URL(controllerUrl).port || 443}... * Connected to{" "}
+              {new URL(controllerUrl).hostname} (
+              {new URL(controllerUrl).hostname}) port{" "}
+              {new URL(controllerUrl).port || 443}* HTTPS certificate
+              validation:
+              <span className="text-[#f14c4c] font-bold">
+                * Error: self-signed certificate * Error: certificate
+                verification failed
+              </span>
+              * Connection failed
+              <span className="text-[#f14c4c] font-bold">
+                * Error details: {connectionError}
+              </span>
+            </pre>
 
-Non-authoritative answer:
-Name:    ${new URL(controllerUrl).hostname}
-Address: ${new URL(controllerUrl).hostname}</div>
+            <div className="text-[#569cd6] font-medium mb-2">
+              <span className="text-[#608b4e]">$ </span>telnet{" "}
+              {new URL(controllerUrl).hostname}{" "}
+              {new URL(controllerUrl).port || 443}
+            </div>
+            <pre className="text-[#ce9178] mb-6 whitespace-pre-wrap">
+              Connecting to {new URL(controllerUrl).hostname}:
+              {new URL(controllerUrl).port || 443}...
+              <span className="text-[#DCDCAA]">
+                Connection timeout after 15 seconds
+              </span>
+            </pre>
 
-                    <div class="header">DIAGNOSIS SUMMARY</div>
-                    <div class="output indent">
-Connection target: <span class="highlight">${new URL(controllerUrl).protocol}//${new URL(controllerUrl).hostname}:${new URL(controllerUrl).port || 443}</span>
-Status: <span class="error-text">FAILED</span>
-Possible causes:
-- Self-signed certificate not trusted by browser
-- Controller is offline or unreachable
-- Network connectivity issues between client and server
-- Port ${new URL(controllerUrl).port || 443} blocked by firewall
-- Invalid controller credentials
-                    </div>
-                    `
-                    }
-                    
-                    <div class="command">_<span class="blink">|</span></div>
-                  </div>
-                </body>
-              </html>
-            `}
-            className="h-full w-full border-t"
-            sandbox="allow-same-origin"
-          />
+            <div className="font-bold text-[#569cd6] text-lg border-b border-[#565656] pb-2 my-4">
+              DIAGNOSIS SUMMARY
+            </div>
+            <pre className="text-[#ce9178] pl-6 whitespace-pre-wrap">
+              Connection target:{" "}
+              <span className="text-[#4ec9b0]">
+                {new URL(controllerUrl).protocol}//
+                {new URL(controllerUrl).hostname}:
+                {new URL(controllerUrl).port || 443}
+              </span>
+              Status: <span className="text-[#f14c4c] font-bold">FAILED</span>
+              Possible causes: - Self-signed certificate not trusted by browser
+              - Controller is offline or unreachable - Network connectivity
+              issues between client and server - Port{" "}
+              {new URL(controllerUrl).port || 443} blocked by firewall - Invalid
+              controller credentials - Proxy API request returned 403 Forbidden
+            </pre>
+
+            <div className="text-[#569cd6] mt-6 font-medium">
+              <span className="text-[#608b4e]">$ </span>_
+              <span className="animate-pulse">|</span>
+            </div>
+          </div>
         </div>
       )}
 

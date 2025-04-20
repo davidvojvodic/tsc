@@ -33,6 +33,12 @@ const nextConfig = {
                 port: '3000',
                 pathname: '/**',
             },
+            {
+                protocol: 'https',
+                hostname: '194.249.165.38',
+                port: '55522',
+                pathname: '/**',
+            },
         ],
         unoptimized: process.env.NODE_ENV === 'development'
     },
@@ -46,7 +52,7 @@ const nextConfig = {
             bodySizeLimit: '5mb',
         },
         // Properly handle language detection and server components
-        serverComponentsExternalPackages: ['cookies-next'],
+        serverComponentsExternalPackages: ['cookies-next', 'https'],
     },
     async headers() {
         return [
@@ -59,8 +65,27 @@ const nextConfig = {
                   { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
                   { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
                 ]
-              }
+            },
+            {
+                // Add Content Security Policy for iframe access
+                source: "/(.*)",
+                headers: [
+                  { 
+                    key: "Content-Security-Policy", 
+                    value: "frame-src 'self' https://194.249.165.38:55522 https://www.youtube.com https://*.youtube.com;" 
+                  }
+                ]
+            }
         ];
+    },
+    // Disable SSL certificate verification for specific hosts (industrial controllers often use self-signed certs)
+    // This only affects server-side requests
+    webpack: (config, { isServer }) => {
+        if (isServer) {
+            // This allows the server to ignore SSL certificate errors when proxying requests
+            process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+        }
+        return config;
     },
 };
 

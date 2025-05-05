@@ -36,7 +36,7 @@ const schoolContent = {
       The school participates in the Erasmus+ KA1 program, enabling students to participate in international exchanges and gain valuable experience abroad. TŠC Maribor has successfully obtained the Erasmus+ KA2 Waterwise project, aimed at raising awareness and implementing smart solutions in sustainable water management. The school also participates in the zMIGAJ! project, which promotes physical activity and sports among students and emphasizes the importance of a healthy lifestyle.
         
       With modern equipped classrooms, workshops, and laboratories, TŠC Maribor ensures quality education adapted to contemporary needs.`,
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/sola.jpg",
     },
     sl: {
       title: "Tehniški šolski center Maribor",
@@ -61,7 +61,7 @@ const schoolContent = {
       Šola sodeluje v programu Erasmus+ KA1, ki dijakom in študentom omogoča mednarodne izmenjave ter pridobivanje dragocenih izkušenj v tujini. TŠC Maribor je uspešno pridobil projekt Erasmus+ KA2 Waterwise, ki je namenjen ozaveščanju in uvajanju pametnih rešitev na področju trajnostnega ravnanja z vodo. Prav tako šola sodeluje v projektu zMIGAJ!, ki spodbuja telesno aktivnost in šport med dijaki ter poudarja pomen zdravega življenjskega sloga.
       
       S sodobno opremljenimi učilnicami, delavnicami in laboratoriji TŠC Maribor zagotavlja kakovostno izobraževanje, prilagojeno potrebam sodobnega časa.`,
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/sola.jpg",
     },
     hr: {
       title: "Tehnički školski centar Maribor",
@@ -86,7 +86,7 @@ const schoolContent = {
       Škola sudjeluje u programu Erasmus+ KA1, koji učenicima i studentima omogućuje međunarodne razmjene i stjecanje dragocjenih iskustava u inozemstvu. TŠC Maribor je uspješno dobio projekt Erasmus+ KA2 Waterwise, usmjeren na podizanje svijesti i implementaciju pametnih rješenja u održivom upravljanju vodama. Škola također sudjeluje u projektu zMIGAJ!, koji promiče tjelesnu aktivnost i sport među učenicima te naglašava važnost zdravog načina života.
       
       Sa suvremeno opremljenim učionicama, radionicama i laboratorijima, TŠC Maribor osigurava kvalitetno obrazovanje prilagođeno suvremenim potrebama.`,
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/sola.jpg",
     },
   },
   "ptz-dubrovnik": {
@@ -143,7 +143,7 @@ const schoolContent = {
 
 export function SchoolDetailPage({ slug, language }: SchoolDetailProps) {
   const school = schoolContent[slug as keyof typeof schoolContent]?.[language];
-  
+
   if (!school) {
     return (
       <Container>
@@ -157,13 +157,17 @@ export function SchoolDetailPage({ slug, language }: SchoolDetailProps) {
   return (
     <Container>
       <div className="py-12 space-y-12">
-        <Heading 
-          title={school.title} 
-          description={language === "en" ? "School Profile" : 
-                      language === "sl" ? "Profil šole" : 
-                      "Profil škole"} 
+        <Heading
+          title={school.title}
+          description={
+            language === "en"
+              ? "School Profile"
+              : language === "sl"
+                ? "Profil šole"
+                : "Profil škole"
+          }
         />
-        
+
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
           <Image
             src={school.imageUrl}
@@ -172,7 +176,7 @@ export function SchoolDetailPage({ slug, language }: SchoolDetailProps) {
             className="object-cover"
           />
         </div>
-        
+
         <div className="prose prose-lg max-w-none whitespace-pre-line">
           {school.description}
         </div>

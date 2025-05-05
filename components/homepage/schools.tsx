@@ -16,7 +16,7 @@ const schoolsContent = {
       description:
         "Technical School Center Maribor (TŠC Maribor) is an educational center offering quality general, theoretical vocational, and practical education and training for youth and adults. The school offers various educational programs in mechanical engineering, mechatronics, and automotive industry that adapt to labor market needs. With modern equipped classrooms, workshops, and laboratories, TŠC Maribor ensures quality education adapted to contemporary needs.",
       buttonText: "Learn more",
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/sola.jpg",
     },
     {
       id: "ptz-dubrovnik",
@@ -34,7 +34,7 @@ const schoolsContent = {
       description:
         "Tehniški šolski center Maribor (TŠC Maribor) je izobraževalno središče, ki ponuja kakovostno splošno-izobraževalno, strokovno-teoretično in praktično izobraževanje ter usposabljanje za mladino in odrasle. Šola ponuja različne izobraževalne programe na področju strojništva, mehatronike in avtoservisa, ki se prilagajajo potrebam trga dela. S sodobno opremljenimi učilnicami, delavnicami in laboratoriji TŠC Maribor zagotavlja kakovostno izobraževanje, prilagojeno potrebam sodobnega časa.",
       buttonText: "Več informacij",
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/sola.jpg",
     },
     {
       id: "ptz-dubrovnik",
@@ -52,7 +52,7 @@ const schoolsContent = {
       description:
         "Tehnički školski centar Maribor (TŠC Maribor) je obrazovni centar koji nudi kvalitetno opće, stručno-teoretsko i praktično obrazovanje i osposobljavanje za mlade i odrasle. Škola nudi različite obrazovne programe u području strojarstva, mehatronike i autoindustrije koji se prilagođavaju potrebama tržišta rada. Sa suvremeno opremljenim učionicama, radionicama i laboratorijima, TŠC Maribor osigurava kvalitetno obrazovanje prilagođeno suvremenim potrebama.",
       buttonText: "Saznaj više",
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/sola.jpg",
     },
     {
       id: "ptz-dubrovnik",

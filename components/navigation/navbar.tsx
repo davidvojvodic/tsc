@@ -25,6 +25,7 @@ const getTranslations = (language: SupportedLanguage) => {
     en: {
       about: "About Us",
       projects: "Our Projects",
+      waterwise: "WaterWise",
       resources: "Resources",
       learning: "Online Learning",
       login: "Log In",
@@ -35,6 +36,7 @@ const getTranslations = (language: SupportedLanguage) => {
     sl: {
       about: "O nas",
       projects: "Naši projekti",
+      waterwise: "WaterWise",
       resources: "Gradiva",
       learning: "Spletno učenje",
       login: "Prijava",
@@ -45,6 +47,7 @@ const getTranslations = (language: SupportedLanguage) => {
     hr: {
       about: "O nama",
       projects: "Naši projekti",
+      waterwise: "WaterWise",
       resources: "Materijali",
       learning: "Online učenje",
       login: "Prijava",
@@ -65,6 +68,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
   const basePaths = {
     home: "/",
     projects: "/projects",
+    waterwise: "/projects/Waterwise",
     materials: "/materials",
     quizzes: "/quizzes",
     login: "/login",
@@ -78,6 +82,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
   const paths = {
     home: `${prefix}${basePaths.home}`,
     projects: `${prefix}${basePaths.projects}`,
+    waterwise: `${prefix}${basePaths.waterwise}`,
     materials: `${prefix}${basePaths.materials}`,
     quizzes: `${prefix}${basePaths.quizzes}`,
     login: `${prefix}${basePaths.login}`,
@@ -89,6 +94,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
   return [
     { name: t.about, href: paths.home },
     { name: t.projects, href: paths.projects },
+    { name: t.waterwise, href: paths.waterwise },
     { name: t.resources, href: paths.materials },
     { name: t.learning, href: paths.quizzes },
   ];
@@ -172,7 +178,7 @@ export async function Navbar() {
             <div className="hidden md:block">
               <LanguageSelector />
             </div>
-            
+
             {/* Auth buttons or profile dropdown - Only visible on desktop */}
             {user ? (
               <div className="hidden md:block">

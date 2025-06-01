@@ -64,12 +64,7 @@ export default async function HomePage() {
       <TeacherCarousel teachers={teachers} />
       <TestimonialsSection testimonials={testimonials} />
       <SchoolsSection />
-      <LiveStreams
-        youtubeIds={{
-          mbLocation: "-janKd7NDLM",
-          // dubrovnikLocation will be added later when available
-        }}
-      />
+      <LiveStreams />
     </>
   );
 }

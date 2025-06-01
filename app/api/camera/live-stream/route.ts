@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   // Simple HTML page that uses our stream proxy
   const html = `
     <!DOCTYPE html>
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     </body>
     </html>
   `;
-  
+
   return new NextResponse(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",

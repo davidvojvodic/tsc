@@ -34,9 +34,9 @@ const nextConfig = {
                 pathname: '/**',
             },
             {
-                protocol: 'https',
+                protocol: 'http',
                 hostname: '194.249.165.38',
-                port: '55522',
+                port: '4560',
                 pathname: '/**',
             },
         ],
@@ -72,7 +72,7 @@ const nextConfig = {
                 headers: [
                   { 
                     key: "Content-Security-Policy", 
-                    value: "frame-src 'self' https://194.249.165.38:55522 https://www.youtube.com https://*.youtube.com;" 
+                    value: "frame-src 'self' http://194.249.165.38:* https://194.249.165.38:* https://www.youtube.com https://*.youtube.com; img-src 'self' data: http://194.249.165.38:* https://194.249.165.38:* https://res.cloudinary.com https://utfs.io https://*.ufs.sh; media-src 'self' http://194.249.165.38:* https://194.249.165.38:* rtsp://194.249.165.38:*;" 
                   }
                 ]
             }

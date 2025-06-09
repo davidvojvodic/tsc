@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import https from "https";
 
+// Force this route to be dynamic
+export const dynamic = 'force-dynamic';
+
 // This function uses node's built-in https module to create a request
 // that bypasses certificate validation, since the fetch API doesn't
 // reliably support this in Next.js environments

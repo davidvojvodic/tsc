@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Camera, RefreshCw } from "lucide-react";
+import { RealtimeCameraStream } from "@/components/realtime-camera-stream";
 
 interface StreamProps {
   cameraUrl?: string;
@@ -21,6 +22,7 @@ export default function LiveStreams({
   const CAMERA_PASSWORD = "tscmb2025";
   const [isStreamLoading, setIsStreamLoading] = useState(true);
   const [streamError, setStreamError] = useState(false);
+  const [streamMode, setStreamMode] = useState<'iframe' | 'realtime'>('iframe');
 
   if (error) {
     return (
@@ -90,11 +92,13 @@ export default function LiveStreams({
               <div className="space-x-2">
                 <button
                   onClick={() => {
-                    window.open("/api/camera/websocket-stream", "_blank");
+                    setStreamMode('realtime');
+                    setStreamError(false);
+                    setIsStreamLoading(false);
                   }}
                   className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
                 >
-                  WebSocket Stream
+                  Real-time Stream
                 </button>
                 <button
                   onClick={() => {
@@ -119,6 +123,26 @@ export default function LiveStreams({
             </p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Render real-time stream if selected
+  if (streamMode === 'realtime') {
+    return (
+      <div className="relative max-w-screen-xl mx-auto mb-10">
+        <div className="mb-4 flex gap-2">
+          <button
+            onClick={() => setStreamMode('iframe')}
+            className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+          >
+            ← Back to Standard Stream
+          </button>
+          <span className="text-sm text-gray-500 py-1">
+            Using Real-time Polling Stream (Production Compatible)
+          </span>
+        </div>
+        <RealtimeCameraStream className="max-w-screen-xl mx-auto" />
       </div>
     );
   }
@@ -162,6 +186,13 @@ export default function LiveStreams({
             >
               <RefreshCw className="h-3 w-3" />
               Refresh
+            </button>
+            <button
+              onClick={() => setStreamMode('realtime')}
+              className="bg-purple-500/80 hover:bg-purple-600/80 text-white text-xs px-3 py-1 rounded-md"
+              title="Switch to real-time polling stream"
+            >
+              Real-time
             </button>
             {/*<button
                 onClick={() => {

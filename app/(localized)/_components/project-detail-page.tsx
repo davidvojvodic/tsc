@@ -20,7 +20,13 @@ import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Carousel,
   CarouselContent,
@@ -28,6 +34,12 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 // Define types for the project and related data
 interface Project {
@@ -84,19 +96,27 @@ interface Project {
     endDate: Date | null;
     completed: boolean;
     order: number;
-    media:
-      | {
-          id: string;
-          url: string;
-        }[]
-      | {
-          id: string;
-          url: string;
-        }
-      | null;
-    gallery?: {
+    activities?: {
       id: string;
-      url: string;
+      title: string;
+      title_sl?: string | null;
+      title_hr?: string | null;
+      description: string;
+      description_sl?: string | null;
+      description_hr?: string | null;
+      order: number;
+      teachers?: {
+        teacher: {
+          id: string;
+          name: string;
+        };
+      }[];
+      images?: {
+        media: {
+          id: string;
+          url: string;
+        };
+      }[];
     }[];
   }[];
 }
@@ -105,6 +125,66 @@ interface ProjectDetailPageProps {
   project: Project;
   language: SupportedLanguage;
 }
+
+// Helper function for Slavic pluralization
+const getSlavicPlural = (
+  count: number,
+  singular: string,
+  dual: string,
+  plural: string,
+  genitive: string
+) => {
+  if (count === 1) return singular;
+  if (count === 2) return dual;
+  if (count === 3 || count === 4) return plural;
+  return genitive;
+};
+
+// Helper function for Croatian pluralization
+const getCroatianPlural = (
+  count: number,
+  singular: string,
+  paucal: string,
+  plural: string
+) => {
+  if (count === 1) return singular;
+  if (count >= 2 && count <= 4) return paucal;
+  return plural;
+};
+
+// Helper function to get localized count text
+const getLocalizedCount = (
+  count: number,
+  type: "teacher" | "image",
+  language: SupportedLanguage
+) => {
+  if (language === "en") {
+    if (type === "teacher") return count === 1 ? "teacher" : "teachers";
+    return count === 1 ? "image" : "images";
+  }
+
+  if (language === "sl") {
+    if (type === "teacher") {
+      return getSlavicPlural(
+        count,
+        "učitelj",
+        "učitelja",
+        "učitelji",
+        "učiteljev"
+      );
+    }
+    return getSlavicPlural(count, "slika", "sliki", "slike", "slik");
+  }
+
+  if (language === "hr") {
+    if (type === "teacher") {
+      return getCroatianPlural(count, "nastavnik", "nastavnika", "nastavnika");
+    }
+    return getCroatianPlural(count, "slika", "slike", "slika");
+  }
+
+  return "";
+};
 
 const getTranslations = (language: SupportedLanguage) => {
   const translations = {
@@ -122,10 +202,16 @@ const getTranslations = (language: SupportedLanguage) => {
       projectTimeline: "Project Timeline",
       trackProgress: "Track the project's progress and milestones",
       completed: "Completed",
+      activities: "Activities",
       learningResources: "Learning Resources",
       takeQuiz: "Take this quiz to test your knowledge",
       startQuiz: "Start Quiz",
       projectGallery: "Project Gallery",
+      // Activity accordion translations
+      assignedTeachers: "Assigned Teachers",
+      activityGallery: "Activity Gallery",
+      gallery: "Gallery",
+      noActivityDetails: "No additional details available for this activity.",
     },
     sl: {
       backToProjects: "Nazaj na projekte",
@@ -141,10 +227,16 @@ const getTranslations = (language: SupportedLanguage) => {
       projectTimeline: "Časovnica projekta",
       trackProgress: "Sledite napredku in mejnikom projekta",
       completed: "Končano",
+      activities: "Aktivnosti",
       learningResources: "Učni viri",
       takeQuiz: "Rešite ta kviz, da preverite svoje znanje",
       startQuiz: "Začni kviz",
       projectGallery: "Galerija projekta",
+      // Activity accordion translations
+      assignedTeachers: "Dodeljeni učitelji",
+      activityGallery: "Galerija aktivnosti",
+      gallery: "Galerija",
+      noActivityDetails: "Za to aktivnost ni na voljo dodatnih podrobnosti.",
     },
     hr: {
       backToProjects: "Natrag na projekte",
@@ -160,10 +252,16 @@ const getTranslations = (language: SupportedLanguage) => {
       projectTimeline: "Vremenski okvir projekta",
       trackProgress: "Pratite napredak i prekretnice projekta",
       completed: "Završeno",
+      activities: "Aktivnosti",
       learningResources: "Obrazovni resursi",
       takeQuiz: "Riješite ovaj kviz da testirate svoje znanje",
       startQuiz: "Započni kviz",
       projectGallery: "Galerija projekta",
+      // Activity accordion translations
+      assignedTeachers: "Dodijeljeni nastavnici",
+      activityGallery: "Galerija aktivnosti",
+      gallery: "Galerija",
+      noActivityDetails: "Nema dodatnih detalja dostupnih za ovu aktivnost.",
     },
   };
 
@@ -191,60 +289,14 @@ export function ProjectDetailPage({
     (completedPhases / project.timeline.length) * 100
   );
 
-  // Combine all project media for the gallery - no need to separate by phase for the main gallery
-  const allProjectImages: GalleryImage[] = [
-    // Regular gallery images
-    ...(project.gallery || []).map((img) => ({
+  // Project gallery - only actual gallery images (not activity images)
+  const projectGalleryImages: GalleryImage[] = (project.gallery || []).map(
+    (img) => ({
       id: img.id,
       url: img.url,
       alt: projectName || project.name,
-    })),
-
-    // Get all phase images in a flat list
-    ...(project.timeline || []).flatMap((phase) => {
-      const images: GalleryImage[] = [];
-
-      // Add primary media if it exists
-      if (phase.media) {
-        if (
-          !Array.isArray(phase.media) &&
-          typeof phase.media === "object" &&
-          phase.media.url
-        ) {
-          images.push({
-            id: phase.id + "-media",
-            url: phase.media.url,
-            alt: getLocalizedContent(phase, "title", language) || phase.title,
-          });
-        } else if (Array.isArray(phase.media)) {
-          phase.media.forEach((img) => {
-            images.push({
-              id: img.id,
-              url: img.url,
-              alt: getLocalizedContent(phase, "title", language) || phase.title,
-            });
-          });
-        }
-      }
-
-      // Add gallery images
-      if (
-        phase.gallery &&
-        Array.isArray(phase.gallery) &&
-        phase.gallery.length > 0
-      ) {
-        phase.gallery.forEach((img) => {
-          images.push({
-            id: img.id,
-            url: img.url,
-            alt: getLocalizedContent(phase, "title", language) || phase.title,
-          });
-        });
-      }
-
-      return images;
-    }),
-  ];
+    })
+  );
 
   return (
     <Container>
@@ -283,7 +335,7 @@ export function ProjectDetailPage({
                 </Badge>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight break-words">
                 {projectName || project.name}
               </h1>
             </div>
@@ -320,32 +372,32 @@ export function ProjectDetailPage({
         </CardHeader>
         <CardContent>
           <RichTextDisplay
-            className="mb-3"
+            className="mb-3 break-words overflow-hidden"
             content={projectDescription || project.description || ""}
           />
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{t.startDate}</p>
-              <p className="text-xl font-semibold">
+              <p className="text-sm text-muted-foreground break-words">{t.startDate}</p>
+              <p className="text-lg sm:text-xl font-semibold break-words">
                 {project.timeline[0]?.startDate
                   ? format(project.timeline[0].startDate, "MMM yyyy")
                   : t.notSpecified}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{t.teamSize}</p>
-              <p className="text-xl font-semibold">
+              <p className="text-sm text-muted-foreground break-words">{t.teamSize}</p>
+              <p className="text-lg sm:text-xl font-semibold break-words">
                 {project.teachers.length} {t.members}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{t.completion}</p>
-              <p className="text-xl font-semibold">{completionPercentage}%</p>
+              <p className="text-sm text-muted-foreground break-words">{t.completion}</p>
+              <p className="text-lg sm:text-xl font-semibold">{completionPercentage}%</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{t.resources}</p>
-              <p className="text-xl font-semibold">
+              <p className="text-sm text-muted-foreground break-words">{t.resources}</p>
+              <p className="text-lg sm:text-xl font-semibold break-words">
                 {project.quizzes.length} {t.quizzes}
               </p>
             </div>
@@ -421,162 +473,287 @@ export function ProjectDetailPage({
                             />
                           </div>
 
-                          {/* Phase images - matching gallery style from project details page */}
-                          {(phase.media ||
-                            (phase.gallery && phase.gallery.length > 0)) && (
-                            <div className="mt-4">
-                              {(() => {
-                                // Collect all images for this phase
-                                const phaseImages = [
-                                  // Include primary media (handle both array and single object forms)
-                                  ...(phase.media
-                                    ? Array.isArray(phase.media)
-                                      ? phase.media
-                                      : [
-                                          {
-                                            id:
-                                              typeof phase.media === "object" &&
-                                              phase.media !== null
-                                                ? phase.media.id
-                                                : `${phase.id}-media`,
-                                            url:
-                                              typeof phase.media === "object" &&
-                                              phase.media !== null
-                                                ? phase.media.url
-                                                : "",
-                                          },
-                                        ].filter((img) => img.url) // Filter out empty URLs
-                                    : []),
-                                  // Include gallery images
-                                  ...(phase.gallery || []),
-                                ].filter((img) => img && img.url);
+                          {/* Activities */}
+                          {phase.activities && phase.activities.length > 0 && (
+                            <div className="mb-6">
+                              <h4 className="text-lg font-medium mb-4 text-foreground flex items-center gap-2">
+                                <div className="h-1 w-8 bg-gradient-to-r from-primary to-primary/60 rounded-full"></div>
+                                {t.activities}
+                              </h4>
 
-                                if (phaseImages.length === 0) return null;
-
-                                // Format images for gallery
-                                const galleryImages = phaseImages.map(
-                                  (img) => ({
-                                    id: img.id,
-                                    url: img.url,
-                                    alt: phaseTitle || phase.title,
-                                  })
-                                );
-
-                                // If only 1 image, display a simple thumbnail
-                                if (phaseImages.length === 1) {
-                                  return (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <div className="group relative aspect-square w-40 rounded-md overflow-hidden bg-muted cursor-pointer">
-                                          <Image
-                                            src={phaseImages[0].url}
-                                            alt={phaseTitle || phase.title}
-                                            fill
-                                            sizes="(max-width: 768px) 100vw, 160px"
-                                            className="object-cover transition-transform group-hover:scale-105"
-                                            loading="lazy"
-                                          />
-                                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <Expand className="w-6 h-6 text-white" />
-                                          </div>
-                                        </div>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-4xl">
-                                        <div className="py-1">
-                                          <h3 className="text-lg font-medium">
-                                            {phaseTitle || phase.title}
-                                          </h3>
-                                        </div>
-                                        <Carousel className="w-full">
-                                          <CarouselContent>
-                                            {galleryImages.map((img) => (
-                                              <CarouselItem key={img.id}>
-                                                <div className="relative h-[60vh] max-h-[600px] w-full">
-                                                  <Image
-                                                    src={img.url}
-                                                    alt={
-                                                      img.alt || "Project image"
-                                                    }
-                                                    fill
-                                                    sizes="(max-width: 768px) 100vw, 80vw"
-                                                    className="object-contain"
-                                                  />
-                                                </div>
-                                              </CarouselItem>
-                                            ))}
-                                          </CarouselContent>
-                                          <CarouselPrevious />
-                                          <CarouselNext />
-                                        </Carousel>
-                                      </DialogContent>
-                                    </Dialog>
+                              <Accordion type="multiple" className="space-y-3">
+                                {phase.activities.map((activity, index) => {
+                                  const activityTitle = getLocalizedContent(
+                                    activity,
+                                    "title",
+                                    language
                                   );
-                                }
+                                  const activityDescription =
+                                    getLocalizedContent(
+                                      activity,
+                                      "description",
+                                      language
+                                    );
 
-                                // For multiple images, use a grid of thumbnails
-                                return (
-                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-w-xl">
-                                    {phaseImages
-                                      .slice(0, 4)
-                                      .map((image, index) => (
-                                        <Dialog key={image.id}>
-                                          <DialogTrigger asChild>
-                                            <div className="group relative aspect-square rounded-md overflow-hidden bg-muted cursor-pointer">
-                                              <Image
-                                                src={image.url}
-                                                alt={phaseTitle || phase.title}
-                                                fill
-                                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                                className="object-cover transition-transform group-hover:scale-105"
-                                                loading="lazy"
-                                              />
-                                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <Expand className="w-6 h-6 text-white" />
-                                              </div>
+                                  return (
+                                    <AccordionItem
+                                      key={activity.id}
+                                      value={`activity-${activity.id}`}
+                                      className="border border-border/60 rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300"
+                                    >
+                                      <AccordionTrigger className="px-4 sm:px-6 py-4 hover:no-underline group">
+                                        <div className="flex items-start gap-3 sm:gap-4 w-full min-w-0">
+                                          {/* Activity Number Badge */}
+                                          <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center text-primary-foreground text-xs sm:text-sm font-semibold">
+                                            {index + 1}
+                                          </div>
 
-                                              {/* Show +X more on last visible thumbnail if needed */}
-                                              {index === 3 &&
-                                                phaseImages.length > 4 && (
-                                                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-medium">
-                                                    +{phaseImages.length - 4}
-                                                  </div>
+                                          <div className="text-left flex-1 min-w-0">
+                                            <h5 className="font-semibold text-sm sm:text-base group-hover:text-primary transition-colors break-words">
+                                              {activityTitle || activity.title}
+                                            </h5>
+
+                                            {/* Info badges */}
+                                            <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3">
+                                              {activity.teachers &&
+                                                activity.teachers.length >
+                                                  0 && (
+                                                  <Badge
+                                                    variant="secondary"
+                                                    className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 whitespace-nowrap"
+                                                  >
+                                                    👥{" "}
+                                                    {activity.teachers.length}{" "}
+                                                    {getLocalizedCount(
+                                                      activity.teachers.length,
+                                                      "teacher",
+                                                      language
+                                                    )}
+                                                  </Badge>
+                                                )}
+                                              {activity.images &&
+                                                activity.images.length > 0 && (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 whitespace-nowrap"
+                                                  >
+                                                    🖼️ {activity.images.length}{" "}
+                                                    {getLocalizedCount(
+                                                      activity.images.length,
+                                                      "image",
+                                                      language
+                                                    )}
+                                                  </Badge>
                                                 )}
                                             </div>
-                                          </DialogTrigger>
-                                          <DialogContent className="max-w-4xl">
-                                            <div className="py-1">
-                                              <h3 className="text-lg font-medium">
-                                                {phaseTitle || phase.title}
-                                              </h3>
-                                            </div>
-                                            <Carousel className="w-full">
-                                              <CarouselContent>
-                                                {galleryImages.map((img) => (
-                                                  <CarouselItem key={img.id}>
-                                                    <div className="relative h-[60vh] max-h-[600px] w-full">
-                                                      <Image
-                                                        src={img.url}
-                                                        alt={
-                                                          img.alt ||
-                                                          "Project image"
+                                          </div>
+                                        </div>
+                                      </AccordionTrigger>
+
+                                      <AccordionContent className="px-4 sm:px-6 pb-6">
+                                        <div className="space-y-6 mt-2">
+                                          {/* Full Description */}
+                                          <div className="prose prose-sm max-w-none text-muted-foreground">
+                                            <RichTextDisplay
+                                              content={
+                                                activityDescription ||
+                                                activity.description
+                                              }
+                                              className="text-sm leading-relaxed"
+                                            />
+                                          </div>
+
+                                          {/* Teachers Section */}
+                                          {activity.teachers &&
+                                            activity.teachers.length > 0 && (
+                                              <div className="bg-muted/30 rounded-lg p-4">
+                                                <h6 className="font-medium mb-3 text-sm text-foreground flex items-center gap-2">
+                                                  👥 {t.assignedTeachers}
+                                                </h6>
+                                                <div className="flex flex-wrap gap-2">
+                                                  {activity.teachers.map(
+                                                    (teacherRel) => (
+                                                      <Badge
+                                                        key={
+                                                          teacherRel.teacher.id
                                                         }
-                                                        fill
-                                                        sizes="(max-width: 768px) 100vw, 80vw"
-                                                        className="object-contain"
-                                                      />
-                                                    </div>
-                                                  </CarouselItem>
-                                                ))}
-                                              </CarouselContent>
-                                              <CarouselPrevious />
-                                              <CarouselNext />
-                                            </Carousel>
-                                          </DialogContent>
-                                        </Dialog>
-                                      ))}
-                                  </div>
-                                );
-                              })()}
+                                                        variant="secondary"
+                                                        className="text-sm px-3 py-1.5 font-medium break-words"
+                                                      >
+                                                        {
+                                                          teacherRel.teacher
+                                                            .name
+                                                        }
+                                                      </Badge>
+                                                    )
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
+
+                                          {/* Images Gallery */}
+                                          {activity.images &&
+                                            activity.images.length > 0 && (
+                                              <div className="bg-muted/30 rounded-lg p-4">
+                                                <h6 className="font-medium mb-4 text-sm text-foreground flex items-center gap-2">
+                                                  🖼️ {t.activityGallery}
+                                                </h6>
+
+                                                {activity.images.length ===
+                                                1 ? (
+                                                  // Single image - larger display
+                                                  <Dialog>
+                                                    <DialogTrigger asChild>
+                                                      <div className="group relative aspect-video rounded-lg overflow-hidden bg-muted cursor-pointer max-w-md">
+                                                        <Image
+                                                          src={
+                                                            activity.images[0]
+                                                              .media.url
+                                                          }
+                                                          alt={
+                                                            activityTitle ||
+                                                            activity.title
+                                                          }
+                                                          fill
+                                                          sizes="(max-width: 768px) 100vw, 400px"
+                                                          className="object-cover transition-transform group-hover:scale-105"
+                                                          loading="lazy"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                          <Expand className="w-6 h-6 text-white" />
+                                                        </div>
+                                                      </div>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="max-w-4xl">
+                                                      <DialogHeader>
+                                                        <DialogTitle>
+                                                          {activityTitle ||
+                                                            activity.title}
+                                                        </DialogTitle>
+                                                      </DialogHeader>
+                                                      <div className="relative h-[70vh] max-h-[600px] w-full">
+                                                        <Image
+                                                          src={
+                                                            activity.images[0]
+                                                              .media.url
+                                                          }
+                                                          alt={
+                                                            activityTitle ||
+                                                            activity.title
+                                                          }
+                                                          fill
+                                                          sizes="(max-width: 768px) 100vw, 80vw"
+                                                          className="object-contain"
+                                                        />
+                                                      </div>
+                                                    </DialogContent>
+                                                  </Dialog>
+                                                ) : (
+                                                  // Multiple images - grid with carousel dialog
+                                                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                                                    {activity.images.map(
+                                                      (imageRel, imgIndex) => (
+                                                        <Dialog
+                                                          key={
+                                                            imageRel.media.id
+                                                          }
+                                                        >
+                                                          <DialogTrigger
+                                                            asChild
+                                                          >
+                                                            <div className="group relative aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer">
+                                                              <Image
+                                                                src={
+                                                                  imageRel.media
+                                                                    .url
+                                                                }
+                                                                alt={`${activityTitle || activity.title} - Image ${imgIndex + 1}`}
+                                                                fill
+                                                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                                                className="object-cover transition-transform group-hover:scale-105"
+                                                                loading="lazy"
+                                                              />
+                                                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                <Expand className="w-5 h-5 text-white" />
+                                                              </div>
+                                                              <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                                                                {imgIndex + 1}/
+                                                                {
+                                                                  activity
+                                                                    .images!
+                                                                    .length
+                                                                }
+                                                              </div>
+                                                            </div>
+                                                          </DialogTrigger>
+                                                          <DialogContent className="max-w-6xl">
+                                                            <DialogHeader>
+                                                              <DialogTitle>
+                                                                {activityTitle ||
+                                                                  activity.title}{" "}
+                                                                - {t.gallery}
+                                                              </DialogTitle>
+                                                            </DialogHeader>
+                                                            <Carousel className="w-full">
+                                                              <CarouselContent>
+                                                                {activity.images!.map(
+                                                                  (img) => (
+                                                                    <CarouselItem
+                                                                      key={
+                                                                        img
+                                                                          .media
+                                                                          .id
+                                                                      }
+                                                                    >
+                                                                      <div className="relative h-[70vh] max-h-[700px] w-full">
+                                                                        <Image
+                                                                          src={
+                                                                            img
+                                                                              .media
+                                                                              .url
+                                                                          }
+                                                                          alt={
+                                                                            activityTitle ||
+                                                                            activity.title
+                                                                          }
+                                                                          fill
+                                                                          sizes="(max-width: 768px) 100vw, 90vw"
+                                                                          className="object-contain"
+                                                                        />
+                                                                      </div>
+                                                                    </CarouselItem>
+                                                                  )
+                                                                )}
+                                                              </CarouselContent>
+                                                              <CarouselPrevious />
+                                                              <CarouselNext />
+                                                            </Carousel>
+                                                          </DialogContent>
+                                                        </Dialog>
+                                                      )
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+
+                                          {/* Empty state */}
+                                          {(!activity.teachers ||
+                                            activity.teachers.length === 0) &&
+                                            (!activity.images ||
+                                              activity.images.length === 0) && (
+                                              <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg">
+                                                <p className="text-sm">
+                                                  {t.noActivityDetails}
+                                                </p>
+                                              </div>
+                                            )}
+                                        </div>
+                                      </AccordionContent>
+                                    </AccordionItem>
+                                  );
+                                })}
+                              </Accordion>
                             </div>
                           )}
                         </div>
@@ -596,10 +773,10 @@ export function ProjectDetailPage({
             <ProjectTeam teachers={project.teachers} language={language} />
           )}
 
-          {/* Combined Gallery - optimized version */}
-          {allProjectImages.length > 0 && (
+          {/* Project Gallery - only actual gallery images */}
+          {projectGalleryImages.length > 0 && (
             <GalleryView
-              images={allProjectImages}
+              images={projectGalleryImages}
               title={t.projectGallery}
               columns={4} // We now handle responsive columns inside the component
             />
@@ -630,17 +807,17 @@ export function ProjectDetailPage({
                     return (
                       <div
                         key={quiz.id}
-                        className="flex items-center justify-between"
+                        className="flex items-start sm:items-center justify-between gap-4"
                       >
-                        <div>
-                          <p className="font-medium">
+                        <div className="flex-1 min-w-0 pr-4">
+                          <p className="font-medium break-words">
                             {quizTitle || quiz.title}
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-muted-foreground break-words">
                             {quizDescription || quiz.description || t.takeQuiz}
                           </p>
                         </div>
-                        <Button variant="outline" size="sm" asChild>
+                        <Button variant="outline" size="sm" asChild className="flex-shrink-0">
                           <Link href={`${prefix}/quizzes/${quiz.id}`}>
                             {t.startQuiz}
                           </Link>

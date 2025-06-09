@@ -33,8 +33,33 @@ async function getProject(slug: string) {
       quizzes: true,
       timeline: {
         include: {
-          media: true,
-          gallery: true,
+          activities: {
+            include: {
+              teachers: {
+                include: {
+                  teacher: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+              images: {
+                include: {
+                  media: {
+                    select: {
+                      id: true,
+                      url: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: {
+              order: "asc",
+            },
+          },
         },
         orderBy: {
           order: "asc",

@@ -227,6 +227,7 @@ export function RichTextEditor({
       content: value,
       editable: !disabled,
       onUpdate: handleUpdate,
+      immediatelyRender: false,
       editorProps: {
         attributes: {
           class: cn(

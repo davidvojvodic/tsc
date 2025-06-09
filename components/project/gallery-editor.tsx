@@ -5,9 +5,10 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { uploadFiles } from "@/lib/uploadthing"; // Ensure this is correctly exported
 import { useDropzone } from "react-dropzone";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -196,24 +197,48 @@ export function GalleryEditor({
             )}
           </div>
 
-          {/* Simple Gallery Status Message */}
-          <div className="space-y-2">
+          {/* Gallery Preview */}
+          <div className="space-y-4">
             {value.length === 0 ? (
               <p className="text-muted-foreground text-center py-4">
                 No images uploaded yet. Upload images using the area above.
               </p>
             ) : (
-              <div className="border rounded-lg p-4 text-center">
-                <h3 className="font-medium">
-                  {value.length} {value.length === 1 ? "image" : "images"}{" "}
-                  uploaded successfully
-                </h3>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Images will be displayed on the project page after saving.
-                </p>
-
-                {/* Hidden button to manage images if needed */}
-                <div className="mt-4">
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {value.map((image) => (
+                    <div
+                      key={image.id}
+                      className="group relative aspect-square rounded-lg overflow-hidden border"
+                    >
+                      <Image
+                        src={image.url}
+                        alt={image.alt || "Gallery image"}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="h-8 px-2"
+                          type="button"
+                          onClick={() => {
+                            onChange(value.filter((img) => img.id !== image.id));
+                            toast.success("Image removed");
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">
+                    {value.length} {value.length === 1 ? "image" : "images"} uploaded
+                  </p>
                   <Button
                     variant="outline"
                     size="sm"
@@ -226,7 +251,7 @@ export function GalleryEditor({
                     Clear All Images
                   </Button>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>

@@ -17,27 +17,19 @@ const heroImageSchema = z
   })
   .nullable();
 
-const mediaSchema = z.union([
-  z.array(
-    z.object({
-      id: z.string(),
-      url: z.string(),
-      ufsUrl: z.string().optional(),
-      fileKey: z.string().optional(),
-      alt: z.string().nullable(),
-      size: z.number().optional(), // Optional in the schema validation but will default to 0
-      mimeType: z.string().optional(), // Optional in the schema validation but will default
-    })
-  ),
-  z.object({
-    url: z.string(),
-    ufsUrl: z.string().optional(),
-    fileKey: z.string().optional(),
-    size: z.number().optional(),
-    mimeType: z.string().optional(),
-  }),
-  z.null(),
-]);
+
+const activitySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  title_sl: z.string().nullable(),
+  title_hr: z.string().nullable(),
+  description: z.string(),
+  description_sl: z.string().nullable(),
+  description_hr: z.string().nullable(),
+  order: z.number(),
+  teacherIds: z.array(z.string()),
+  imageIds: z.array(z.string()),
+});
 
 const timelinePhaseSchema = z.object({
   id: z.string(),
@@ -57,7 +49,7 @@ const timelinePhaseSchema = z.object({
   }, z.date().nullable()),
   completed: z.boolean(),
   order: z.number(),
-  media: mediaSchema,
+  activities: z.array(activitySchema).optional(),
 });
 
 const galleryImageSchema = z.object({
@@ -121,6 +113,7 @@ export async function PATCH(
 
     const body = await req.json();
     const validatedData = projectSchema.parse(body);
+
 
     // Check if slug is unique
     const existingProject = await prisma.project.findFirst({
@@ -199,97 +192,22 @@ export async function PATCH(
         )
       );
 
-      // Retrieve current phases with media and gallery for comparison
-      const currentPhases = await tx.projectPhase.findMany({
-        where: { projectId: params.id },
-        include: { 
-          media: true,
-          gallery: true,
-        },
+
+      // Create a mapping from frontend image IDs (fileKeys) to database media IDs
+      const imageIdMapping = new Map<string, string>();
+      newGalleryImages.forEach(media => {
+        imageIdMapping.set(media.filename, media.id);
       });
+
+      // Phases no longer have media - images are only attached to activities
       
-      // Create a map of existing media to avoid duplicates
-      const existingMediaMap = new Map();
-      
-      // Track media IDs we should retain
-      const mediaIdsToKeep = new Set();
-      
-      // Fill the existing media map with all current media
-      for (const phase of currentPhases) {
-        // Primary media
-        if (phase.media) {
-          existingMediaMap.set(phase.media.url, phase.media);
-        }
-        
-        // Gallery media
-        if (phase.gallery && phase.gallery.length > 0) {
-          phase.gallery.forEach(img => {
-            existingMediaMap.set(img.url, img);
-          });
-        }
-      }
-      
-      // First, delete old phases but keep track of which media to preserve
+      // Delete old phases (activities will be cascade deleted)
       await tx.projectPhase.deleteMany({ where: { projectId: params.id } });
       
-      // Create new timeline phases with media
+      // Create new timeline phases with activities
       await Promise.all(
         validatedData.timeline.map(async (phase) => {
-          let mediaId: string | undefined;
-          let additionalGalleryImages: any[] = [];
-
-          // Process phase media (multiple images using new schema)
-          if (phase.media && Array.isArray(phase.media) && phase.media.length > 0) {
-            console.log(`Processing phase with ${phase.media.length} media items`);
-            
-            const phaseMediaItems = [];
-            
-            // Process all media items for this phase
-            for(let i = 0; i < phase.media.length; i++) {
-              const img = phase.media[i];
-              let media;
-              
-              // Check if this media already exists by URL
-              const existingMedia = existingMediaMap.get(img.url || img.ufsUrl);
-              
-              if (existingMedia) {
-                // Use existing media
-                media = existingMedia;
-                mediaIdsToKeep.add(existingMedia.id);
-                console.log(`Reusing existing media: ${existingMedia.id}`);
-              } else {
-                // Create new media only if it doesn't exist
-                console.log(`Creating new media for: ${img.url || img.ufsUrl}`);
-                media = await tx.media.create({
-                  data: {
-                    filename: img.fileKey || img.id || "unknown",
-                    url: img.ufsUrl || img.url,
-                    type: MediaType.IMAGE,
-                    mimeType: img.mimeType || "image/jpeg",
-                    size: img.size || 0,
-                    alt: img.alt || null,
-                  },
-                });
-              }
-              
-              // Add to list of all phase media
-              phaseMediaItems.push(media);
-              
-              // Set the first one as primary media
-              if (i === 0) {
-                mediaId = media.id;
-              }
-            }
-            
-            // We'll connect all images to the phase gallery when we create the phase
-            if (phaseMediaItems.length > 1) {
-              // Get all except the primary one (which will be connected via mediaId)
-              additionalGalleryImages = phaseMediaItems.slice(1);
-            }
-          }
-
-          // Create the phase with primary media and gallery relations
-          return tx.projectPhase.create({
+          const createdPhase = await tx.projectPhase.create({
             data: {
               title: phase.title,
               title_sl: phase.title_sl,
@@ -302,34 +220,66 @@ export async function PATCH(
               completed: phase.completed,
               order: phase.order,
               projectId: params.id,
-              ...(mediaId ? { mediaId } : {}),
-              // Connect additional images to the phase gallery
-              ...(additionalGalleryImages.length > 0 ? {
-                gallery: {
-                  connect: additionalGalleryImages.map(media => ({ id: media.id }))
-                }
-              } : {})
             },
           });
+
+          // Create activities for this phase
+          if (phase.activities && phase.activities.length > 0) {
+            await Promise.all(
+              phase.activities.map(async (activity) => {
+                const createdActivity = await tx.projectActivity.create({
+                  data: {
+                    title: activity.title,
+                    title_sl: activity.title_sl,
+                    title_hr: activity.title_hr,
+                    description: activity.description,
+                    description_sl: activity.description_sl,
+                    description_hr: activity.description_hr,
+                    order: activity.order,
+                    phaseId: createdPhase.id,
+                  },
+                });
+
+                // Create teacher associations
+                if (activity.teacherIds && activity.teacherIds.length > 0) {
+                  await Promise.all(
+                    activity.teacherIds.map(async (teacherId) => {
+                      await tx.projectActivityToTeacher.create({
+                        data: {
+                          activityId: createdActivity.id,
+                          teacherId: teacherId,
+                        },
+                      });
+                    })
+                  );
+                }
+
+                // Create image associations using the mapping
+                if (activity.imageIds && activity.imageIds.length > 0) {
+                  const validImageIds = activity.imageIds
+                    .map(frontendId => imageIdMapping.get(frontendId))
+                    .filter(Boolean) as string[];
+                  
+                  await Promise.all(
+                    validImageIds.map(async (databaseImageId) => {
+                      await tx.projectActivityToMedia.create({
+                        data: {
+                          activityId: createdActivity.id,
+                          mediaId: databaseImageId,
+                        },
+                      });
+                    })
+                  );
+                }
+              })
+            );
+          }
+
+          return createdPhase;
         })
       );
 
-      // Clean up unused media (those not in mediaIdsToKeep)
-      // This is done after creating phases to avoid foreign key constraints
-      const existingMediaIds = Array.from(existingMediaMap.values()).map(media => media.id);
-      const mediaToDelete = existingMediaIds.filter(id => !mediaIdsToKeep.has(id));
-      
-      if (mediaToDelete.length > 0) {
-        console.log(`Cleaning up ${mediaToDelete.length} unused media items`);
-        // Delete unused media that's not being reused
-        await tx.media.deleteMany({
-          where: {
-            id: {
-              in: mediaToDelete
-            }
-          }
-        });
-      }
+      // Phase media cleanup is no longer needed since phases don't have media
       
       // Update the project with all new data
       return await tx.project.update({
@@ -362,8 +312,23 @@ export async function PATCH(
           },
           timeline: {
             include: {
-              media: true,
-              gallery: true,
+              activities: {
+                include: {
+                  teachers: {
+                    include: {
+                      teacher: true,
+                    },
+                  },
+                  images: {
+                    include: {
+                      media: true,
+                    },
+                  },
+                },
+                orderBy: {
+                  order: "asc",
+                },
+              },
             },
             orderBy: {
               order: "asc",
@@ -469,54 +434,16 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Create timeline phases with media
+      // Create a mapping from frontend image IDs (fileKeys) to database media IDs
+      const postImageIdMapping = new Map<string, string>();
+      galleryImages.forEach(media => {
+        postImageIdMapping.set(media.filename, media.id);
+      });
+
+      // Create timeline phases with activities
       await Promise.all(
         validatedData.timeline.map(async (phase) => {
-          let mediaId: string | undefined;
-          let additionalGalleryImages: any[] = [];
-
-          // Process phase media (multiple images using new schema)
-          if (phase.media && Array.isArray(phase.media) && phase.media.length > 0) {
-            console.log(`Processing phase with ${phase.media.length} media items`);
-            
-            const phaseMediaItems = [];
-            
-            // Create all media items for this phase
-            for(let i = 0; i < phase.media.length; i++) {
-              const img = phase.media[i];
-              try {
-                const media = await tx.media.create({
-                  data: {
-                    filename: img.fileKey || img.id || "unknown",
-                    url: img.ufsUrl || img.url,
-                    type: MediaType.IMAGE,
-                    mimeType: img.mimeType || "image/jpeg",
-                    size: img.size || 0,
-                    alt: img.alt || null,
-                  },
-                });
-                
-                // Add to list of all phase media
-                phaseMediaItems.push(media);
-                
-                // Set the first one as primary media
-                if (i === 0) {
-                  mediaId = media.id;
-                }
-              } catch (error) {
-                console.error("Error creating phase media:", error);
-              }
-            }
-            
-            // We'll connect all images to the phase gallery when we create the phase
-            if (phaseMediaItems.length > 1) {
-              // Get all except the primary one (which will be connected via mediaId)
-              additionalGalleryImages = phaseMediaItems.slice(1);
-            }
-          }
-
-          // Create the phase with primary media and gallery relations
-          return tx.projectPhase.create({
+          const createdPhase = await tx.projectPhase.create({
             data: {
               title: phase.title,
               title_sl: phase.title_sl || null,
@@ -529,15 +456,62 @@ export async function POST(req: NextRequest) {
               completed: phase.completed,
               order: phase.order,
               projectId: newProject.id,
-              ...(mediaId ? { mediaId } : {}),
-              // Connect additional images to the phase gallery
-              ...(additionalGalleryImages.length > 0 ? {
-                gallery: {
-                  connect: additionalGalleryImages.map(media => ({ id: media.id }))
-                }
-              } : {})
             },
           });
+
+          // Create activities for this phase
+          if (phase.activities && phase.activities.length > 0) {
+            await Promise.all(
+              phase.activities.map(async (activity) => {
+                const createdActivity = await tx.projectActivity.create({
+                  data: {
+                    title: activity.title,
+                    title_sl: activity.title_sl,
+                    title_hr: activity.title_hr,
+                    description: activity.description,
+                    description_sl: activity.description_sl,
+                    description_hr: activity.description_hr,
+                    order: activity.order,
+                    phaseId: createdPhase.id,
+                  },
+                });
+
+                // Create teacher associations
+                if (activity.teacherIds && activity.teacherIds.length > 0) {
+                  await Promise.all(
+                    activity.teacherIds.map(async (teacherId) => {
+                      await tx.projectActivityToTeacher.create({
+                        data: {
+                          activityId: createdActivity.id,
+                          teacherId: teacherId,
+                        },
+                      });
+                    })
+                  );
+                }
+
+                // Create image associations using the mapping
+                if (activity.imageIds && activity.imageIds.length > 0) {
+                  const validImageIds = activity.imageIds
+                    .map(frontendId => postImageIdMapping.get(frontendId))
+                    .filter(Boolean) as string[];
+                  
+                  await Promise.all(
+                    validImageIds.map(async (databaseImageId) => {
+                      await tx.projectActivityToMedia.create({
+                        data: {
+                          activityId: createdActivity.id,
+                          mediaId: databaseImageId,
+                        },
+                      });
+                    })
+                  );
+                }
+              })
+            );
+          }
+
+          return createdPhase;
         })
       );
 
@@ -553,8 +527,23 @@ export async function POST(req: NextRequest) {
           },
           timeline: {
             include: {
-              media: true,
-              gallery: true,
+              activities: {
+                include: {
+                  teachers: {
+                    include: {
+                      teacher: true,
+                    },
+                  },
+                  images: {
+                    include: {
+                      media: true,
+                    },
+                  },
+                },
+                orderBy: {
+                  order: "asc",
+                },
+              },
             },
             orderBy: {
               order: "asc",
@@ -607,11 +596,7 @@ export async function DELETE(
         },
         timeline: {
           select: { 
-            id: true,
-            mediaId: true,
-            gallery: {
-              select: { id: true }
-            }
+            id: true
           }
         }
       },
@@ -641,33 +626,7 @@ export async function DELETE(
         project.gallery.forEach(img => mediaIds.push(img.id));
       }
       
-      // Add phase media (both primary and gallery)
-      if (project.timeline && project.timeline.length > 0) {
-        // Add primary media IDs
-        const primaryMediaIds = project.timeline
-          .filter(phase => phase.mediaId !== null && phase.mediaId !== undefined)
-          .map(phase => phase.mediaId as string);
-        
-        if (primaryMediaIds.length > 0) {
-          console.log(`Found ${primaryMediaIds.length} primary phase media items to delete`);
-          mediaIds.push(...primaryMediaIds);
-        }
-        
-        // Add gallery image IDs
-        const galleryMediaIds: string[] = [];
-        project.timeline.forEach(phase => {
-          if (phase.gallery && phase.gallery.length > 0) {
-            phase.gallery.forEach(img => {
-              if (img.id) galleryMediaIds.push(img.id);
-            });
-          }
-        });
-        
-        if (galleryMediaIds.length > 0) {
-          console.log(`Found ${galleryMediaIds.length} phase gallery media items to delete`);
-          mediaIds.push(...galleryMediaIds);
-        }
-      }
+      // Phases no longer have media - media is only attached to activities
       
       // 2. Delete project phases 
       console.log("Deleting project phases");

@@ -46,8 +46,6 @@ export interface ProjectPhase {
   completed: boolean;
 
   order: number;
-
-  media?: { url: string } | null;
 }
 
 export interface GalleryImage {
@@ -100,12 +98,29 @@ export interface ProjectFormData {
 
     completed: boolean;
 
-    mediaId?: string;
-    mediaUrl?: string;
-    galleryImages?: Array<{
+    activities?: Array<{
       id: string;
-      url: string;
-      alt?: string | null;
+      title: string;
+      title_sl?: string | null;
+      title_hr?: string | null;
+      description: string;
+      description_sl?: string | null;
+      description_hr?: string | null;
+      order: number;
+      // Arrays for multiple teachers and images
+      teacherIds?: string[];
+      imageIds?: string[];
+      // Keep legacy support for raw API data
+      teachers?: Array<{ teacher: { id: string; name: string } }>;
+      images?: Array<{ media: { id: string; url: string } }>;
+      // Legacy single fields (deprecated)
+      teacherId?: string | null;
+      teacher?: Teacher | null;
+      imageId?: string | null;
+      image?: {
+        id: string;
+        url: string;
+      } | null;
     }>;
   }>;
 

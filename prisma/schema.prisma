@@ -1,19 +1,13 @@
-// This is your Prisma schema file with multilingual support
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
-
-// Datasource configuration for PostgreSQL
 
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
-
-// User model for authentication and user management
 
 model User {
   id              String           @id @default(uuid())
@@ -23,20 +17,17 @@ model User {
   updatedAt       DateTime         @updatedAt
   emailVerified   Boolean
   image           String?
+  banExpires      DateTime?
+  banReason       String?
+  banned          Boolean?
   role            Role             @default(USER)
-  Session         Session[]
   Account         Account[]
   pages           Page[]
   quizSubmissions QuizSubmission[]
-
-  banned     Boolean?
-  banReason  String?
-  banExpires DateTime?
+  Session         Session[]
 
   @@map("user")
 }
-
-// Session model for user sessions
 
 model Session {
   id             String   @id @default(uuid())
@@ -44,117 +35,360 @@ model Session {
   ipAddress      String?
   userAgent      String?
   userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token          String
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
   impersonatedBy String?
+  token          String   @unique
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@map("session")
 }
-
-// Account model for third-party account linking
 
 model Account {
   id                    String    @id @default(uuid())
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
   expiresAt             DateTime?
   password              String?
   accessTokenExpiresAt  DateTime?
+  createdAt             DateTime  @default(now())
   refreshTokenExpiresAt DateTime?
   scope                 String?
-  createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("account")
 }
 
-// Verification model for email or action verification
-
 model Verification {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   identifier String
   value      String
   expiresAt  DateTime
-
-  createdAt DateTime?
-  updatedAt DateTime?
+  createdAt  DateTime?
+  updatedAt  DateTime?
 
   @@map("verification")
 }
 
-// Role enumeration for user roles
+model Post {
+  id          String    @id @default(uuid())
+  title       String
+  title_sl    String?
+  title_hr    String?
+  slug        String    @unique
+  content     String
+  content_sl  String?
+  content_hr  String?
+  excerpt     String?
+  excerpt_sl  String?
+  excerpt_hr  String?
+  featured    Boolean   @default(false)
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  coverId     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  projectId   String?
+  authorName  String    @default("Admin")
+  cover       Media?    @relation(fields: [coverId], references: [id])
+  Project     Project?  @relation(fields: [projectId], references: [id])
+
+  @@map("post")
+}
+
+model Page {
+  id          String    @id @default(uuid())
+  title       String
+  title_sl    String?
+  title_hr    String?
+  slug        String    @unique
+  content     String
+  content_sl  String?
+  content_hr  String?
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  authorId    String
+  parentId    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  mediaId     String?
+  projectId   String?
+  author      User      @relation(fields: [authorId], references: [id])
+  Media       Media?    @relation(fields: [mediaId], references: [id])
+  parent      Page?     @relation("PageToPage", fields: [parentId], references: [id])
+  children    Page[]    @relation("PageToPage")
+  Project     Project?  @relation(fields: [projectId], references: [id])
+
+  @@map("page")
+}
+
+model Media {
+  id               String                     @id @default(uuid())
+  filename         String
+  url              String
+  mimeType         String
+  size             Int
+  type             MediaType                  @default(OTHER)
+  alt              String?
+  alt_sl           String?
+  alt_hr           String?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+  projectId        String?
+  Project          Project?                   @relation(fields: [projectId], references: [id])
+  pages            Page[]
+  posts            Post[]
+  projectHero      Project[]                  @relation("ProjectHero")
+  teachers         Teacher[]
+  testimonials     Testimonial[]
+  projectGallery   Project[]                  @relation("ProjectGallery")
+  activities       ProjectActivityToMedia[]
+
+  @@map("media")
+}
+
+model Material {
+  id             String       @id @default(uuid())
+  title          String
+  title_sl       String?
+  title_hr       String?
+  description    String?
+  description_sl String?
+  description_hr String?
+  type           MaterialType @default(OTHER)
+  url            String
+  filename       String
+  fileKey        String
+  size           Int
+  downloads      Int          @default(0)
+  published      Boolean      @default(true)
+  category       String?
+  category_sl    String?
+  category_hr    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  language       String       @default("en")
+
+  @@map("material")
+}
+
+model Teacher {
+  id           String                        @id @default(uuid())
+  name         String
+  title        String?
+  title_sl     String?
+  title_hr     String?
+  bio          String?
+  bio_sl       String?
+  bio_hr       String?
+  photoId      String?
+  email        String?
+  displayOrder Int                           @default(0)
+  createdAt    DateTime                      @default(now())
+  updatedAt    DateTime                      @updatedAt
+  school       String?
+  quizzes      Quiz[]
+  photo        Media?                        @relation(fields: [photoId], references: [id])
+  projects     Project[]                     @relation("ProjectToTeacher")
+  activities   ProjectActivityToTeacher[]
+
+  @@map("teacher")
+}
+
+model Quiz {
+  id             String           @id @default(uuid())
+  title          String
+  title_sl       String?
+  title_hr       String?
+  description    String?
+  description_sl String?
+  description_hr String?
+  teacherId      String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  projectId      String?
+  questions      Question[]
+  Project        Project?         @relation(fields: [projectId], references: [id])
+  teacher        Teacher          @relation(fields: [teacherId], references: [id])
+  submissions    QuizSubmission[]
+
+  @@map("quiz")
+}
+
+model Question {
+  id              String   @id @default(uuid())
+  text            String
+  text_sl         String?
+  text_hr         String?
+  quizId          String
+  correctOptionId String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  options         Option[] @relation("QuestionOptions")
+  correctOption   Option?  @relation("CorrectAnswer", fields: [correctOptionId], references: [id])
+  quiz            Quiz     @relation(fields: [quizId], references: [id])
+
+  @@map("question")
+}
+
+model Option {
+  id                    String    @id @default(uuid())
+  text                  String
+  text_sl               String?
+  text_hr               String?
+  questionId            String
+  correct               Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  question              Question  @relation("QuestionOptions", fields: [questionId], references: [id], onDelete: Cascade)
+  correctAnswerQuestion Question? @relation("CorrectAnswer")
+
+  @@map("option")
+}
+
+model QuizSubmission {
+  id        String   @id @default(uuid())
+  quizId    String
+  userId    String
+  score     Float
+  answers   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([quizId])
+  @@index([userId])
+  @@map("quiz_submission")
+}
+
+model Project {
+  id             String         @id @default(uuid())
+  name           String
+  name_sl        String?
+  name_hr        String?
+  slug           String         @unique
+  description    String?
+  description_sl String?
+  description_hr String?
+  published      Boolean        @default(false)
+  publishedAt    DateTime?
+  featured       Boolean        @default(false)
+  heroImageId    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  Media          Media[]
+  pages          Page[]
+  posts          Post[]
+  heroImage      Media?         @relation("ProjectHero", fields: [heroImageId], references: [id])
+  timeline       ProjectPhase[]
+  quizzes        Quiz[]
+  gallery        Media[]        @relation("ProjectGallery")
+  teachers       Teacher[]      @relation("ProjectToTeacher")
+
+  @@map("project")
+}
+
+model ProjectPhase {
+  id             String            @id @default(uuid())
+  title          String
+  title_sl       String?
+  title_hr       String?
+  description    String
+  description_sl String?
+  description_hr String?
+  startDate      DateTime?
+  endDate        DateTime?
+  completed      Boolean           @default(false)
+  order          Int
+  projectId      String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  project        Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  activities     ProjectActivity[]
+
+  @@map("project_phase")
+}
+
+model Testimonial {
+  id         String   @id @default(uuid())
+  name       String
+  role       String
+  role_sl    String?
+  role_hr    String?
+  content    String
+  content_sl String?
+  content_hr String?
+  photoId    String?
+  featured   Boolean  @default(false)
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  photo      Media?   @relation(fields: [photoId], references: [id])
+
+  @@map("testimonial")
+}
+
+model ProjectActivity {
+  id             String                        @id @default(uuid())
+  title          String                        // Primary language (English)
+  title_sl       String?                       // Slovenian
+  title_hr       String?                       // Croatian
+  description    String                        @db.Text // Primary language (English)
+  description_sl String?                       @db.Text // Slovenian
+  description_hr String?                       @db.Text // Croatian
+  order          Int                           @default(0)
+  
+  // Phase this activity belongs to
+  phase          ProjectPhase                  @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  phaseId        String
+  
+  // Many-to-many relationships
+  teachers       ProjectActivityToTeacher[]
+  images         ProjectActivityToMedia[]
+  
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @updatedAt
+  
+  @@map("project_activity")
+}
+
+// Junction table for ProjectActivity to Teacher many-to-many relationship
+model ProjectActivityToTeacher {
+  id         String          @id @default(uuid())
+  activity   ProjectActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId String
+  teacher    Teacher         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId  String
+  createdAt  DateTime        @default(now())
+
+  @@unique([activityId, teacherId])
+  @@map("project_activity_to_teacher")
+}
+
+// Junction table for ProjectActivity to Media many-to-many relationship
+model ProjectActivityToMedia {
+  id         String          @id @default(uuid())
+  activity   ProjectActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId String
+  media      Media           @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  mediaId    String
+  createdAt  DateTime        @default(now())
+
+  @@unique([activityId, mediaId])
+  @@map("project_activity_to_media")
+}
 
 enum Role {
   USER
   ADMIN
   TEACHER
 }
-
-// Post model for blog posts
-
-model Post {
-  id          String     @id @default(uuid())
-  title       String // Primary language (English)
-  title_sl    String? // Slovenian
-  title_hr    String? // Croatian
-  slug        String     @unique
-  content     String     @db.Text // Primary language (English)
-  content_sl  String?    @db.Text // Slovenian
-  content_hr  String?    @db.Text // Croatian
-  excerpt     String?    @db.Text // Primary language (English)
-  excerpt_sl  String?    @db.Text // Slovenian
-  excerpt_hr  String?    @db.Text // Croatian
-  featured    Boolean    @default(false)
-  published   Boolean    @default(false)
-  publishedAt DateTime?
-  authorName  String     @default("Admin")
-  cover       Media?     @relation(fields: [coverId], references: [id])
-  coverId     String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  Project     Project?   @relation(fields: [projectId], references: [id])
-  projectId   String?
-
-  @@map("post")
-}
-
-// Page model for static pages
-
-model Page {
-  id          String    @id @default(uuid())
-  title       String // Primary language (English)
-  title_sl    String? // Slovenian
-  title_hr    String? // Croatian
-  slug        String    @unique
-  content     String    @db.Text // Primary language (English)
-  content_sl  String?   @db.Text // Slovenian
-  content_hr  String?   @db.Text // Croatian
-  published   Boolean   @default(false)
-  publishedAt DateTime?
-  author      User      @relation(fields: [authorId], references: [id])
-  authorId    String
-  parent      Page?     @relation("PageToPage", fields: [parentId], references: [id])
-  parentId    String?
-  children    Page[]    @relation("PageToPage")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  Media       Media?    @relation(fields: [mediaId], references: [id])
-  mediaId     String?
-  Project     Project?  @relation(fields: [projectId], references: [id])
-  projectId   String?
-
-  @@map("page")
-}
-
-// Media model for handling images, documents, etc.
 
 enum MediaType {
   IMAGE
@@ -164,242 +398,10 @@ enum MediaType {
   OTHER
 }
 
-model Media {
-  id             String         @id @default(uuid())
-  filename       String
-  url            String
-  mimeType       String
-  size           Int
-  type           MediaType      @default(OTHER)
-  alt            String? // Primary language (English)
-  alt_sl         String? // Slovenian
-  alt_hr         String? // Croatian
-  posts          Post[]
-  pages          Page[]
-  teachers       Teacher[]
-  projectHero    Project[]      @relation("ProjectHero")
-  projectGallery Project[]      @relation("ProjectGallery")
-  
-  // Project phase relations
-  primaryForPhases  ProjectPhase[] @relation("PhasePrimaryMedia")
-  phaseGalleries    ProjectPhase[] @relation("PhaseGallery")
-  
-  testimonials   Testimonial[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  Project        Project?       @relation(fields: [projectId], references: [id])
-  projectId      String?
-
-  @@map("media")
-}
-
 enum MaterialType {
   PDF
   WORD
   EXCEL
   POWERPOINT
   OTHER
-}
-
-model Material {
-  id             String       @id @default(uuid())
-  title          String // Primary language (English)
-  title_sl       String? // Slovenian
-  title_hr       String? // Croatian
-  description    String?      @db.Text // Primary language (English)
-  description_sl String?      @db.Text // Slovenian
-  description_hr String?      @db.Text // Croatian
-  type           MaterialType @default(OTHER)
-  url            String // URL from UploadThing
-  filename       String // Original filename
-  fileKey        String // UploadThing file key
-  size           Int // File size in bytes
-  downloads      Int          @default(0)
-  published      Boolean      @default(true)
-  language       String       @default("en") // Primary language (en, sl, hr)
-  category       String? // Primary language (English)
-  category_sl    String? // Slovenian
-  category_hr    String? // Croatian
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@map("material")
-}
-
-// Teacher model for managing teacher profiles
-
-model Teacher {
-  id           String    @id @default(uuid())
-  name         String
-  title        String? // Primary language (English)
-  title_sl     String? // Slovenian
-  title_hr     String? // Croatian
-  bio          String?   @db.Text // Primary language (English)
-  bio_sl       String?   @db.Text // Slovenian
-  bio_hr       String?   @db.Text // Croatian
-  photo        Media?    @relation(fields: [photoId], references: [id])
-  photoId      String?
-  email        String?
-  displayOrder Int       @default(0)
-  school       String? // Can be "tsc" or "pts"
-  quizzes      Quiz[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  projects     Project[]
-
-  @@map("teacher")
-}
-
-// Quiz model for creating quizzes
-
-model Quiz {
-  id             String           @id @default(uuid())
-  title          String // Primary language (English)
-  title_sl       String? // Slovenian
-  title_hr       String? // Croatian
-  description    String?          @db.Text // Primary language (English)
-  description_sl String?          @db.Text // Slovenian
-  description_hr String?          @db.Text // Croatian
-  teacher        Teacher          @relation(fields: [teacherId], references: [id])
-  teacherId      String
-  questions      Question[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  Project        Project?         @relation(fields: [projectId], references: [id])
-  projectId      String?
-  submissions    QuizSubmission[]
-
-  @@map("quiz")
-}
-
-// Question model for quiz questions
-
-model Question {
-  id      String   @id @default(uuid())
-  text    String   @db.Text // Primary language (English)
-  text_sl String?  @db.Text // Slovenian
-  text_hr String?  @db.Text // Croatian
-  quiz    Quiz     @relation(fields: [quizId], references: [id])
-  quizId  String
-  options Option[] @relation("QuestionOptions")
-
-  correctOptionId String? @unique
-  correctOption   Option? @relation("CorrectAnswer", fields: [correctOptionId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("question")
-}
-
-// Option model for quiz answer options
-
-model Option {
-  id                    String    @id @default(uuid())
-  text                  String // Primary language (English)
-  text_sl               String? // Slovenian
-  text_hr               String? // Croatian
-  question              Question  @relation("QuestionOptions", fields: [questionId], references: [id], onDelete: Cascade)
-  questionId            String
-  correctAnswerQuestion Question? @relation("CorrectAnswer")
-  correct               Boolean   @default(false)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  @@map("option")
-}
-
-model QuizSubmission {
-  id        String   @id @default(uuid())
-  quiz      Quiz     @relation(fields: [quizId], references: [id])
-  quizId    String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  score     Float
-  answers   Json // Store array of answer details
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([quizId])
-  @@index([userId])
-  @@map("quiz_submission")
-}
-
-model Project {
-  id             String    @id @default(uuid())
-  name           String // Primary language (English)
-  name_sl        String? // Slovenian
-  name_hr        String? // Croatian
-  slug           String    @unique
-  description    String?   @db.Text // Primary language (English)
-  description_sl String?   @db.Text // Slovenian
-  description_hr String?   @db.Text // Croatian
-  published      Boolean   @default(false)
-  publishedAt    DateTime?
-  featured       Boolean   @default(false)
-
-  heroImage   Media?  @relation("ProjectHero", fields: [heroImageId], references: [id])
-  heroImageId String?
-  gallery     Media[] @relation("ProjectGallery")
-
-  teachers Teacher[]
-  quizzes  Quiz[]
-  posts    Post[]
-  pages    Page[]
-
-  timeline ProjectPhase[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Media     Media[]
-
-  @@map("project")
-}
-
-model ProjectPhase {
-  id             String    @id @default(uuid())
-  title          String // Primary language (English)
-  title_sl       String? // Slovenian
-  title_hr       String? // Croatian
-  description    String    @db.Text // Primary language (English)
-  description_sl String?   @db.Text // Slovenian
-  description_hr String?   @db.Text // Croatian
-  startDate      DateTime?
-  endDate        DateTime?
-  completed      Boolean   @default(false)
-  order          Int
-
-  // Primary media (for backwards compatibility)
-  media   Media?  @relation("PhasePrimaryMedia", fields: [mediaId], references: [id])
-  mediaId String?
-  
-  // Gallery of media items for this phase
-  gallery Media[] @relation("PhaseGallery")
-
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("project_phase")
-}
-
-model Testimonial {
-  id         String   @id @default(uuid())
-  name       String
-  role       String // Primary language (English)
-  role_sl    String? // Slovenian
-  role_hr    String? // Croatian
-  content    String   @db.Text // Primary language (English)
-  content_sl String?  @db.Text // Slovenian
-  content_hr String?  @db.Text // Croatian
-  photo      Media?   @relation(fields: [photoId], references: [id])
-  photoId    String?
-  featured   Boolean  @default(false)
-  published  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@map("testimonial")
 }

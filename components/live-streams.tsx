@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, { useState } from "react";
@@ -95,14 +96,14 @@ export default function LiveStreams({
                 >
                   Camera Interface
                 </button>
-                <button
+                {/**<button
                   onClick={() => {
                     window.open(`${cameraUrl}`, "_blank");
                   }}
                   className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                 >
                   Direct Access
-                </button>
+                </button>*/}
               </div>
             </div>
             <p className="text-sm text-gray-500 mt-4">
@@ -154,18 +155,18 @@ export default function LiveStreams({
               <RefreshCw className="h-3 w-3" />
               Refresh
             </button>
-            <button
-              onClick={() => {
-                window.open(
-                  `http://${CAMERA_USERNAME}:${CAMERA_PASSWORD}@${CAMERA_HOST}/`,
-                  "_blank"
-                );
-              }}
-              className="bg-gray-600/80 hover:bg-gray-700/80 text-white text-xs px-3 py-1 rounded-md"
-              title="Open camera interface directly"
-            >
-              Direct Access
-            </button>
+            {/*<button
+                onClick={() => {
+                  window.open(
+                    `http://${CAMERA_USERNAME}:${CAMERA_PASSWORD}@${CAMERA_HOST}/`,
+                    "_blank"
+                  );
+                }}
+                className="bg-gray-600/80 hover:bg-gray-700/80 text-white text-xs px-3 py-1 rounded-md"
+                title="Open camera interface directly"
+              >
+                Direct Access
+              </button> */}
           </div>
         )}
       </div>

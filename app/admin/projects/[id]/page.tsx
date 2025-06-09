@@ -30,8 +30,23 @@ export default async function ProjectPage({ params }: PageParams) {
           },
           timeline: {
             include: {
-              media: true, // Primary media
-              gallery: true, // Gallery of images (new relation)
+              activities: {
+                include: {
+                  teachers: {
+                    include: {
+                      teacher: true,
+                    },
+                  },
+                  images: {
+                    include: {
+                      media: true,
+                    },
+                  },
+                },
+                orderBy: {
+                  order: "asc",
+                },
+              },
             },
             orderBy: {
               order: "asc",
@@ -79,14 +94,27 @@ export default async function ProjectPage({ params }: PageParams) {
           startDate: phase.startDate ?? undefined, // Convert 'null' to 'undefined'
           endDate: phase.endDate ?? undefined, // Convert 'null' to 'undefined'
           completed: phase.completed,
-          mediaId: phase.media?.id, // Primary media ID
-          mediaUrl: phase.media?.url, // Primary media URL
-          // Include gallery images if available
-          galleryImages: phase.gallery?.map(img => ({
-            id: img.id,
-            url: img.url,
-            alt: img.alt
-          })) || []
+          // Include activities if available
+          activities: phase.activities?.map(activity => {
+            
+            return {
+              id: activity.id,
+              title: activity.title,
+              title_sl: activity.title_sl,
+              title_hr: activity.title_hr,
+              description: activity.description,
+              description_sl: activity.description_sl,
+              description_hr: activity.description_hr,
+              order: activity.order,
+              // Extract teacher IDs for the form
+              teacherIds: activity.teachers ? activity.teachers.map(t => t.teacher.id) : [],
+              // Extract image IDs for the form  
+              imageIds: activity.images ? activity.images.map(i => i.media.id) : [],
+              // Keep raw data for reference
+              teachers: activity.teachers,
+              images: activity.images,
+            };
+          }) || []
           // Removed 'order' since it's not defined in ProjectFormData
         })),
         teachers: project.teachers.map((teacher) => ({

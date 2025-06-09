@@ -27,14 +27,14 @@ const steps = [
     description: "Project name, description, and settings",
   },
   {
-    id: "timeline",
-    title: "Timeline",
-    description: "Add project phases and milestones",
-  },
-  {
     id: "gallery",
     title: "Gallery",
     description: "Upload and manage project images",
+  },
+  {
+    id: "timeline",
+    title: "Timeline",
+    description: "Add project phases and milestones",
   },
   {
     id: "teachers",
@@ -105,25 +105,25 @@ export function ProjectForm({
           endDate: phase.endDate ? new Date(phase.endDate) : null,
           completed: phase.completed,
           order: index,
-          // Combine primary media and gallery images
-          media: [
-            // Add primary media if exists
-            ...(phase.mediaId && phase.mediaUrl ? [{ 
-              id: phase.mediaId,
-              url: phase.mediaUrl,
-              fileKey: phase.mediaId,
-              alt: null
-            }] : []),
-            // Add gallery images if any
-            ...(phase.galleryImages && phase.galleryImages.length > 0 ? 
-              phase.galleryImages.map(img => ({
-                id: img.id,
-                url: img.url,
-                fileKey: img.id,
-                alt: img.alt || null
-              })) 
-              : [])
-          ]
+          // Transform activities to match ProjectActivity interface
+          activities: phase.activities?.map(activity => {
+            return {
+              id: activity.id,
+              title: activity.title,
+              title_sl: activity.title_sl || null,
+              title_hr: activity.title_hr || null,
+              description: activity.description,
+              description_sl: activity.description_sl || null,
+              description_hr: activity.description_hr || null,
+              order: activity.order,
+              // Use the correctly populated arrays from the server
+              teacherIds: activity.teacherIds || [],
+              imageIds: activity.imageIds || [],
+              // Keep the raw data for reference
+              teachers: activity.teachers,
+              rawImages: activity.images
+            };
+          }) || []
         };
         return typedPhase;
       });
@@ -150,10 +150,10 @@ export function ProjectForm({
       case 0:
         return basicInfo.name.length >= 2 && basicInfo.slug.length >= 2;
       case 1:
-        return timeline.length > 0;
-      case 2:
         // Allow proceeding even without images
         return true;
+      case 2:
+        return timeline.length > 0;
       case 3:
         return teachers.length > 0;
       default:
@@ -189,6 +189,18 @@ export function ProjectForm({
         gallery: gallery.map(({ ...rest }) => rest),
         teacherIds: teachers,
       };
+
+      console.log('=== SAVING PROJECT ===');
+      console.log('Form data being sent:', formData);
+      console.log('Timeline with activities:', timeline.map(phase => ({
+        title: phase.title,
+        activities: phase.activities?.map(activity => ({
+          title: activity.title,
+          teacherIds: activity.teacherIds,
+          imageIds: activity.imageIds,
+          images: activity.images
+        }))
+      })));
 
       const response = await fetch(
         initialData ? `/api/projects/${initialData.id}` : "/api/projects",
@@ -279,18 +291,20 @@ export function ProjectForm({
             )}
 
             {currentStep === 1 && (
-              <TimelineEditor
-                value={timeline}
-                onChange={setTimeline}
+              <GalleryEditor
+                value={gallery}
+                onChange={setGallery}
                 isLoading={isLoading}
               />
             )}
 
             {currentStep === 2 && (
-              <GalleryEditor
-                value={gallery}
-                onChange={setGallery}
+              <TimelineEditor
+                value={timeline}
+                onChange={setTimeline}
                 isLoading={isLoading}
+                galleryImages={gallery}
+                availableTeachers={availableTeachers}
               />
             )}
 

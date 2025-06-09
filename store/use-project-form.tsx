@@ -14,6 +14,24 @@ export interface ProjectBasicInfo {
   heroImage: { url: string; fileKey: string } | null;
 }
 
+export interface ProjectActivity {
+  id: string;
+  title: string;
+  title_sl: string | null;
+  title_hr: string | null;
+  description: string;
+  description_sl: string | null;
+  description_hr: string | null;
+  order: number;
+  teacherIds: string[];
+  imageIds: string[];
+  images?: ProjectImage[];
+  // Support for raw API data structure when loading from server
+  teachers?: Array<{ teacher: { id: string; name: string } }>;
+  // Support for raw images data from API
+  rawImages?: Array<{ media: { id: string; url: string } }>;
+}
+
 export interface ProjectPhase {
   id: string;
   title: string;
@@ -26,7 +44,7 @@ export interface ProjectPhase {
   endDate: Date | null | undefined;
   completed: boolean;
   order: number;
-  media: ProjectImage[] | null;
+  activities?: ProjectActivity[];
 }
 
 export interface ProjectImage {

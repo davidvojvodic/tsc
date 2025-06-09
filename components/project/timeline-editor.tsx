@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ import {
   GripVertical,
   X,
   Pencil,
+  Check,
 } from "lucide-react";
 import * as z from "zod";
 
@@ -34,7 +36,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
@@ -46,9 +47,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
-import { ProjectPhase, ProjectImage } from "@/store/use-project-form";
-import { uploadFiles } from "@/lib/uploadthing";
-import { useDropzone } from "react-dropzone";
+import { RichTextEditor } from "@/components/rich-text-editor";
+import { RichTextDisplay } from "@/components/rich-text-content";
+import {
+  ProjectPhase,
+  ProjectImage,
+  ProjectActivity,
+} from "@/store/use-project-form";
+import { Teacher } from "@/lib/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -66,29 +86,29 @@ interface TimelineEditorProps {
   value: ProjectPhase[];
   onChange: (phases: ProjectPhase[]) => void;
   isLoading?: boolean;
+  galleryImages?: ProjectImage[];
+  availableTeachers?: Teacher[];
 }
 
 export function TimelineEditor({
   value: phases,
   onChange,
   isLoading = false,
+  galleryImages = [],
+  availableTeachers = [],
 }: TimelineEditorProps) {
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
-  const [phaseImages, setPhaseImages] = useState<ProjectImage[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [currentFileIndex, setCurrentFileIndex] = useState(0);
-  const [totalFiles, setTotalFiles] = useState(0);
 
   // Use refs to prevent re-renders of drag and drop while editing
   const phaseListRef = useRef(phases);
   phaseListRef.current = phases;
-  
+
   // Debug current phases
   useEffect(() => {
-    console.log("Current phases:", phases);
+    if (phases.length > 0) {
+      console.log("Timeline loaded:", phases.length, "phases");
+    }
   }, [phases]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -125,7 +145,7 @@ export function TimelineEditor({
   const startEditing = (phase: ProjectPhase) => {
     setEditingPhaseId(phase.id);
     setIsAddingPhase(false);
-    setPhaseImages(phase.media || []);
+    console.log("Editing phase:", phase.title);
     form.reset({
       title: phase.title,
       title_sl: phase.title_sl || null,
@@ -144,14 +164,12 @@ export function TimelineEditor({
       id: crypto.randomUUID(),
       ...values,
       order: phases.length,
-      media: phaseImages.length > 0 ? phaseImages : null,
       startDate: values.startDate || undefined,
       endDate: values.endDate || undefined,
     };
 
     onChange([...phases, newPhase]);
     setIsAddingPhase(false);
-    setPhaseImages([]);
     form.reset();
     toast.success("Phase added successfully");
   };
@@ -164,7 +182,6 @@ export function TimelineEditor({
         return {
           ...phase,
           ...values,
-          media: phaseImages.length > 0 ? phaseImages : null,
           startDate: values.startDate || undefined,
           endDate: values.endDate || undefined,
         };
@@ -174,7 +191,6 @@ export function TimelineEditor({
 
     onChange(updatedPhases);
     setEditingPhaseId(null);
-    setPhaseImages([]);
     form.reset();
     toast.success("Phase updated successfully");
   };
@@ -206,536 +222,332 @@ export function TimelineEditor({
     }
   };
 
-  // Function to handle file selection via react-dropzone
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      // Optional: Limit the total number of images
-      if (phaseImages.length + acceptedFiles.length > 10) {
-        toast.error("You can upload a maximum of 10 images per phase");
-        return;
-      }
-      setSelectedFiles((prev) => [...prev, ...acceptedFiles]);
-    },
-    [phaseImages.length]
-  );
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { "image/*": [] },
-    multiple: true,
-  });
-
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0) {
-      toast.error("No files selected for upload");
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadProgress(0);
-    setTotalFiles(selectedFiles.length);
-    setCurrentFileIndex(0);
-
-    try {
-      const uploadedImages: ProjectImage[] = [];
-      const failedUploads: string[] = [];
-      const maxRetries = 2;
-
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        setCurrentFileIndex(i);
-        // Calculate progress percentage based on current file index
-        setUploadProgress(Math.round((i / selectedFiles.length) * 100));
-        
-        let uploaded = false;
-        let retries = 0;
-
-        while (!uploaded && retries < maxRetries) {
-          try {
-            const res = await uploadFiles("imageUploader", {
-              files: [file], // Upload one file at a time
-            });
-
-            if (res && res.length > 0) {
-              const uploadedFile = res[0];
-              const newImage: ProjectImage = {
-                id: crypto.randomUUID(),
-                url: uploadedFile.ufsUrl || uploadedFile.url,
-                fileKey:
-                  uploadedFile.key ||
-                  (uploadedFile.ufsUrl || uploadedFile.url).split("/").pop() ||
-                  crypto.randomUUID(),
-                alt: null,
-              };
-              uploadedImages.push(newImage);
-              uploaded = true;
-            }
-          } catch (error: any) {
-            console.error(
-              `Failed to upload file ${file.name} (attempt ${retries + 1}):`,
-              error
-            );
-            retries++;
-
-            // Last retry failed
-            if (retries >= maxRetries) {
-              failedUploads.push(file.name);
-            }
-
-            // Small delay before retry
-            if (!uploaded && retries < maxRetries) {
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-            }
-          }
-        }
-      }
-
-      // Set to 100% when complete
-      setUploadProgress(100);
-
-      // Handle results
-      if (uploadedImages.length > 0) {
-        setPhaseImages((prev) => [...prev, ...uploadedImages]);
-        toast.success(
-          `${uploadedImages.length} image(s) uploaded successfully`
-        );
-      }
-
-      if (failedUploads.length > 0) {
-        toast.error(`Failed to upload: ${failedUploads.join(", ")}`);
-      }
-
-      setSelectedFiles([]);
-    } catch (error: any) {
-      console.error("Upload failed:", error);
-      toast.error(`Upload process error: ${error.message || "Unknown error"}`);
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   // Separate upload dialog component
 
   // Separate edit form from the timeline view
   if (isAddingPhase || editingPhaseId) {
     return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>
-            {isAddingPhase ? "Add New Phase" : "Edit Phase"}
-          </CardTitle>
-          <CardDescription>
-            {isAddingPhase
-              ? "Add a new phase to your project timeline"
-              : "Edit this phase in your project timeline"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(
-                isAddingPhase ? handleAddPhase : handleUpdatePhase
-              )}
-              className="space-y-4"
-            >
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium">Phase Title</h3>
-                <Tabs defaultValue="en" className="w-full">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="en">English</TabsTrigger>
-                    <TabsTrigger value="sl">Slovenian</TabsTrigger>
-                    <TabsTrigger value="hr">Croatian</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="en" className="mt-0">
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              disabled={isLoading}
-                              placeholder="Enter phase title"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="sl" className="mt-0">
-                    <FormField
-                      control={form.control}
-                      name="title_sl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              disabled={isLoading}
-                              placeholder="Enter Slovenian phase title"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(e.target.value || null)
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="hr" className="mt-0">
-                    <FormField
-                      control={form.control}
-                      name="title_hr"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              disabled={isLoading}
-                              placeholder="Enter Croatian phase title"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(e.target.value || null)
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                </Tabs>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium">Phase Description</h3>
-                <Tabs defaultValue="en" className="w-full">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="en">English</TabsTrigger>
-                    <TabsTrigger value="sl">Slovenian</TabsTrigger>
-                    <TabsTrigger value="hr">Croatian</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="en" className="mt-0">
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Textarea
-                              disabled={isLoading}
-                              placeholder="Describe this phase"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="sl" className="mt-0">
-                    <FormField
-                      control={form.control}
-                      name="description_sl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Textarea
-                              disabled={isLoading}
-                              placeholder="Describe this phase in Slovenian"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(e.target.value || null)
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="hr" className="mt-0">
-                    <FormField
-                      control={form.control}
-                      name="description_hr"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Textarea
-                              disabled={isLoading}
-                              placeholder="Describe this phase in Croatian"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(e.target.value || null)
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                </Tabs>
-              </div>
-
-              <div className="flex flex-col md:flex-row gap-4">
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>Start Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                <span className="flex items-center">
-                                  {format(field.value, "PPP")}
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    type="button"
-                                    className="ml-auto h-6 w-6"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      clearDate("startDate");
-                                    }}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </span>
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            disabled={isLoading}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>End Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                <span className="flex items-center">
-                                  {format(field.value, "PPP")}
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    type="button"
-                                    className="ml-auto h-6 w-6"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      clearDate("endDate");
-                                    }}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </span>
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            disabled={isLoading}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormItem>
-                <FormLabel>Phase Images</FormLabel>
-                <div className="space-y-6">
-                  {/* Gallery Grid */}
-                  {phaseImages.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {phaseImages.map((image) => (
-                        <div
-                          key={image.id}
-                          className="group relative aspect-square rounded-lg overflow-hidden border"
-                        >
-                          <Image
-                            src={image.url}
-                            alt={image.alt || "Phase image"}
-                            fill
-                            className="object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              className="h-8 px-2"
-                              onClick={() => {
-                                setPhaseImages(
-                                  phaseImages.filter(
-                                    (img) => img.id !== image.id
-                                  )
-                                );
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Upload Section */}
-                  <div className="flex flex-col items-center border-2 border-dashed rounded-lg p-6">
-                    <div
-                      {...getRootProps()}
-                      className="w-full h-32 flex flex-col items-center justify-center cursor-pointer"
-                    >
-                      <input {...getInputProps()} />
-                      {isDragActive ? (
-                        <p>Drop the files here ...</p>
-                      ) : (
-                        <p>
-                          Drag & drop some files here, or click to select files
-                        </p>
-                      )}
-                    </div>
-                    {selectedFiles.length > 0 && (
-                      <div className="mt-4 w-full">
-                        <h4 className="text-sm font-medium">Selected Files:</h4>
-                        <ul className="list-disc list-inside">
-                          {selectedFiles.map((file, index) => (
-                            <li key={index}>
-                              {file.name} - {(file.size / 1024).toFixed(2)} KB
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="space-y-2 w-full">
-                          <Button
-                            onClick={handleUpload}
-                            disabled={isUploading || isLoading}
-                            className="mt-4 w-full"
-                          >
-                            {isUploading ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Uploading {uploadProgress}% - File {currentFileIndex + 1}/{totalFiles}
-                              </>
-                            ) : (
-                              "Upload Selected Images"
-                            )}
-                          </Button>
-                          
-                          {isUploading && (
-                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-primary transition-all duration-300 ease-in-out" 
-                                style={{ width: `${uploadProgress}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </FormItem>
-
-              <FormField
-                control={form.control}
-                name="completed"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Mark as completed</FormLabel>
-                    </div>
-                  </FormItem>
+      <>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>
+              {isAddingPhase ? "Add New Phase" : "Edit Phase"}
+            </CardTitle>
+            <CardDescription>
+              {isAddingPhase
+                ? "Add a new phase to your project timeline"
+                : "Edit this phase in your project timeline"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(
+                  isAddingPhase ? handleAddPhase : handleUpdatePhase
                 )}
-              />
+                className="space-y-4"
+              >
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Phase Title</h3>
+                  <Tabs defaultValue="en" className="w-full">
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="en">English</TabsTrigger>
+                      <TabsTrigger value="sl">Slovenian</TabsTrigger>
+                      <TabsTrigger value="hr">Croatian</TabsTrigger>
+                    </TabsList>
 
-              <div className="flex gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setEditingPhaseId(null);
-                    setIsAddingPhase(false);
-                    setPhaseImages([]);
-                    form.reset();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <TabsContent value="en" className="mt-0">
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                disabled={isLoading}
+                                placeholder="Enter phase title"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="sl" className="mt-0">
+                      <FormField
+                        control={form.control}
+                        name="title_sl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                disabled={isLoading}
+                                placeholder="Enter Slovenian phase title"
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value || null)
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="hr" className="mt-0">
+                      <FormField
+                        control={form.control}
+                        name="title_hr"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                disabled={isLoading}
+                                placeholder="Enter Croatian phase title"
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value || null)
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Phase Description</h3>
+                  <Tabs defaultValue="en" className="w-full">
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="en">English</TabsTrigger>
+                      <TabsTrigger value="sl">Slovenian</TabsTrigger>
+                      <TabsTrigger value="hr">Croatian</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="en" className="mt-0">
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <RichTextEditor
+                                value={field.value || ""}
+                                onChange={field.onChange}
+                                disabled={isLoading}
+                                placeholder="Describe this phase"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="sl" className="mt-0">
+                      <FormField
+                        control={form.control}
+                        name="description_sl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <RichTextEditor
+                                value={field.value || ""}
+                                onChange={field.onChange}
+                                disabled={isLoading}
+                                placeholder="Describe this phase in Slovenian"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="hr" className="mt-0">
+                      <FormField
+                        control={form.control}
+                        name="description_hr"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <RichTextEditor
+                                value={field.value || ""}
+                                onChange={field.onChange}
+                                disabled={isLoading}
+                                placeholder="Describe this phase in Croatian"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-4">
+                  <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Start Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  <span className="flex items-center">
+                                    {format(field.value, "PPP")}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      type="button"
+                                      className="ml-auto h-6 w-6"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearDate("startDate");
+                                      }}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </span>
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={field.onChange}
+                              disabled={isLoading}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>End Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  <span className="flex items-center">
+                                    {format(field.value, "PPP")}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      type="button"
+                                      className="ml-auto h-6 w-6"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearDate("endDate");
+                                      }}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </span>
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={field.onChange}
+                              disabled={isLoading}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+
+                <FormField
+                  control={form.control}
+                  name="completed"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Mark as completed</FormLabel>
+                      </div>
+                    </FormItem>
                   )}
-                  {isAddingPhase ? "Add Phase" : "Update Phase"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                />
+
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingPhaseId(null);
+                      setIsAddingPhase(false);
+                                        form.reset();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {isAddingPhase ? "Add Phase" : "Update Phase"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </>
     );
   }
 
@@ -770,70 +582,107 @@ export function TimelineEditor({
                           {...provided.draggableProps}
                           className="relative rounded-lg border bg-card p-4"
                         >
-                          <div className="flex items-center gap-4">
-                            <div
-                              {...provided.dragHandleProps}
-                              className="flex items-center justify-center"
-                            >
-                              <GripVertical className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <h3 className="font-semibold">{phase.title}</h3>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => startEditing(phase)}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDeletePhase(phase.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-4">
+                              <div
+                                {...provided.dragHandleProps}
+                                className="flex items-center justify-center"
+                              >
+                                <GripVertical className="h-5 w-5 text-muted-foreground" />
                               </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {phase.description}
-                              </p>
-                              <div className="flex items-center justify-start gap-4 mt-2">
-                                <div className="text-sm">
-                                  {(phase.startDate || phase.endDate) && (
-                                    <div className="text-sm">
-                                      {phase.startDate &&
-                                        formatDate(phase.startDate)}
-                                      {phase.startDate &&
-                                        phase.endDate &&
-                                        " - "}
-                                      {phase.endDate &&
-                                        formatDate(phase.endDate)}
-                                    </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <h3 className="font-semibold">
+                                    {phase.title}
+                                  </h3>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => startEditing(phase)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() =>
+                                        handleDeletePhase(phase.id)
+                                      }
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  <RichTextDisplay
+                                    content={phase.description || ""}
+                                    className="prose-sm"
+                                  />
+                                </div>
+                                <div className="flex items-center justify-start gap-4 mt-2">
+                                  <div className="text-sm">
+                                    {(phase.startDate || phase.endDate) && (
+                                      <div className="text-sm">
+                                        {phase.startDate &&
+                                          formatDate(phase.startDate)}
+                                        {phase.startDate &&
+                                          phase.endDate &&
+                                          " - "}
+                                        {phase.endDate &&
+                                          formatDate(phase.endDate)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {phase.completed && (
+                                    <Badge variant="secondary">Completed</Badge>
                                   )}
                                 </div>
-                                {phase.completed && (
-                                  <Badge variant="secondary">Completed</Badge>
-                                )}
                               </div>
                             </div>
-                            {phase.media && phase.media.length > 0 && (
-                              <div className="relative h-16 w-16 rounded-md overflow-hidden">
-                                <Image
-                                  src={phase.media[0].url}
-                                  alt={phase.media[0].alt || phase.title}
-                                  fill
-                                  className="object-cover"
-                                />
-                                {phase.media.length > 1 && (
-                                  <div className="absolute bottom-0 right-0 bg-black/70 text-white text-xs px-1 rounded-tl">
-                                    +{phase.media.length - 1}
-                                  </div>
-                                )}
-                              </div>
-                            )}
+
+                            {/* Activities Section */}
+                            <div className="ml-9">
+                              <Accordion
+                                type="single"
+                                collapsible
+                                className="w-full"
+                              >
+                                <AccordionItem
+                                  value="activities"
+                                  className="border-none"
+                                >
+                                  <AccordionTrigger className="hover:no-underline py-2">
+                                    <div className="flex items-center gap-2 text-sm">
+                                      <span>Activities</span>
+                                      <Badge
+                                        variant="outline"
+                                        className="h-5 px-2"
+                                      >
+                                        {phase.activities?.length || 0}
+                                      </Badge>
+                                    </div>
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    <ActivityManager
+                                      phaseId={phase.id}
+                                      activities={phase.activities || []}
+                                      onActivitiesChange={(activities) => {
+                                        const updatedPhases = phases.map((p) =>
+                                          p.id === phase.id
+                                            ? { ...p, activities }
+                                            : p
+                                        );
+                                        onChange(updatedPhases);
+                                      }}
+                                      galleryImages={galleryImages}
+                                      availableTeachers={availableTeachers}
+                                      isLoading={isLoading}
+                                    />
+                                  </AccordionContent>
+                                </AccordionItem>
+                              </Accordion>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -854,3 +703,634 @@ export function TimelineEditor({
     </Card>
   );
 }
+
+// Activity Manager Component
+interface ActivityManagerProps {
+  phaseId: string;
+  activities: ProjectActivity[];
+  onActivitiesChange: (activities: ProjectActivity[]) => void;
+  galleryImages: ProjectImage[];
+  availableTeachers: Teacher[];
+  isLoading?: boolean;
+}
+
+function ActivityManager({
+  activities,
+  onActivitiesChange,
+  galleryImages,
+  availableTeachers,
+  isLoading = false,
+}: ActivityManagerProps) {
+  const [isAddingActivity, setIsAddingActivity] = useState(false);
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(
+    null
+  );
+
+  const activityFormSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    title_sl: z.string().nullable(),
+    title_hr: z.string().nullable(),
+    description: z.string().min(1, "Description is required"),
+    description_sl: z.string().nullable(),
+    description_hr: z.string().nullable(),
+    teacherIds: z.array(z.string()),
+    imageIds: z.array(z.string()),
+  });
+
+  const activityForm = useForm<z.infer<typeof activityFormSchema>>({
+    resolver: zodResolver(activityFormSchema),
+    defaultValues: {
+      title: "",
+      title_sl: null,
+      title_hr: null,
+      description: "",
+      description_sl: null,
+      description_hr: null,
+      teacherIds: [],
+      imageIds: [],
+    },
+  });
+
+  const handleAddActivity = (values: z.infer<typeof activityFormSchema>) => {
+    const selectedImages = galleryImages.filter((img) =>
+      values.imageIds.includes(img.id)
+    );
+    const newActivity: ProjectActivity = {
+      id: crypto.randomUUID(),
+      ...values,
+      order: activities.length,
+      images: selectedImages,
+    };
+    onActivitiesChange([...activities, newActivity]);
+    setIsAddingActivity(false);
+    activityForm.reset();
+    toast.success("Activity added successfully");
+  };
+
+  const handleUpdateActivity = (values: z.infer<typeof activityFormSchema>) => {
+    if (!editingActivityId) return;
+    const selectedImages = galleryImages.filter((img) =>
+      values.imageIds.includes(img.id)
+    );
+    const updatedActivities = activities.map((activity) =>
+      activity.id === editingActivityId
+        ? { ...activity, ...values, images: selectedImages }
+        : activity
+    );
+    onActivitiesChange(updatedActivities);
+    setEditingActivityId(null);
+    activityForm.reset();
+    toast.success("Activity updated successfully");
+  };
+
+  const handleDeleteActivity = (activityId: string) => {
+    const updatedActivities = activities
+      .filter((activity) => activity.id !== activityId)
+      .map((activity, index) => ({ ...activity, order: index }));
+    onActivitiesChange(updatedActivities);
+    toast.success("Activity deleted successfully");
+  };
+
+  const startEditingActivity = (activity: ProjectActivity) => {
+    setEditingActivityId(activity.id);
+    setIsAddingActivity(false);
+
+
+    // Handle both transformed data (teacherIds/imageIds arrays) and raw API data (teachers/images objects)
+    const teacherIds =
+      activity.teacherIds ||
+      (activity.teachers
+        ? activity.teachers
+            .map((t: any) => t.teacher?.id || t.id)
+            .filter(Boolean)
+        : []);
+
+    const imageIds =
+      activity.imageIds ||
+      (activity.rawImages
+        ? activity.rawImages.map((i: any) => i.media?.id || i.id).filter(Boolean)
+        : activity.images
+        ? activity.images.map((i: any) => i.media?.id || i.id).filter(Boolean)
+        : []);
+
+
+    activityForm.reset({
+      title: activity.title,
+      title_sl: activity.title_sl,
+      title_hr: activity.title_hr,
+      description: activity.description,
+      description_sl: activity.description_sl,
+      description_hr: activity.description_hr,
+      teacherIds: teacherIds,
+      imageIds: imageIds,
+    });
+  };
+
+  if (isAddingActivity || editingActivityId) {
+    return (
+      <Card className="mt-4">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">
+            {isAddingActivity ? "Add New Activity" : "Edit Activity"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...activityForm}>
+            <form
+              onSubmit={activityForm.handleSubmit(
+                isAddingActivity ? handleAddActivity : handleUpdateActivity
+              )}
+              className="space-y-4"
+            >
+              {/* Title Fields */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Activity Title</h4>
+                <Tabs defaultValue="en" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="sl">Slovenian</TabsTrigger>
+                    <TabsTrigger value="hr">Croatian</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="en">
+                    <FormField
+                      control={activityForm.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="Enter activity title"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="sl">
+                    <FormField
+                      control={activityForm.control}
+                      name="title_sl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="Enter Slovenian activity title"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) =>
+                                field.onChange(e.target.value || null)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="hr">
+                    <FormField
+                      control={activityForm.control}
+                      name="title_hr"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="Enter Croatian activity title"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) =>
+                                field.onChange(e.target.value || null)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* Description Fields */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Activity Description</h4>
+                <Tabs defaultValue="en" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="sl">Slovenian</TabsTrigger>
+                    <TabsTrigger value="hr">Croatian</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="en">
+                    <FormField
+                      control={activityForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <RichTextEditor
+                              value={field.value || ""}
+                              onChange={field.onChange}
+                              disabled={isLoading}
+                              placeholder="Describe this activity"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="sl">
+                    <FormField
+                      control={activityForm.control}
+                      name="description_sl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <RichTextEditor
+                              value={field.value || ""}
+                              onChange={field.onChange}
+                              disabled={isLoading}
+                              placeholder="Describe this activity in Slovenian"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="hr">
+                    <FormField
+                      control={activityForm.control}
+                      name="description_hr"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <RichTextEditor
+                              value={field.value || ""}
+                              onChange={field.onChange}
+                              disabled={isLoading}
+                              placeholder="Describe this activity in Croatian"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* Teacher Selection */}
+              <FormField
+                control={activityForm.control}
+                name="teacherIds"
+                render={({ field }) => {
+                  const selectedTeachers = availableTeachers.filter((teacher) =>
+                    (field.value || []).includes(teacher.id)
+                  );
+
+                  const handleTeacherToggle = (teacherId: string) => {
+                    const currentValue = field.value || [];
+                    const isSelected = currentValue.includes(teacherId);
+                    if (isSelected) {
+                      field.onChange(
+                        currentValue.filter((id) => id !== teacherId)
+                      );
+                    } else {
+                      field.onChange([...currentValue, teacherId]);
+                    }
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Assign Teachers (Optional)</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between"
+                            >
+                              {selectedTeachers.length === 0
+                                ? "Select teachers"
+                                : `${selectedTeachers.length} teacher${selectedTeachers.length !== 1 ? "s" : ""} selected`}
+                              <Check className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <div className="max-h-60 overflow-y-auto p-2">
+                            {availableTeachers.length === 0 ? (
+                              <div className="py-6 text-center text-sm text-muted-foreground">
+                                No teachers available
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                {availableTeachers.map((teacher) => (
+                                  <div
+                                    key={teacher.id}
+                                    onClick={() =>
+                                      handleTeacherToggle(teacher.id)
+                                    }
+                                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                                  >
+                                    <Checkbox
+                                      checked={(field.value || []).includes(
+                                        teacher.id
+                                      )}
+                                      className="mr-2"
+                                    />
+                                    <span>{teacher.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+
+                      {selectedTeachers.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {selectedTeachers.map((teacher) => (
+                            <Badge
+                              key={teacher.id}
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
+                              {teacher.name}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
+                                onClick={() => handleTeacherToggle(teacher.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+
+              {/* Image Selection */}
+              <FormField
+                control={activityForm.control}
+                name="imageIds"
+                render={({ field }) => {
+                  const selectedImages = galleryImages.filter((image) =>
+                    (field.value || []).includes(image.id)
+                  );
+
+                  const handleImageToggle = (imageId: string) => {
+                    const currentValue = field.value || [];
+                    const isSelected = currentValue.includes(imageId);
+                    if (isSelected) {
+                      field.onChange(
+                        currentValue.filter((id) => id !== imageId)
+                      );
+                    } else {
+                      field.onChange([...currentValue, imageId]);
+                    }
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Select Images (Optional)</FormLabel>
+                      {galleryImages.length > 0 ? (
+                        <div className="space-y-4">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className="w-full justify-between"
+                                >
+                                  {selectedImages.length === 0
+                                    ? "Select images from gallery"
+                                    : `${selectedImages.length} image${selectedImages.length !== 1 ? "s" : ""} selected`}
+                                  <Check className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-full p-0"
+                              align="start"
+                            >
+                              <div className="max-h-60 overflow-y-auto p-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  {galleryImages.map((image, index) => {
+                                    const isSelected = (
+                                      field.value || []
+                                    ).includes(image.id);
+                                    return (
+                                      <div
+                                        key={image.id}
+                                        onClick={() =>
+                                          handleImageToggle(image.id)
+                                        }
+                                        className={cn(
+                                          "relative cursor-pointer select-none items-center rounded-sm p-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                          isSelected &&
+                                            "bg-primary/10 border border-primary"
+                                        )}
+                                      >
+                                        <div className="flex items-center space-x-2">
+                                          <Checkbox
+                                            checked={isSelected}
+                                            className="mr-2"
+                                          />
+                                          <div className="relative h-16 w-16 rounded overflow-hidden">
+                                            <Image
+                                              src={image.url}
+                                              alt={
+                                                image.alt ||
+                                                `Gallery Image ${index + 1}`
+                                              }
+                                              fill
+                                              className="object-cover"
+                                            />
+                                          </div>
+                                          <span className="text-xs">
+                                            Image {index + 1}
+                                          </span>
+                                        </div>
+                                        {isSelected && (
+                                          <div className="absolute top-1 right-1">
+                                            <Check className="h-4 w-4 text-primary" />
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+
+                          {/* Image Previews */}
+                          {selectedImages.length > 0 && (
+                            <div className="grid grid-cols-3 gap-3">
+                              {selectedImages.map((image, index) => (
+                                <div
+                                  key={image.id}
+                                  className="relative h-24 w-24 rounded-lg overflow-hidden border group"
+                                >
+                                  <Image
+                                    src={image.url}
+                                    alt={image.alt || "Selected image"}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => handleImageToggle(image.id)}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No images available. Upload images in the Gallery step
+                          first.
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingActivityId(null);
+                    setIsAddingActivity(false);
+                    activityForm.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {isAddingActivity ? "Add Activity" : "Update Activity"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {activities.length > 0 ? (
+        <div className="space-y-2">
+          {activities.map((activity, index) => (
+            <Card key={activity.id} className="p-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm">{activity.title}</h4>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => startEditingActivity(activity)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteActivity(activity.id)}
+                      >
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground line-clamp-2">
+                    <RichTextDisplay
+                      content={activity.description}
+                      className="prose-xs"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    {activity.teacherIds && activity.teacherIds.length > 0 && (
+                      <>
+                        {activity.teacherIds.map((teacherId) => {
+                          const teacher = availableTeachers.find(
+                            (t) => t.id === teacherId
+                          );
+                          return teacher ? (
+                            <Badge
+                              key={teacherId}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {teacher.name}
+                            </Badge>
+                          ) : null;
+                        })}
+                      </>
+                    )}
+                    {activity.images && activity.images.length > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {activity.images.length} image
+                        {activity.images.length !== 1 ? "s" : ""}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground text-center py-4">
+          No activities yet. Add one to get started.
+        </p>
+      )}
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        onClick={() => setIsAddingActivity(true)}
+      >
+        <Plus className="mr-2 h-4 w-4" />
+        Add Activity
+      </Button>
+    </div>
+  );
+}
+

@@ -34,6 +34,19 @@ const heroImageSchema = z
 
 //   .nullable();
 
+const activitySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  title_sl: z.string().nullable(),
+  title_hr: z.string().nullable(),
+  description: z.string(),
+  description_sl: z.string().nullable(),
+  description_hr: z.string().nullable(),
+  order: z.number(),
+  teacherIds: z.array(z.string()),
+  imageIds: z.array(z.string()),
+});
+
 const timelinePhaseSchema = z.object({
   id: z.string(),
 
@@ -61,21 +74,8 @@ const timelinePhaseSchema = z.object({
 
   order: z.number(),
 
-  media: z.union([
-    z.array(
-      z.object({
-        id: z.string(),
-        url: z.string(),
-        fileKey: z.string(),
-        alt: z.string().nullable(),
-      })
-    ),
-    z.object({
-      url: z.string(),
-      fileKey: z.string().optional(),
-    }),
-    z.null(),
-  ]),
+  activities: z.array(activitySchema).optional(),
+
 });
 
 const galleryImageSchema = z.object({
@@ -303,46 +303,55 @@ export async function POST(req: NextRequest) {
                 phaseData.endDate = phase.endDate;
               }
 
-              // Handle media if it exists (multiple images per phase)
-              if (phase.media && Array.isArray(phase.media) && phase.media.length > 0) {
-                console.log(`Processing phase with ${phase.media.length} media items`);
-                
-                const phaseMediaItems = [];
-                
-                // Create all media items for this phase
-                for(let i = 0; i < phase.media.length; i++) {
-                  const img = phase.media[i];
-                  try {
-                    const media = await tx.media.create({
-                      data: {
-                        filename: img.fileKey || img.id || "unknown",
-                        url: img.url,
-                        type: MediaType.IMAGE,
-                        mimeType: "image/jpeg", 
-                        size: 0,
-                        alt: img.alt || null,
-                      },
-                    });
-                    
-                    // Add to phase media collection
-                    phaseMediaItems.push(media);
-                    
-                    // Set the first image as the primary phase media 
-                    if (i === 0) {
-                      phaseData.mediaId = media.id;
-                    }
-                  } catch (error) {
-                    console.error("Error creating phase media:", error);
-                  }
-                }
-                
-                // Handle additional images (beyond the primary one)
-                if (phaseMediaItems.length > 1) {
-                  // Store gallery connection data for all non-primary images
-                  phaseData.gallery = {
-                    connect: phaseMediaItems.slice(1).map(media => ({ id: media.id }))
-                  };
-                }
+              // Create activities for this phase
+              if (phase.activities && phase.activities.length > 0) {
+                phaseData.activities = {
+                  create: await Promise.all(
+                    phase.activities.map(async (activity) => {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const activityData: any = {
+                        title: activity.title,
+                        title_sl: activity.title_sl,
+                        title_hr: activity.title_hr,
+                        description: activity.description,
+                        description_sl: activity.description_sl,
+                        description_hr: activity.description_hr,
+                        order: activity.order,
+                      };
+
+                      // Create teacher associations
+                      if (activity.teacherIds && activity.teacherIds.length > 0) {
+                        activityData.teachers = {
+                          create: activity.teacherIds.map((teacherId) => ({
+                            teacherId: teacherId,
+                          })),
+                        };
+                      }
+
+                      // Create image associations using the mapping
+                      if (activity.imageIds && activity.imageIds.length > 0) {
+                        const routeImageIdMapping = new Map<string, string>();
+                        galleryImages.forEach(media => {
+                          routeImageIdMapping.set(media.filename, media.id);
+                        });
+
+                        const validImageIds = activity.imageIds
+                          .map(frontendId => routeImageIdMapping.get(frontendId))
+                          .filter(Boolean) as string[];
+                        
+                        if (validImageIds.length > 0) {
+                          activityData.images = {
+                            create: validImageIds.map((databaseImageId) => ({
+                              mediaId: databaseImageId,
+                            })),
+                          };
+                        }
+                      }
+
+                      return activityData;
+                    })
+                  ),
+                };
               }
 
               return phaseData;
@@ -363,8 +372,23 @@ export async function POST(req: NextRequest) {
 
           timeline: {
             include: {
-              media: true,
-              gallery: true,
+              activities: {
+                include: {
+                  teachers: {
+                    include: {
+                      teacher: true,
+                    },
+                  },
+                  images: {
+                    include: {
+                      media: true,
+                    },
+                  },
+                },
+                orderBy: {
+                  order: "asc",
+                },
+              },
             },
 
             orderBy: {

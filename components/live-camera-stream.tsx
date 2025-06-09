@@ -17,44 +17,40 @@ export function LiveCameraStream({ className }: LiveCameraStreamProps) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const errorCountRef = useRef(0);
 
-  // Use snapshot endpoint that should work better
-  const getImageUrl = () => {
-    const timestamp = new Date().getTime();
-    return `/api/camera/snapshot?t=${timestamp}`;
-  };
-
-  const updateImage = () => {
-    if (!imgRef.current || !isPlaying) return;
-
-    const newImg = new Image();
-    
-    newImg.onload = () => {
-      if (imgRef.current && isPlaying) {
-        imgRef.current.src = newImg.src;
-        errorCountRef.current = 0;
-        setError(null);
-        setIsLoading(false);
-      }
-    };
-
-    newImg.onerror = () => {
-      errorCountRef.current++;
-      console.error('Failed to load image, count:', errorCountRef.current);
-      
-      if (errorCountRef.current > 5) {
-        setError('Unable to connect to camera');
-        setIsPlaying(false);
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      }
-    };
-
-    newImg.src = getImageUrl();
-  };
 
   useEffect(() => {
+    const updateImage = () => {
+      if (!imgRef.current || !isPlaying) return;
+
+      const newImg = new Image();
+      
+      newImg.onload = () => {
+        if (imgRef.current && isPlaying) {
+          imgRef.current.src = newImg.src;
+          errorCountRef.current = 0;
+          setError(null);
+          setIsLoading(false);
+        }
+      };
+
+      newImg.onerror = () => {
+        errorCountRef.current++;
+        console.error('Failed to load image, count:', errorCountRef.current);
+        
+        if (errorCountRef.current > 5) {
+          setError('Unable to connect to camera');
+          setIsPlaying(false);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+        }
+      };
+
+      const timestamp = new Date().getTime();
+      newImg.src = `/api/camera/snapshot?t=${timestamp}`;
+    };
+
     if (isPlaying) {
       // Initial load
       updateImage();
@@ -70,7 +66,7 @@ export function LiveCameraStream({ className }: LiveCameraStreamProps) {
         }
       };
     }
-  }, [isPlaying, fps, updateImage]);
+  }, [isPlaying, fps]);
 
   // Pause when tab is not visible
   useEffect(() => {

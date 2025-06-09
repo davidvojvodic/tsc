@@ -85,8 +85,8 @@ export function RealtimeCameraStream({ className }: RealtimeCameraStreamProps) {
         lastFrameTimeRef.current = now;
       }
 
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
         // Request was cancelled, ignore
         return;
       }
@@ -184,8 +184,9 @@ export function RealtimeCameraStream({ className }: RealtimeCameraStreamProps) {
     return () => {
       stopStreaming();
       // Clean up any blob URLs
-      if (imgRef.current?.src.startsWith('blob:')) {
-        URL.revokeObjectURL(imgRef.current.src);
+      const imgElement = imgRef.current;
+      if (imgElement?.src.startsWith('blob:')) {
+        URL.revokeObjectURL(imgElement.src);
       }
     };
   }, [stopStreaming]);

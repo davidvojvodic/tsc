@@ -80,19 +80,27 @@ export default function LiveStreams({
                 </button>
                 <button
                   onClick={() => {
-                    window.open("/api/camera/simple-stream", "_blank");
+                    window.open("/api/camera/pwa-stream", "_blank");
                   }}
                   className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                 >
-                  Simple Stream
+                  PWA Stream
                 </button>
               </div>
               <div className="space-x-2">
                 <button
                   onClick={() => {
-                    window.open("/api/camera/interface", "_blank");
+                    window.open("/api/camera/websocket-stream", "_blank");
                   }}
                   className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                >
+                  WebSocket Stream
+                </button>
+                <button
+                  onClick={() => {
+                    window.open("/api/camera/interface", "_blank");
+                  }}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                 >
                   Camera Interface
                 </button>
@@ -127,12 +135,10 @@ export default function LiveStreams({
       )}
 
       <div className="absolute inset-0 h-full w-full">
-        {/* Use edge streaming for production, with fallback to snapshot mode */}
+        {/* Use the working live stream iframe */}
         <iframe
           id="camera-iframe"
-          src={process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_VERCEL_ENV 
-            ? "/api/camera/live-stream-edge"  // Try edge streaming first
-            : "/api/camera/live-stream"}       // Local development uses regular streaming
+          src="/api/camera/live-stream"
           className="absolute inset-0 w-full h-full border-0"
           onLoad={handleStreamLoad}
           onError={handleStreamError}

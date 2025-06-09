@@ -24,7 +24,7 @@ const schoolsContent = {
       description:
         "Dubrovnik Maritime Technical School is a secondary vocational school founded in 1852, offering education in four vocational professions: marine navigator, marine engineering technician, mechanical computer technician, and electrical technician. The school provides practical training in specialized classrooms with modern simulators and workshops, including optional robotics classes. With an ISO 9001:2015 certified quality system and active participation in Erasmus+ projects since 2017, the school ensures high-quality education adapted to contemporary maritime and technical industry needs.",
       buttonText: "Learn more",
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/cro.jpg",
     },
   ],
   sl: [
@@ -42,7 +42,7 @@ const schoolsContent = {
       description:
         "Pomorsko-tehniška šola Dubrovnik je srednja poklicna šola, ustanovljena leta 1852, ki izobražuje dijake v štirih strokovnih smereh: pomorski navtik, pomorski strojni tehnik, strojni računalniški tehnik in elektrotehnik. Šola ponuja praktično usposabljanje v specializiranih učilnicah z modernimi simulatorji in delavnicami, vključno z izbirnim poukom robotike. S sistemom kakovosti, certificiranim po standardu ISO 9001:2015 in aktivnim sodelovanjem v projektih Erasmus+ od leta 2017, šola zagotavlja visokokakovostno izobraževanje, prilagojeno sodobnim potrebam pomorske in tehnične industrije.",
       buttonText: "Več informacij",
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/cro.jpg",
     },
   ],
   hr: [
@@ -60,7 +60,7 @@ const schoolsContent = {
       description:
         "Pomorsko-tehnička škola Dubrovnik je srednja strukovna škola osnovana 1852. godine koja obrazuje učenike u četiri strukovna zanimanja: pomorski nautičar, tehničar za brodostrojarstvo, računalni tehničar za strojarstvo i elektrotehničar. Škola pruža praktičnu nastavu u specijaliziranim učionicama s modernim simulatorima i radionicama, uključujući izbornu nastavu robotike. Sa sustavom kvalitete certificiranim prema normi ISO 9001:2015 i aktivnim sudjelovanjem u Erasmus+ projektima od 2017. godine, škola osigurava visokokvalitetno obrazovanje prilagođeno suvremenim potrebama pomorske i tehničke industrije.",
       buttonText: "Saznaj više",
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/cro.jpg",
     },
   ],
 };

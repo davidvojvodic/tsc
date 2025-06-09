@@ -104,7 +104,7 @@ const schoolContent = {
       The school has an international quality system in accordance with the ISO 9001:2015 standard, certified by Croatian Register of Shipping (CRS) and Bureau Veritas Quality International (BVQI).
 
       The school collaborates with various institutions and organizations at local, national and international levels, which enables the implementation of numerous activities and projects. Since 2017, it has been implementing Erasmus+ projects. Vocational education and training projects are particularly notable, among which the Erasmus+ project Cybernetic Advanced Technology from 2018 received a high quality assessment due to successful implementation and sustainability of results. In 2022, the school started implementing its first Erasmus+ KA2 project Yellow Dwarf, aimed at modernizing teaching in the field of renewable energy sources. Since 2023, the school has been the holder of the Erasmus+ accreditation for vocational education and training, which enables continuous international cooperation with various institutions.`,
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/cro.jpg",
     },
     sl: {
       title: "Pomorsko-tehniška šola Dubrovnik",
@@ -120,7 +120,7 @@ const schoolContent = {
       Šola ima mednarodni sistem kakovosti v skladu s standardom ISO 9001:2015, certificiran pri Hrvatski registar brodova (CRS) in Bureau Veritas Quality International (BVQI).
 
       Šola sodeluje z različnimi ustanovami in organizacijami na lokalni, nacionalni in mednarodni ravni, kar omogoča izvajanje številnih aktivnosti in projektov. Od leta 2017 izvaja Erasmus+ projekte. Posebej izstopajo projekti poklicnega izobraževanja in usposabljanja, med katerimi je Erasmus+ projekt Cybernetic Advanced Technology iz leta 2018 prejel visoko oceno kakovosti zaradi uspešne izvedbe in trajnosti rezultatov. Leta 2022 je šola začela izvajati svoj prvi Erasmus+ KA2 projekt Žuti patuljak, ki je namenjen modernizaciji poučevanja na področju obnovljivih virov energije. Od leta 2023 je šola nosilka Erasmus+ akreditacije za poklicno izobraževanje in usposabljanje, kar omogoča stalno mednarodno sodelovanje z različnimi institucijami.`,
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/cro.jpg",
     },
     hr: {
       title: "Pomorsko-tehnička škola Dubrovnik",
@@ -136,7 +136,7 @@ const schoolContent = {
       Škola ima međunarodni sustav kvalitete prema normi ISO 9001:2015, certificiran od strane Hrvatskog registra brodova (CRS) i Bureau Veritas Quality International (BVQI).
 
       Škola surađuje s različitim institucijama i organizacijama na lokalnoj, nacionalnoj i međunarodnoj razini, što omogućuje provedbu brojnih aktivnosti i projekata. Od 2017. provodi Erasmus+ projekte. Posebno se ističu projekti strukovnog obrazovanja i osposobljavanja, među kojima je Erasmus+ projekt Cybernetic Advanced Technology iz 2018. dobio visoku ocjenu kvalitete zbog uspješne provedbe i održivosti rezultata. 2022. škola je započela provedbu prvog Erasmus+ KA2 projekta Žuti patuljak, namijenjenog modernizaciji poučavanja u području obnovljivih izvora energije. Od 2023. škola je nositeljica Erasmus+ akreditacije za strukovno obrazovanje i osposobljavanje, što omogućuje kontinuiranu međunarodnu suradnju s različitim institucijama.`,
-      imageUrl: "/school-start-times.jpg",
+      imageUrl: "/cro.jpg",
     },
   },
 };

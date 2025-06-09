@@ -16,6 +16,7 @@ const EXCLUDED_PATHS = [
   "/hero.png",
   "/school-start-times.jpg",
   "/sola.jpg",
+  "/cro.jpg",
   "/waterwise.png",
 ];
 

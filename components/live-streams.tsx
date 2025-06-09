@@ -127,10 +127,12 @@ export default function LiveStreams({
       )}
 
       <div className="absolute inset-0 h-full w-full">
-        {/* Use the working live stream iframe */}
+        {/* Use edge streaming for production, with fallback to snapshot mode */}
         <iframe
           id="camera-iframe"
-          src="/api/camera/live-stream"
+          src={process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_VERCEL_ENV 
+            ? "/api/camera/live-stream-edge"  // Try edge streaming first
+            : "/api/camera/live-stream"}       // Local development uses regular streaming
           className="absolute inset-0 w-full h-full border-0"
           onLoad={handleStreamLoad}
           onError={handleStreamError}
@@ -141,7 +143,7 @@ export default function LiveStreams({
         {!isStreamLoading && (
           <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-3 py-1 rounded-md flex items-center gap-2">
             <Camera className="h-3 w-3" />
-            <span>Live Camera Stream (704x576)</span>
+            <span>Live Camera Stream</span>
           </div>
         )}
 

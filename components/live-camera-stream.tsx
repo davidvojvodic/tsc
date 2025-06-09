@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Camera, RefreshCw, Play, Pause } from "lucide-react";
+import { Camera, RefreshCw, Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LiveCameraStreamProps {
@@ -18,11 +17,6 @@ export function LiveCameraStream({ className }: LiveCameraStreamProps) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const errorCountRef = useRef(0);
 
-  // Direct camera URL with auth
-  const CAMERA_HOST = "194.249.165.38:4560";
-  const CAMERA_USERNAME = "tsc";
-  const CAMERA_PASSWORD = "tscmb2025";
-  
   // Use snapshot endpoint that should work better
   const getImageUrl = () => {
     const timestamp = new Date().getTime();
@@ -76,7 +70,7 @@ export function LiveCameraStream({ className }: LiveCameraStreamProps) {
         }
       };
     }
-  }, [isPlaying, fps]);
+  }, [isPlaying, fps, updateImage]);
 
   // Pause when tab is not visible
   useEffect(() => {

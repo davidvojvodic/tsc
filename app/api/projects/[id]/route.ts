@@ -131,6 +131,7 @@ export async function PATCH(
     }
 
     // Update project and all related data
+    // Increase timeout to 30 seconds for complex operations
     const project = await prisma.$transaction(async (tx) => {
       // Handle hero image
       let heroImageUpdate = {};
@@ -339,6 +340,9 @@ export async function PATCH(
           },
         },
       });
+    }, {
+      maxWait: 30000, // Maximum time to wait for a transaction slot (30s)
+      timeout: 30000, // Maximum time the transaction can run (30s)
     });
 
     return NextResponse.json(project);
@@ -353,7 +357,9 @@ export async function PATCH(
     
     if (error instanceof Error) {
       // Check for specific database errors
-      if (error.message.includes("foreign key constraint")) {
+      if (error.message.includes("Transaction already closed") || error.message.includes("timeout")) {
+        errorMessage = "The operation took too long to complete. This can happen with large projects. Please try again or contact support if the issue persists.";
+      } else if (error.message.includes("foreign key constraint")) {
         errorMessage = "Invalid reference: One or more selected items (teacher, image) do not exist";
       } else if (error.message.includes("unique constraint")) {
         errorMessage = "A duplicate value was detected. Please check your input.";
@@ -578,6 +584,9 @@ export async function POST(req: NextRequest) {
           },
         },
       });
+    }, {
+      maxWait: 30000, // Maximum time to wait for a transaction slot (30s)
+      timeout: 30000, // Maximum time the transaction can run (30s)
     });
 
     return NextResponse.json(project);
@@ -592,7 +601,9 @@ export async function POST(req: NextRequest) {
     
     if (error instanceof Error) {
       // Check for specific database errors
-      if (error.message.includes("foreign key constraint")) {
+      if (error.message.includes("Transaction already closed") || error.message.includes("timeout")) {
+        errorMessage = "The operation took too long to complete. This can happen with large projects. Please try again or contact support if the issue persists.";
+      } else if (error.message.includes("foreign key constraint")) {
         errorMessage = "Invalid reference: One or more selected items (teacher, image) do not exist";
       } else if (error.message.includes("unique constraint")) {
         errorMessage = "A duplicate value was detected. Please check your input.";

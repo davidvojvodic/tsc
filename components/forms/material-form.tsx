@@ -217,7 +217,7 @@ export function MaterialForm({ initialData }: MaterialFormProps) {
                     onClientUploadComplete={(res) => {
                       if (res?.[0]) {
                         setFile({
-                          url: res[0].url,
+                          url: res[0].ufsUrl || res[0].url,
                           key: res[0].key,
                           name: res[0].name,
                           size: res[0].size,

@@ -72,7 +72,7 @@ const nextConfig = {
                 headers: [
                   { 
                     key: "Content-Security-Policy", 
-                    value: "frame-src 'self' http://194.249.165.38:* https://194.249.165.38:* https://www.youtube.com https://*.youtube.com https://tsc-testing.vercel.app; img-src 'self' data: blob: http://194.249.165.38:* https://194.249.165.38:* https://res.cloudinary.com https://utfs.io https://*.ufs.sh https://tsc-testing.vercel.app; media-src 'self' http://194.249.165.38:* https://194.249.165.38:* rtsp://194.249.165.38:*; connect-src 'self' http://194.249.165.38:* https://194.249.165.38:* https://tsc-testing.vercel.app;" 
+                    value: "frame-src 'self' http://194.249.165.38:* https://194.249.165.38:* https://www.youtube.com https://*.youtube.com https://tsc-testing.vercel.app; img-src 'self' data: blob: http://194.249.165.38:* https://194.249.165.38:* https://res.cloudinary.com https://utfs.io https://*.ufs.sh https://tsc-testing.vercel.app; media-src 'self' http://194.249.165.38:* https://194.249.165.38:* rtsp://194.249.165.38:*; connect-src 'self' http://194.249.165.38:* https://194.249.165.38:* https://tsc-testing.vercel.app https://api.uploadthing.com https://*.ingest.uploadthing.com;" 
                   }
                 ]
             }

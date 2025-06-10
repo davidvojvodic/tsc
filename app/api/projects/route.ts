@@ -201,7 +201,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingProject) {
-      return new NextResponse("Slug already exists", { status: 400 });
+      return NextResponse.json(
+        { message: "A project with this slug already exists. Please choose a different slug." },
+        { status: 400 }
+      );
     }
 
     // Create project with all related data
@@ -408,7 +411,27 @@ export async function POST(req: NextRequest) {
     }
 
     console.error("[PROJECTS_POST]", error);
+    
+    // Provide more detailed error information
+    let errorMessage = "Internal server error";
+    
+    if (error instanceof Error) {
+      // Check for specific database errors
+      if (error.message.includes("foreign key constraint")) {
+        errorMessage = "Invalid reference: One or more selected items (teacher, image) do not exist";
+      } else if (error.message.includes("unique constraint")) {
+        errorMessage = "A duplicate value was detected. Please check your input.";
+      } else if (error.message.includes("not found")) {
+        errorMessage = error.message;
+      } else {
+        // Include the actual error for debugging in development
+        errorMessage = `Server error: ${error.message}`;
+      }
+    }
 
-    return new NextResponse("Internal error", { status: 500 });
+    return NextResponse.json(
+      { message: errorMessage },
+      { status: 500 }
+    );
   }
 }

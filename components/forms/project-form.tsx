@@ -214,7 +214,50 @@ export function ProjectForm({
       );
 
       if (!response.ok) {
-        throw new Error(await response.text());
+        const contentType = response.headers.get("content-type");
+        let errorMessage = "Failed to save project";
+        
+        try {
+          if (contentType && contentType.includes("application/json")) {
+            const errorData = await response.json();
+            
+            // Handle Zod validation errors
+            if (Array.isArray(errorData)) {
+              const errors = errorData.map(err => {
+                const path = err.path.join(' > ');
+                return `${path}: ${err.message}`;
+              }).join('\n');
+              errorMessage = `Validation errors:\n${errors}`;
+            } else if (errorData.message) {
+              errorMessage = errorData.message;
+            } else if (typeof errorData === 'object') {
+              errorMessage = JSON.stringify(errorData);
+            }
+          } else {
+            // Handle text responses
+            const text = await response.text();
+            if (text) {
+              errorMessage = text;
+            }
+          }
+          
+          // Add status code information
+          if (response.status === 400) {
+            errorMessage = `Bad Request: ${errorMessage}`;
+          } else if (response.status === 401) {
+            errorMessage = "Unauthorized: Please log in again";
+          } else if (response.status === 403) {
+            errorMessage = "Forbidden: You don't have permission to perform this action";
+          } else if (response.status === 422) {
+            errorMessage = `Invalid data: ${errorMessage}`;
+          } else if (response.status === 500) {
+            errorMessage = `Server error: ${errorMessage}`;
+          }
+        } catch (parseError) {
+          console.error("Error parsing response:", parseError);
+        }
+        
+        throw new Error(errorMessage);
       }
 
       toast.success(
@@ -226,7 +269,23 @@ export function ProjectForm({
       router.refresh();
     } catch (error) {
       console.error("[PROJECT_SUBMIT_ERROR]", error);
-      toast.error("Failed to save project");
+      
+      // Display detailed error message in toast
+      if (error instanceof Error) {
+        // Split multiline errors for better display
+        const errorLines = error.message.split('\n');
+        if (errorLines.length > 1) {
+          // Show first line as main error
+          toast.error(errorLines[0], {
+            description: errorLines.slice(1).join('\n'),
+            duration: 10000, // Show for longer when there are details
+          });
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.error("An unexpected error occurred while saving the project");
+      }
     } finally {
       setIsLoading(false);
     }

@@ -180,84 +180,12 @@ export function ProjectForm({
     try {
       setIsLoading(true);
 
-      // Do NOT combine phase media into the main gallery
-      // Keep gallery and timeline media separate
-      const formData = {
-        basicInfo,
-        timeline,
-        // Only include explicitly added gallery images
-        gallery: gallery.map(({ ...rest }) => rest),
-        teacherIds: teachers,
-      };
-
-      console.log('=== SAVING PROJECT ===');
-      console.log('Form data being sent:', formData);
-      console.log('Timeline with activities:', timeline.map(phase => ({
-        title: phase.title,
-        activities: phase.activities?.map(activity => ({
-          title: activity.title,
-          teacherIds: activity.teacherIds,
-          imageIds: activity.imageIds,
-          images: activity.images
-        }))
-      })));
-
-      const response = await fetch(
-        initialData ? `/api/projects/${initialData.id}` : "/api/projects",
-        {
-          method: initialData ? "PATCH" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        let errorMessage = "Failed to save project";
-        
-        try {
-          if (contentType && contentType.includes("application/json")) {
-            const errorData = await response.json();
-            
-            // Handle Zod validation errors
-            if (Array.isArray(errorData)) {
-              const errors = errorData.map(err => {
-                const path = err.path.join(' > ');
-                return `${path}: ${err.message}`;
-              }).join('\n');
-              errorMessage = `Validation errors:\n${errors}`;
-            } else if (errorData.message) {
-              errorMessage = errorData.message;
-            } else if (typeof errorData === 'object') {
-              errorMessage = JSON.stringify(errorData);
-            }
-          } else {
-            // Handle text responses
-            const text = await response.text();
-            if (text) {
-              errorMessage = text;
-            }
-          }
-          
-          // Add status code information
-          if (response.status === 400) {
-            errorMessage = `Bad Request: ${errorMessage}`;
-          } else if (response.status === 401) {
-            errorMessage = "Unauthorized: Please log in again";
-          } else if (response.status === 403) {
-            errorMessage = "Forbidden: You don't have permission to perform this action";
-          } else if (response.status === 422) {
-            errorMessage = `Invalid data: ${errorMessage}`;
-          } else if (response.status === 500) {
-            errorMessage = `Server error: ${errorMessage}`;
-          }
-        } catch (parseError) {
-          console.error("Error parsing response:", parseError);
-        }
-        
-        throw new Error(errorMessage);
+      if (initialData) {
+        // For editing, use chunked updates
+        await handleChunkedUpdate();
+      } else {
+        // For new projects, use the original single endpoint
+        await handleSingleCreate();
       }
 
       toast.success(
@@ -289,6 +217,151 @@ export function ProjectForm({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleChunkedUpdate = async () => {
+    const projectId = initialData!.id;
+    
+    // Step 1: Update basic info and hero image
+    const basicInfoResponse = await fetch(
+      `/api/projects/${projectId}/basic-info`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(basicInfo),
+      }
+    );
+
+    if (!basicInfoResponse.ok) {
+      const error = await parseError(basicInfoResponse);
+      throw new Error(error);
+    }
+
+    // Step 2: Update gallery
+    const galleryResponse = await fetch(
+      `/api/projects/${projectId}/gallery`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ gallery: gallery.map(({ ...rest }) => rest) }),
+      }
+    );
+
+    if (!galleryResponse.ok) {
+      const error = await parseError(galleryResponse);
+      throw new Error(error);
+    }
+
+    // Step 3: Update teachers
+    const teachersResponse = await fetch(
+      `/api/projects/${projectId}/teachers`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ teacherIds: teachers }),
+      }
+    );
+
+    if (!teachersResponse.ok) {
+      const error = await parseError(teachersResponse);
+      throw new Error(error);
+    }
+
+    // Step 4: Update timeline (this is the most complex part)
+    if (timeline.length > 0) {
+      const timelineResponse = await fetch(
+        `/api/projects/${projectId}/timeline`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ timeline }),
+        }
+      );
+
+      if (!timelineResponse.ok) {
+        const error = await parseError(timelineResponse);
+        throw new Error(error);
+      }
+    }
+  };
+
+  const handleSingleCreate = async () => {
+    const formData = {
+      basicInfo,
+      timeline,
+      gallery: gallery.map(({ ...rest }) => rest),
+      teacherIds: teachers,
+    };
+
+    const response = await fetch("/api/projects", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (!response.ok) {
+      const error = await parseError(response);
+      throw new Error(error);
+    }
+  };
+
+  const parseError = async (response: Response): Promise<string> => {
+    const contentType = response.headers.get("content-type");
+    let errorMessage = "Failed to save project";
+    
+    try {
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await response.json();
+        
+        // Handle Zod validation errors
+        if (Array.isArray(errorData)) {
+          const errors = errorData.map(err => {
+            const path = err.path.join(' > ');
+            return `${path}: ${err.message}`;
+          }).join('\n');
+          errorMessage = `Validation errors:\n${errors}`;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'object') {
+          errorMessage = JSON.stringify(errorData);
+        }
+      } else {
+        // Handle text responses
+        const text = await response.text();
+        if (text) {
+          errorMessage = text;
+        }
+      }
+      
+      // Add status code information
+      if (response.status === 400) {
+        errorMessage = `Bad Request: ${errorMessage}`;
+      } else if (response.status === 401) {
+        errorMessage = "Unauthorized: Please log in again";
+      } else if (response.status === 403) {
+        errorMessage = "Forbidden: You don't have permission to perform this action";
+      } else if (response.status === 422) {
+        errorMessage = `Invalid data: ${errorMessage}`;
+      } else if (response.status === 500) {
+        errorMessage = `Server error: ${errorMessage}`;
+      } else if (response.status === 504) {
+        errorMessage = "Request timeout: The operation took too long to complete";
+      }
+    } catch (parseError) {
+      console.error("Error parsing response:", parseError);
+    }
+    
+    return errorMessage;
   };
 
   return (

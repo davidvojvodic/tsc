@@ -130,18 +130,27 @@ export async function PATCH(
       );
     }
 
+    // OPTIMIZED: Get current project data in one query
+    const currentProject = await prisma.project.findUnique({
+      where: { id: params.id },
+      select: {
+        heroImage: { select: { id: true } },
+        gallery: { select: { id: true } },
+      },
+    });
+
+    if (!currentProject) {
+      return new NextResponse("Project not found", { status: 404 });
+    }
+
     // Update project and all related data
-    // Increase timeout to 30 seconds for complex operations
+    // Reduced timeout to fit within Vercel limits
     const project = await prisma.$transaction(async (tx) => {
       // Handle hero image
       let heroImageUpdate = {};
       if (validatedData.basicInfo.heroImage !== undefined) {
-        const currentProject = await tx.project.findUnique({
-          where: { id: params.id },
-          select: { heroImage: true },
-        });
-
-        if (currentProject?.heroImage) {
+        // Use pre-fetched data instead of querying again
+        if (currentProject.heroImage) {
           await tx.media.delete({
             where: { id: currentProject.heroImage.id },
           });
@@ -166,20 +175,14 @@ export async function PATCH(
         }
       }
 
-      // Update gallery
-      await tx.media.deleteMany({
-        where: {
-          id: {
-            in:
-              (
-                await tx.project.findUnique({
-                  where: { id: params.id },
-                  select: { gallery: { select: { id: true } } },
-                })
-              )?.gallery.map((img) => img.id) || [],
-          },
-        },
-      });
+      // Update gallery - use pre-fetched data and batch delete
+      if (currentProject.gallery.length > 0) {
+        await tx.media.deleteMany({
+          where: {
+            id: { in: currentProject.gallery.map(img => img.id) }
+          }
+        });
+      }
 
       const newGalleryImages = await Promise.all(
         validatedData.gallery.map((img) =>
@@ -341,8 +344,8 @@ export async function PATCH(
         },
       });
     }, {
-      maxWait: 30000, // Maximum time to wait for a transaction slot (30s)
-      timeout: 30000, // Maximum time the transaction can run (30s)
+      maxWait: 9000, // Maximum time to wait for a transaction slot (9s)
+      timeout: 9000, // Maximum time the transaction can run (9s to fit within Vercel's 10s limit)
     });
 
     return NextResponse.json(project);
@@ -585,8 +588,8 @@ export async function POST(req: NextRequest) {
         },
       });
     }, {
-      maxWait: 30000, // Maximum time to wait for a transaction slot (30s)
-      timeout: 30000, // Maximum time the transaction can run (30s)
+      maxWait: 9000, // Maximum time to wait for a transaction slot (9s)
+      timeout: 9000, // Maximum time the transaction can run (9s to fit within Vercel's 10s limit)
     });
 
     return NextResponse.json(project);

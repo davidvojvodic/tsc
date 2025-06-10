@@ -403,8 +403,8 @@ export async function POST(req: NextRequest) {
 
       return newProject;
     }, {
-      maxWait: 30000, // Maximum time to wait for a transaction slot (30s)
-      timeout: 30000, // Maximum time the transaction can run (30s)
+      maxWait: 9000, // Maximum time to wait for a transaction slot (9s)
+      timeout: 9000, // Maximum time the transaction can run (9s to fit within Vercel's 10s limit)
     });
 
     return NextResponse.json(project);

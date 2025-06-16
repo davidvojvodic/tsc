@@ -4,12 +4,61 @@ import { Button } from "@/components/ui/button";
 import { Container } from "../container";
 import { useLanguage } from "@/store/language-context";
 import { useEffect, useState } from "react";
+import {
+  Users,
+  GraduationCap,
+  Lightbulb,
+  Globe,
+  Languages,
+} from "lucide-react";
 
-const stats = [
-  { number: "250+", label: "Lorem ipsum" },
-  { number: "1000+", label: "Lorem ipsum" },
-  { number: "15+", label: "Lorem ipsum" },
-  { number: "2400+", label: "Lorem ipsum" },
+// Stats data with localization and icons
+const statsData = [
+  {
+    number: "70",
+    icon: Users,
+    labels: {
+      en: "Participating students",
+      sl: "Sodelujočih dijakov",
+      hr: "Sudjelujućih učenika",
+    },
+  },
+  {
+    number: "12",
+    icon: GraduationCap,
+    labels: {
+      en: "Participating teachers",
+      sl: "Sodelujočih učiteljev",
+      hr: "Sudjelujućih nastavnika",
+    },
+  },
+  {
+    number: "16",
+    icon: Lightbulb,
+    labels: {
+      en: "Learning prototypes",
+      sl: "Učnih prototipov",
+      hr: "Obrazovnih prototipova",
+    },
+  },
+  {
+    number: "6",
+    icon: Globe,
+    labels: {
+      en: "International exchanges",
+      sl: "Mednarodnih izmenjav",
+      hr: "Međunarodnih razmjena",
+    },
+  },
+  {
+    number: "3",
+    icon: Languages,
+    labels: {
+      en: "Learning languages",
+      sl: "Učni jeziki",
+      hr: "Učni jezici",
+    },
+  },
 ];
 
 // Content for different languages
@@ -70,44 +119,58 @@ export function HeroSection() {
           {/* Right column - Hero Image */}
           <div className="relative aspect-square max-h-[600px] w-full">
             <Image
-              src="/hero-upscaled.png"
+              src="/tsc-hero.jpg"
               alt="Student Profiles"
               width={1080}
               height={1080}
               className="object-contain"
               priority
             />
-
-            {/* Community badge */}
-            <div className="absolute bottom-12 left-4 z-30 rounded-lg bg-white p-3 shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="flex -space-x-2">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-6 w-6 rounded-full border-2 border-white bg-gray-200"
-                    />
-                  ))}
-                </div>
-                <div className="text-sm">
-                  <p className="font-semibold">Join our community of</p>
-                  <p>100+ Students</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
         {/* Stats section */}
-        <div className="grid grid-cols-2 gap-8 border-y py-12 md:grid-cols-4 md:gap-16">
-          {stats.map((stat, index) => (
-            <div key={index} className="text-center">
-              <div className="text-3xl font-bold md:text-4xl">
-                {stat.number}
-              </div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
-            </div>
-          ))}
+        <div className="py-20 md:py-24">
+          {/* Stats grid */}
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-5 lg:gap-12">
+            {statsData.map((stat, index) => {
+              const IconComponent = stat.icon;
+              return (
+                <div key={index} className="relative group">
+                  {/* Background decoration */}
+                  <div className="absolute -inset-4 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                  <div className="relative flex flex-col items-center text-center space-y-4">
+                    {/* Icon container */}
+                    <div className="relative">
+                      <div className="flex items-center justify-center w-16 h-16 bg-white dark:bg-gray-900 border-2 border-primary/20 rounded-2xl shadow-lg">
+                        <IconComponent className="h-8 w-8 text-primary" />
+                      </div>
+                      {/* Small decorative dot */}
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full border-2 border-white dark:border-gray-900" />
+                    </div>
+
+                    {/* Number with emphasis */}
+                    <div className="space-y-2">
+                      <div className="text-4xl font-black text-foreground md:text-5xl lg:text-6xl">
+                        <span className="bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
+                          {stat.number}
+                        </span>
+                        <span className="text-primary/40 text-2xl md:text-3xl lg:text-4xl">
+                          +
+                        </span>
+                      </div>
+
+                      {/* Label with better typography */}
+                      <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide md:text-base max-w-[100px] leading-tight">
+                        {stat.labels[language] || stat.labels.en}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </Container>

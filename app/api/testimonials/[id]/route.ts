@@ -9,7 +9,11 @@ import { MediaType } from "@prisma/client";
 const testimonialSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters long"),
   role: z.string().min(2, "Role must be at least 2 characters long"),
+  role_sl: z.string().optional(),
+  role_hr: z.string().optional(),
   content: z.string().min(10, "Testimonial must be at least 10 characters long"),
+  content_sl: z.string().optional(),
+  content_hr: z.string().optional(),
   published: z.boolean().default(false),
   featured: z.boolean().default(false),
   photo: z
@@ -92,7 +96,11 @@ export async function PATCH(
         data: {
           name: validatedData.name,
           role: validatedData.role,
+          role_sl: validatedData.role_sl,
+          role_hr: validatedData.role_hr,
           content: validatedData.content,
+          content_sl: validatedData.content_sl,
+          content_hr: validatedData.content_hr,
           published: validatedData.published,
           featured: validatedData.featured,
           ...photoUpdate,

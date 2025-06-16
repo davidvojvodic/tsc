@@ -16,7 +16,11 @@ export default async function HomePage() {
       id: true,
       name: true,
       role: true,
+      role_sl: true,
+      role_hr: true,
       content: true,
+      content_sl: true,
+      content_hr: true,
       photo: {
         select: {
           url: true,

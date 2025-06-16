@@ -12,7 +12,7 @@ const EXCLUDED_PATHS = [
   "/api",
   "/_next",
   "/favicon.ico",
-  "/hero-upscaled.png",
+  "/tsc-hero.jpg",
   "/hero.png",
   "/school-start-times.jpg",
   "/sola.jpg",

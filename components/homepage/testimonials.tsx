@@ -5,12 +5,17 @@ import { Container } from "@/components/container";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Quote } from "lucide-react";
+import { useLanguage } from "@/store/language-context";
 
 interface Testimonial {
   id: string;
   name: string;
   role: string;
+  role_sl?: string | null;
+  role_hr?: string | null;
   content: string;
+  content_sl?: string | null;
+  content_hr?: string | null;
   photo: { url: string } | null;
 }
 
@@ -21,16 +26,58 @@ interface TestimonialsSectionProps {
 export default function TestimonialsSection({
   testimonials,
 }: TestimonialsSectionProps) {
+  const { language } = useLanguage();
+
+  // Helper function to get localized content
+  const getLocalizedContent = (testimonial: Testimonial, field: 'role' | 'content') => {
+    if (field === 'role') {
+      switch (language) {
+        case 'sl':
+          return testimonial.role_sl || testimonial.role;
+        case 'hr':
+          return testimonial.role_hr || testimonial.role;
+        default:
+          return testimonial.role;
+      }
+    } else {
+      switch (language) {
+        case 'sl':
+          return testimonial.content_sl || testimonial.content;
+        case 'hr':
+          return testimonial.content_hr || testimonial.content;
+        default:
+          return testimonial.content;
+      }
+    }
+  };
+
+  // Localized section titles
+  const sectionContent = {
+    en: {
+      title: "What Our Students Say",
+      subtitle: "Hear from our students about their learning experiences and achievements."
+    },
+    sl: {
+      title: "Kaj pravijo naši dijaki",
+      subtitle: "Poslušajte naše dijake o njihovih izkušnjah z učenjem in dosežkih."
+    },
+    hr: {
+      title: "Što kažu naši učenici",
+      subtitle: "Čujte od naših učenika o njihovim iskustvima učenja i postignućima."
+    }
+  };
+
+  const currentContent = sectionContent[language] || sectionContent.en;
+
   return (
     <section className="py-16 md:py-24 bg-muted/50">
       <Container>
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            What Our Students Say
+            {currentContent.title}
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Hear from our students about their learning experiences and
-            achievements.
+            {currentContent.subtitle}
           </p>
         </div>
 
@@ -46,7 +93,7 @@ export default function TestimonialsSection({
               {/* Testimonial Content */}
               <div className="relative">
                 <blockquote className="text-lg mb-6">
-                  {testimonial.content}
+                  {getLocalizedContent(testimonial, 'content')}
                 </blockquote>
 
                 {/* Author */}
@@ -66,7 +113,7 @@ export default function TestimonialsSection({
                   <div>
                     <div className="font-semibold">{testimonial.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      {testimonial.role}
+                      {getLocalizedContent(testimonial, 'role')}
                     </div>
                   </div>
                 </footer>

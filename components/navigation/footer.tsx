@@ -2,17 +2,10 @@ import React from "react";
 import Link from "next/link";
 import { Container } from "../container";
 import Image from "next/image";
-import {
-  Facebook,
-  Instagram,
-  Linkedin,
-  Mail,
-  MapPin,
-  Phone,
-  Twitter,
-} from "lucide-react";
+import { Facebook, Instagram, Mail, MapPin, Phone, User } from "lucide-react";
 import { cookies } from "next/headers";
 import { SupportedLanguage } from "@/store/language-context";
+import { CookieSettingsButton } from "@/components/cookie-consent/cookie-settings-button";
 
 // Translation helper
 const getTranslations = (language: SupportedLanguage) => {
@@ -20,6 +13,7 @@ const getTranslations = (language: SupportedLanguage) => {
     en: {
       about: "About Us",
       projects: "Our Projects",
+      waterwise: "WaterWise",
       resources: "Resources",
       learning: "Online Learning",
       studyMaterials: "Study Materials",
@@ -32,13 +26,21 @@ const getTranslations = (language: SupportedLanguage) => {
       quickLinks: "Quick Links",
       resourcesHeading: "Resources",
       copyright: "© 2024 WaterWise. All rights reserved.",
-      address: "123 Education Street, City, Country",
-      contactUs: "Contact Us",
+      address:
+        "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
+      coordinator: "Mitja Draškovič, project coordinator Waterwise",
+      contactUs: "Contact",
       home: "Home",
+      followUs: "Follow Us",
+      tscFacebook: "TŠC Maribor",
+      ptsFacebook: "PTŠ Dubrovnik",
+      tscInstagram: "TŠC Maribor",
+      ptsInstagram: "PTŠ Dubrovnik",
     },
     sl: {
       about: "O nas",
       projects: "Naši projekti",
+      waterwise: "WaterWise",
       resources: "Gradiva",
       learning: "Spletno učenje",
       studyMaterials: "Učna gradiva",
@@ -51,13 +53,21 @@ const getTranslations = (language: SupportedLanguage) => {
       quickLinks: "Hitre povezave",
       resourcesHeading: "Viri",
       copyright: "© 2024 WaterWise. Vse pravice pridržane.",
-      address: "123 Izobraževalna ulica, Mesto, Država",
-      contactUs: "Kontaktirajte nas",
+      address:
+        "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
+      coordinator: "Mitja Draškovič, koordinator projekta Waterwise",
+      contactUs: "Kontakt",
       home: "Domov",
+      followUs: "Sledite nam",
+      tscFacebook: "TŠC Maribor",
+      ptsFacebook: "PTŠ Dubrovnik",
+      tscInstagram: "TŠC Maribor",
+      ptsInstagram: "PTŠ Dubrovnik",
     },
     hr: {
       about: "O nama",
       projects: "Naši projekti",
+      waterwise: "WaterWise",
       resources: "Materijali",
       learning: "Online učenje",
       studyMaterials: "Nastavni materijali",
@@ -70,9 +80,16 @@ const getTranslations = (language: SupportedLanguage) => {
       quickLinks: "Brze poveznice",
       resourcesHeading: "Resursi",
       copyright: "© 2024 WaterWise. Sva prava pridržana.",
-      address: "123 Obrazovna ulica, Grad, Država",
-      contactUs: "Kontaktirajte nas",
+      address:
+        "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
+      coordinator: "Mitja Draškovič, koordinator projekta Waterwise",
+      contactUs: "Kontakt",
       home: "Početna",
+      followUs: "Pratite nas",
+      tscFacebook: "TŠC Maribor",
+      ptsFacebook: "PTŠ Dubrovnik",
+      tscInstagram: "TŠC Maribor",
+      ptsInstagram: "PTŠ Dubrovnik",
     },
   };
 
@@ -87,6 +104,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
   const basePaths = {
     home: "/",
     projects: "/projects",
+    waterwise: "/projects/Waterwise",
     materials: "/materials",
     quizzes: "/quizzes",
     blog: "/blog",
@@ -102,6 +120,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
   const paths = {
     home: `${prefix}${basePaths.home}`,
     projects: `${prefix}${basePaths.projects}`,
+    waterwise: `${prefix}${basePaths.waterwise}`,
     materials: `${prefix}${basePaths.materials}`,
     quizzes: `${prefix}${basePaths.quizzes}`,
     blog: `${prefix}${basePaths.blog}`,
@@ -115,6 +134,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
     main: [
       { name: t.about, href: paths.home },
       { name: t.projects, href: paths.projects },
+      { name: t.waterwise, href: paths.waterwise },
       { name: t.resources, href: paths.materials },
       { name: t.learning, href: paths.quizzes },
     ],
@@ -149,10 +169,30 @@ export function Footer() {
   const homeLink = `${prefix}/`;
 
   const socialLinks = [
-    { name: "Facebook", icon: Facebook, href: "#" },
-    { name: "Instagram", icon: Instagram, href: "#" },
-    { name: "Twitter", icon: Twitter, href: "#" },
-    { name: "LinkedIn", icon: Linkedin, href: "#" },
+    {
+      name: t.tscFacebook,
+      icon: Facebook,
+      href: "https://www.facebook.com/TSCMariboruradnastran",
+      type: "facebook",
+    },
+    {
+      name: t.ptsFacebook,
+      icon: Facebook,
+      href: "https://www.facebook.com/profile.php?id=100067681561640",
+      type: "facebook",
+    },
+    {
+      name: t.tscInstagram,
+      icon: Instagram,
+      href: "https://www.instagram.com/tsc_maribor",
+      type: "instagram",
+    },
+    {
+      name: t.ptsInstagram,
+      icon: Instagram,
+      href: "https://www.instagram.com/pomorskotehnickaskoladubrovnik",
+      type: "instagram",
+    },
   ];
 
   return (
@@ -172,23 +212,23 @@ export function Footer() {
                   className="dark:invert"
                 />
               </Link>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                eiusmod tempor incididunt ut labore et dolore magna aliqua.
-              </p>
               <div className="space-y-2 pt-2">
                 <h3 className="text-sm font-semibold">{t.contactUs}</h3>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  {t.address}
+                <div className="flex items-start text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>{t.address}</span>
+                </div>
+                <div className="flex items-start text-sm text-muted-foreground">
+                  <User className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="font-medium">{t.coordinator}</span>
                 </div>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Phone className="h-4 w-4 mr-2" />
-                  +1 234 567 890
+                  +386 51 227 990
                 </div>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Mail className="h-4 w-4 mr-2" />
-                  contact@example.com
+                  mitja.draskovic@tscmb.si
                 </div>
               </div>
             </div>
@@ -244,23 +284,34 @@ export function Footer() {
                   {item.name}
                 </Link>
               ))}
+              <CookieSettingsButton 
+                variant="ghost" 
+                size="sm" 
+                showIcon={false}
+                className="text-xs text-muted-foreground hover:text-foreground h-auto p-0 font-normal"
+              />
             </div>
 
             {/* Social Links */}
-            <div className="flex items-center gap-4">
-              {socialLinks.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <span className="sr-only">{item.name}</span>
-                    <Icon className="h-4 w-4" />
-                  </Link>
-                );
-              })}
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-3">
+                {socialLinks.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name + item.href}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      title={item.name}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="text-xs">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Copyright */}

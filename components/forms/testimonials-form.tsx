@@ -32,11 +32,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UploadButton } from "@/lib/uploadthing";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters long"),
   role: z.string().min(2, "Role must be at least 2 characters long"),
+  role_sl: z.string().optional(),
+  role_hr: z.string().optional(),
   content: z.string().min(10, "Testimonial must be at least 10 characters long"),
+  content_sl: z.string().optional(),
+  content_hr: z.string().optional(),
   published: z.boolean().default(false),
   featured: z.boolean().default(false),
 });
@@ -48,7 +53,11 @@ interface TestimonialFormProps {
     id: string;
     name: string;
     role: string;
+    role_sl?: string | null;
+    role_hr?: string | null;
     content: string;
+    content_sl?: string | null;
+    content_hr?: string | null;
     published: boolean;
     featured: boolean;
     photo: { url: string } | null;
@@ -68,7 +77,11 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
     defaultValues: {
       name: initialData?.name || "",
       role: initialData?.role || "",
+      role_sl: initialData?.role_sl || "",
+      role_hr: initialData?.role_hr || "",
       content: initialData?.content || "",
+      content_sl: initialData?.content_sl || "",
+      content_hr: initialData?.content_hr || "",
       published: initialData?.published || false,
       featured: initialData?.featured || false,
     },
@@ -195,43 +208,155 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <FormControl>
-                      <Input
-                        disabled={isLoading}
-                        placeholder="e.g. Student, Parent"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Multilingual Role Fields */}
+              <div className="space-y-4">
+                <FormLabel>Role</FormLabel>
+                <Tabs defaultValue="en" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="sl">Slovenian</TabsTrigger>
+                    <TabsTrigger value="hr">Croatian</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="en" className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role (English) *</FormLabel>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="e.g. Student, Parent"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="sl" className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="role_sl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role (Slovenian)</FormLabel>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="npr. Dijak, Starš"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="hr" className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="role_hr"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role (Croatian)</FormLabel>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="npr. Učenik, Roditelj"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
 
-              <FormField
-                control={form.control}
-                name="content"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Testimonial</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        disabled={isLoading}
-                        placeholder="Enter testimonial content"
-                        className="resize-none"
-                        rows={5}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Multilingual Content Fields */}
+              <div className="space-y-4">
+                <FormLabel>Testimonial Content</FormLabel>
+                <Tabs defaultValue="en" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="sl">Slovenian</TabsTrigger>
+                    <TabsTrigger value="hr">Croatian</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="en" className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Testimonial (English) *</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              disabled={isLoading}
+                              placeholder="Enter testimonial content in English"
+                              className="resize-none"
+                              rows={5}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="sl" className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="content_sl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Testimonial (Slovenian)</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              disabled={isLoading}
+                              placeholder="Vnesite vsebino priporočila v slovenščini"
+                              className="resize-none"
+                              rows={5}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="hr" className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="content_hr"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Testimonial (Croatian)</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              disabled={isLoading}
+                              placeholder="Unesite sadržaj preporuke na hrvatskom"
+                              className="resize-none"
+                              rows={5}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
             </div>
 
             {/* Publishing Options */}

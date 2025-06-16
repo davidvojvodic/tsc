@@ -197,11 +197,6 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
               {language === "sl" && "Spoznajte naše učitelje"}
               {language === "hr" && "Upoznajte naše učitelje"}
             </h2>
-            <p className="text-muted-foreground mt-2">
-              {language === "en" && "Learn from our experienced educators"}
-              {language === "sl" && "Učite od naših izkušenih učiteljev"}
-              {language === "hr" && "Učite od naših iskusnih učitelja"}
-            </p>
           </div>
 
           {/* TSC Teachers Carousel */}

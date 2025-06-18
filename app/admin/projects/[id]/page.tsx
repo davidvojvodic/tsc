@@ -90,7 +90,6 @@ export default async function ProjectPage({ params }: PageParams) {
         timeline: project.timeline.map((phase) => ({
           id: phase.id,
           title: phase.title,
-          description: phase.description,
           startDate: phase.startDate ?? undefined, // Convert 'null' to 'undefined'
           endDate: phase.endDate ?? undefined, // Convert 'null' to 'undefined'
           completed: phase.completed,

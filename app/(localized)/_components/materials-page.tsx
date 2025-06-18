@@ -51,10 +51,26 @@ async function getMaterials(
         ],
       }),
       ...(category && {
-        category: {
-          equals: category,
-          mode: "insensitive",
-        } as Prisma.StringFilter,
+        ...(language === "sl"
+          ? {
+              category_sl: {
+                equals: category,
+                mode: "insensitive",
+              } as Prisma.StringFilter,
+            }
+          : language === "hr"
+          ? {
+              category_hr: {
+                equals: category,
+                mode: "insensitive",
+              } as Prisma.StringFilter,
+            }
+          : {
+              category: {
+                equals: category,
+                mode: "insensitive",
+              } as Prisma.StringFilter,
+            }),
       }),
     };
 
@@ -83,16 +99,26 @@ async function getMaterials(
         },
       }),
       prisma.material.groupBy({
-        by: ["category"],
+        by: language === "sl" ? ["category_sl"] : language === "hr" ? ["category_hr"] : ["category"],
         where: {
           published: true,
-          category: { not: null },
+          language: language,
+          ...(language === "sl" 
+            ? { category_sl: { not: null } }
+            : language === "hr"
+            ? { category_hr: { not: null } }
+            : { category: { not: null } }
+          ),
         },
       }),
     ]);
 
     const categories = categoriesResult
-      .map((c) => c.category)
+      .map((c) => {
+        if (language === "sl") return (c as { category_sl: string | null }).category_sl;
+        if (language === "hr") return (c as { category_hr: string | null }).category_hr;
+        return (c as { category: string | null }).category;
+      })
       .filter((category): category is string => Boolean(category));
 
     return {

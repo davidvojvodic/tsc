@@ -22,9 +22,6 @@ const timelinePhaseSchema = z.object({
   title: z.string(),
   title_sl: z.string().nullable(),
   title_hr: z.string().nullable(),
-  description: z.string(),
-  description_sl: z.string().nullable(),
-  description_hr: z.string().nullable(),
   startDate: z.preprocess((arg) => {
     if (typeof arg === "string" || arg instanceof Date) return new Date(arg);
     return null;
@@ -118,9 +115,6 @@ export async function PATCH(
               title: phase.title,
               title_sl: phase.title_sl,
               title_hr: phase.title_hr,
-              description: phase.description,
-              description_sl: phase.description_sl,
-              description_hr: phase.description_hr,
               startDate: phase.startDate,
               endDate: phase.endDate,
               completed: phase.completed,

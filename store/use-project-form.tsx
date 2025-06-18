@@ -37,9 +37,6 @@ export interface ProjectPhase {
   title: string;
   title_sl: string | null;
   title_hr: string | null;
-  description: string;
-  description_sl: string | null;
-  description_hr: string | null;
   startDate: Date | null | undefined;
   endDate: Date | null | undefined;
   completed: boolean;

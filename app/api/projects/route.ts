@@ -284,10 +284,6 @@ export async function POST(req: NextRequest) {
                 title_sl: phase.title_sl,
                 title_hr: phase.title_hr,
 
-                description: phase.description,
-                description_sl: phase.description_sl,
-                description_hr: phase.description_hr,
-
                 completed: phase.completed,
 
                 order: phase.order,

@@ -199,10 +199,9 @@ const getTranslations = (language: SupportedLanguage) => {
       completion: "Completion",
       resources: "Resources",
       quizzes: "quizzes",
-      projectTimeline: "Project Timeline",
+      projectTimeline: "Project activities",
       trackProgress: "Track the project's progress and milestones",
       completed: "Completed",
-      activities: "Activities",
       learningResources: "Learning Resources",
       takeQuiz: "Take this quiz to test your knowledge",
       startQuiz: "Start Quiz",
@@ -224,10 +223,9 @@ const getTranslations = (language: SupportedLanguage) => {
       completion: "Dokončanje",
       resources: "Viri",
       quizzes: "kvizov",
-      projectTimeline: "Časovnica projekta",
+      projectTimeline: "Aktivnosti projekta",
       trackProgress: "Sledite napredku in mejnikom projekta",
       completed: "Končano",
-      activities: "Aktivnosti",
       learningResources: "Učni viri",
       takeQuiz: "Rešite ta kviz, da preverite svoje znanje",
       startQuiz: "Začni kviz",
@@ -249,10 +247,9 @@ const getTranslations = (language: SupportedLanguage) => {
       completion: "Završetak",
       resources: "Resursi",
       quizzes: "kvizova",
-      projectTimeline: "Vremenski okvir projekta",
+      projectTimeline: "Aktivnosti projekta",
       trackProgress: "Pratite napredak i prekretnice projekta",
       completed: "Završeno",
-      activities: "Aktivnosti",
       learningResources: "Obrazovni resursi",
       takeQuiz: "Riješite ovaj kviz da testirate svoje znanje",
       startQuiz: "Započni kviz",
@@ -378,7 +375,9 @@ export function ProjectDetailPage({
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground break-words">{t.startDate}</p>
+              <p className="text-sm text-muted-foreground break-words">
+                {t.startDate}
+              </p>
               <p className="text-lg sm:text-xl font-semibold break-words">
                 {project.timeline[0]?.startDate
                   ? format(project.timeline[0].startDate, "MMM yyyy")
@@ -386,17 +385,25 @@ export function ProjectDetailPage({
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground break-words">{t.teamSize}</p>
+              <p className="text-sm text-muted-foreground break-words">
+                {t.teamSize}
+              </p>
               <p className="text-lg sm:text-xl font-semibold break-words">
                 {project.teachers.length} {t.members}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground break-words">{t.completion}</p>
-              <p className="text-lg sm:text-xl font-semibold">{completionPercentage}%</p>
+              <p className="text-sm text-muted-foreground break-words">
+                {t.completion}
+              </p>
+              <p className="text-lg sm:text-xl font-semibold">
+                {completionPercentage}%
+              </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground break-words">{t.resources}</p>
+              <p className="text-sm text-muted-foreground break-words">
+                {t.resources}
+              </p>
               <p className="text-lg sm:text-xl font-semibold break-words">
                 {project.quizzes.length} {t.quizzes}
               </p>
@@ -421,11 +428,6 @@ export function ProjectDetailPage({
                     const phaseTitle = getLocalizedContent(
                       phase,
                       "title",
-                      language
-                    );
-                    const phaseDescription = getLocalizedContent(
-                      phase,
-                      "description",
                       language
                     );
 
@@ -460,27 +462,12 @@ export function ProjectDetailPage({
                             )}
                           </div>
 
-                          <h3 className="text-xl font-semibold mb-2">
+                          <h3 className="text-xl font-semibold mb-5">
                             {phaseTitle || phase.title}
                           </h3>
-
-                          <div className="mb-4">
-                            <RichTextDisplay
-                              content={
-                                phaseDescription || phase.description || ""
-                              }
-                              className="text-muted-foreground prose-sm"
-                            />
-                          </div>
-
                           {/* Activities */}
                           {phase.activities && phase.activities.length > 0 && (
                             <div className="mb-6">
-                              <h4 className="text-lg font-medium mb-4 text-foreground flex items-center gap-2">
-                                <div className="h-1 w-8 bg-gradient-to-r from-primary to-primary/60 rounded-full"></div>
-                                {t.activities}
-                              </h4>
-
                               <Accordion type="multiple" className="space-y-3">
                                 {phase.activities.map((activity, index) => {
                                   const activityTitle = getLocalizedContent(
@@ -817,7 +804,12 @@ export function ProjectDetailPage({
                             {quizDescription || quiz.description || t.takeQuiz}
                           </p>
                         </div>
-                        <Button variant="outline" size="sm" asChild className="flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="flex-shrink-0"
+                        >
                           <Link href={`${prefix}/quizzes/${quiz.id}`}>
                             {t.startQuiz}
                           </Link>

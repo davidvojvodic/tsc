@@ -12,7 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ProjectFormData, Teacher } from "@/lib/types";
-import { ProjectPhase as StoreProjectPhase, ProjectImage } from "@/store/use-project-form";
+import {
+  ProjectPhase as StoreProjectPhase,
+  ProjectImage,
+} from "@/store/use-project-form";
 import { Check, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useProjectForm } from "@/store/use-project-form";
 import { BasicForm } from "../project/basic-form";
@@ -98,44 +101,44 @@ export function ProjectForm({
           title: phase.title,
           title_sl: phase.title_sl || null,
           title_hr: phase.title_hr || null,
-          description: phase.description,
-          description_sl: phase.description_sl || null,
-          description_hr: phase.description_hr || null,
           startDate: phase.startDate ? new Date(phase.startDate) : null,
           endDate: phase.endDate ? new Date(phase.endDate) : null,
           completed: phase.completed,
           order: index,
           // Transform activities to match ProjectActivity interface
-          activities: phase.activities?.map(activity => {
-            return {
-              id: activity.id,
-              title: activity.title,
-              title_sl: activity.title_sl || null,
-              title_hr: activity.title_hr || null,
-              description: activity.description,
-              description_sl: activity.description_sl || null,
-              description_hr: activity.description_hr || null,
-              order: activity.order,
-              // Use the correctly populated arrays from the server
-              teacherIds: activity.teacherIds || [],
-              imageIds: activity.imageIds || [],
-              // Keep the raw data for reference
-              teachers: activity.teachers,
-              rawImages: activity.images
-            };
-          }) || []
+          activities:
+            phase.activities?.map((activity) => {
+              return {
+                id: activity.id,
+                title: activity.title,
+                title_sl: activity.title_sl || null,
+                title_hr: activity.title_hr || null,
+                description: activity.description,
+                description_sl: activity.description_sl || null,
+                description_hr: activity.description_hr || null,
+                order: activity.order,
+                // Use the correctly populated arrays from the server
+                teacherIds: activity.teacherIds || [],
+                imageIds: activity.imageIds || [],
+                // Keep the raw data for reference
+                teachers: activity.teachers,
+                rawImages: activity.images,
+              };
+            }) || [],
         };
         return typedPhase;
       });
       setTimeline(transformedTimeline);
 
       // Transform gallery data
-      const transformedGallery: ProjectImage[] = initialData.gallery.map((img) => ({
-        id: img.id,
-        url: img.url,
-        fileKey: img.id,
-        alt: null,
-      }));
+      const transformedGallery: ProjectImage[] = initialData.gallery.map(
+        (img) => ({
+          id: img.id,
+          url: img.url,
+          fileKey: img.id,
+          alt: null,
+        })
+      );
       setGallery(transformedGallery);
 
       setTeachers(initialData.teachers.map((t) => t.id));
@@ -197,15 +200,15 @@ export function ProjectForm({
       router.refresh();
     } catch (error) {
       console.error("[PROJECT_SUBMIT_ERROR]", error);
-      
+
       // Display detailed error message in toast
       if (error instanceof Error) {
         // Split multiline errors for better display
-        const errorLines = error.message.split('\n');
+        const errorLines = error.message.split("\n");
         if (errorLines.length > 1) {
           // Show first line as main error
           toast.error(errorLines[0], {
-            description: errorLines.slice(1).join('\n'),
+            description: errorLines.slice(1).join("\n"),
             duration: 10000, // Show for longer when there are details
           });
         } else {
@@ -221,7 +224,7 @@ export function ProjectForm({
 
   const handleChunkedUpdate = async () => {
     const projectId = initialData!.id;
-    
+
     // Step 1: Update basic info and hero image
     const basicInfoResponse = await fetch(
       `/api/projects/${projectId}/basic-info`,
@@ -240,16 +243,13 @@ export function ProjectForm({
     }
 
     // Step 2: Update gallery
-    const galleryResponse = await fetch(
-      `/api/projects/${projectId}/gallery`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ gallery: gallery.map(({ ...rest }) => rest) }),
-      }
-    );
+    const galleryResponse = await fetch(`/api/projects/${projectId}/gallery`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ gallery: gallery.map(({ ...rest }) => rest) }),
+    });
 
     if (!galleryResponse.ok) {
       const error = await parseError(galleryResponse);
@@ -318,21 +318,23 @@ export function ProjectForm({
   const parseError = async (response: Response): Promise<string> => {
     const contentType = response.headers.get("content-type");
     let errorMessage = "Failed to save project";
-    
+
     try {
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
-        
+
         // Handle Zod validation errors
         if (Array.isArray(errorData)) {
-          const errors = errorData.map(err => {
-            const path = err.path.join(' > ');
-            return `${path}: ${err.message}`;
-          }).join('\n');
+          const errors = errorData
+            .map((err) => {
+              const path = err.path.join(" > ");
+              return `${path}: ${err.message}`;
+            })
+            .join("\n");
           errorMessage = `Validation errors:\n${errors}`;
         } else if (errorData.message) {
           errorMessage = errorData.message;
-        } else if (typeof errorData === 'object') {
+        } else if (typeof errorData === "object") {
           errorMessage = JSON.stringify(errorData);
         }
       } else {
@@ -342,25 +344,27 @@ export function ProjectForm({
           errorMessage = text;
         }
       }
-      
+
       // Add status code information
       if (response.status === 400) {
         errorMessage = `Bad Request: ${errorMessage}`;
       } else if (response.status === 401) {
         errorMessage = "Unauthorized: Please log in again";
       } else if (response.status === 403) {
-        errorMessage = "Forbidden: You don't have permission to perform this action";
+        errorMessage =
+          "Forbidden: You don't have permission to perform this action";
       } else if (response.status === 422) {
         errorMessage = `Invalid data: ${errorMessage}`;
       } else if (response.status === 500) {
         errorMessage = `Server error: ${errorMessage}`;
       } else if (response.status === 504) {
-        errorMessage = "Request timeout: The operation took too long to complete";
+        errorMessage =
+          "Request timeout: The operation took too long to complete";
       }
     } catch (parseError) {
       console.error("Error parsing response:", parseError);
     }
-    
+
     return errorMessage;
   };
 

@@ -299,9 +299,6 @@ model ProjectPhase {
   title          String
   title_sl       String?
   title_hr       String?
-  description    String
-  description_sl String?
-  description_hr String?
   startDate      DateTime?
   endDate        DateTime?
   completed      Boolean           @default(false)

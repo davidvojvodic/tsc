@@ -74,9 +74,6 @@ const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   title_sl: z.string().nullable(),
   title_hr: z.string().nullable(),
-  description: z.string().min(1, "Description is required"),
-  description_sl: z.string().nullable(),
-  description_hr: z.string().nullable(),
   startDate: z.date().optional().nullable(),
   endDate: z.date().optional().nullable(),
   completed: z.boolean().default(false),
@@ -117,9 +114,6 @@ export function TimelineEditor({
       title: "",
       title_sl: null,
       title_hr: null,
-      description: "",
-      description_sl: null,
-      description_hr: null,
       startDate: null,
       endDate: null,
       completed: false,
@@ -150,9 +144,6 @@ export function TimelineEditor({
       title: phase.title,
       title_sl: phase.title_sl || null,
       title_hr: phase.title_hr || null,
-      description: phase.description,
-      description_sl: phase.description_sl || null,
-      description_hr: phase.description_hr || null,
       startDate: phase.startDate ? new Date(phase.startDate) : null,
       endDate: phase.endDate ? new Date(phase.endDate) : null,
       completed: phase.completed,
@@ -171,7 +162,7 @@ export function TimelineEditor({
     onChange([...phases, newPhase]);
     setIsAddingPhase(false);
     form.reset();
-    toast.success("Phase added successfully");
+    toast.success("Activity added successfully");
   };
 
   const handleUpdatePhase = (values: z.infer<typeof formSchema>) => {
@@ -192,7 +183,7 @@ export function TimelineEditor({
     onChange(updatedPhases);
     setEditingPhaseId(null);
     form.reset();
-    toast.success("Phase updated successfully");
+    toast.success("Activity updated successfully");
   };
 
   const handleDeletePhase = (phaseId: string) => {
@@ -204,7 +195,7 @@ export function TimelineEditor({
       }));
 
     onChange(updatedPhases);
-    toast.success("Phase deleted successfully");
+    toast.success("Activity deleted successfully");
   };
 
   const clearDate = (field: "startDate" | "endDate") => {
@@ -222,7 +213,6 @@ export function TimelineEditor({
     }
   };
 
-
   // Separate upload dialog component
 
   // Separate edit form from the timeline view
@@ -232,13 +222,8 @@ export function TimelineEditor({
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>
-              {isAddingPhase ? "Add New Phase" : "Edit Phase"}
+              {isAddingPhase ? "Add New Activity Phase" : "Edit Activity Phase"}
             </CardTitle>
-            <CardDescription>
-              {isAddingPhase
-                ? "Add a new phase to your project timeline"
-                : "Edit this phase in your project timeline"}
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -249,7 +234,7 @@ export function TimelineEditor({
                 className="space-y-4"
               >
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Phase Title</h3>
+                  <h3 className="text-sm font-medium">Activity Phase Title</h3>
                   <Tabs defaultValue="en" className="w-full">
                     <TabsList className="mb-4">
                       <TabsTrigger value="en">English</TabsTrigger>
@@ -266,7 +251,7 @@ export function TimelineEditor({
                             <FormControl>
                               <Input
                                 disabled={isLoading}
-                                placeholder="Enter phase title"
+                                placeholder="Enter activity phase title"
                                 {...field}
                               />
                             </FormControl>
@@ -285,7 +270,7 @@ export function TimelineEditor({
                             <FormControl>
                               <Input
                                 disabled={isLoading}
-                                placeholder="Enter Slovenian phase title"
+                                placeholder="Enter Slovenian activity phase title"
                                 {...field}
                                 value={field.value || ""}
                                 onChange={(e) =>
@@ -308,83 +293,12 @@ export function TimelineEditor({
                             <FormControl>
                               <Input
                                 disabled={isLoading}
-                                placeholder="Enter Croatian phase title"
+                                placeholder="Enter Croatian activity phase title"
                                 {...field}
                                 value={field.value || ""}
                                 onChange={(e) =>
                                   field.onChange(e.target.value || null)
                                 }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Phase Description</h3>
-                  <Tabs defaultValue="en" className="w-full">
-                    <TabsList className="mb-4">
-                      <TabsTrigger value="en">English</TabsTrigger>
-                      <TabsTrigger value="sl">Slovenian</TabsTrigger>
-                      <TabsTrigger value="hr">Croatian</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="en" className="mt-0">
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <RichTextEditor
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                                disabled={isLoading}
-                                placeholder="Describe this phase"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="sl" className="mt-0">
-                      <FormField
-                        control={form.control}
-                        name="description_sl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <RichTextEditor
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                                disabled={isLoading}
-                                placeholder="Describe this phase in Slovenian"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="hr" className="mt-0">
-                      <FormField
-                        control={form.control}
-                        name="description_hr"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <RichTextEditor
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                                disabled={isLoading}
-                                placeholder="Describe this phase in Croatian"
                               />
                             </FormControl>
                             <FormMessage />
@@ -505,7 +419,6 @@ export function TimelineEditor({
                   />
                 </div>
 
-
                 <FormField
                   control={form.control}
                   name="completed"
@@ -531,7 +444,7 @@ export function TimelineEditor({
                     onClick={() => {
                       setEditingPhaseId(null);
                       setIsAddingPhase(false);
-                                        form.reset();
+                      form.reset();
                     }}
                   >
                     Cancel
@@ -556,7 +469,7 @@ export function TimelineEditor({
       <CardHeader>
         <CardTitle>Project Timeline</CardTitle>
         <CardDescription>
-          Manage the phases and milestones of your project
+          Manage the activities and milestones of your project
         </CardDescription>
       </CardHeader>
 
@@ -613,12 +526,6 @@ export function TimelineEditor({
                                       <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                   </div>
-                                </div>
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  <RichTextDisplay
-                                    content={phase.description || ""}
-                                    className="prose-sm"
-                                  />
                                 </div>
                                 <div className="flex items-center justify-start gap-4 mt-2">
                                   <div className="text-sm">
@@ -697,7 +604,7 @@ export function TimelineEditor({
 
         <Button onClick={() => setIsAddingPhase(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Phase
+          Add Activity Phase
         </Button>
       </CardContent>
     </Card>
@@ -795,7 +702,6 @@ function ActivityManager({
     setEditingActivityId(activity.id);
     setIsAddingActivity(false);
 
-
     // Handle both transformed data (teacherIds/imageIds arrays) and raw API data (teachers/images objects)
     const teacherIds =
       activity.teacherIds ||
@@ -808,11 +714,12 @@ function ActivityManager({
     const imageIds =
       activity.imageIds ||
       (activity.rawImages
-        ? activity.rawImages.map((i: any) => i.media?.id || i.id).filter(Boolean)
+        ? activity.rawImages
+            .map((i: any) => i.media?.id || i.id)
+            .filter(Boolean)
         : activity.images
-        ? activity.images.map((i: any) => i.media?.id || i.id).filter(Boolean)
-        : []);
-
+          ? activity.images.map((i: any) => i.media?.id || i.id).filter(Boolean)
+          : []);
 
     activityForm.reset({
       title: activity.title,
@@ -1333,4 +1240,3 @@ function ActivityManager({
     </div>
   );
 }
-

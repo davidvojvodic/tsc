@@ -89,9 +89,6 @@ interface Project {
     title: string;
     title_sl?: string | null;
     title_hr?: string | null;
-    description: string | null;
-    description_sl?: string | null;
-    description_hr?: string | null;
     startDate: Date | null;
     endDate: Date | null;
     completed: boolean;

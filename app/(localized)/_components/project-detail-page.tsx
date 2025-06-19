@@ -114,6 +114,16 @@ interface Project {
           url: string;
         };
       }[];
+      materials?: {
+        material: {
+          id: string;
+          title: string;
+          type: string;
+          url: string;
+          size: number;
+          language: string;
+        };
+      }[];
     }[];
   }[];
 }
@@ -152,12 +162,13 @@ const getCroatianPlural = (
 // Helper function to get localized count text
 const getLocalizedCount = (
   count: number,
-  type: "teacher" | "image",
+  type: "teacher" | "image" | "material",
   language: SupportedLanguage
 ) => {
   if (language === "en") {
     if (type === "teacher") return count === 1 ? "teacher" : "teachers";
-    return count === 1 ? "image" : "images";
+    if (type === "image") return count === 1 ? "image" : "images";
+    return count === 1 ? "resource" : "resources";
   }
 
   if (language === "sl") {
@@ -170,14 +181,20 @@ const getLocalizedCount = (
         "učiteljev"
       );
     }
-    return getSlavicPlural(count, "slika", "sliki", "slike", "slik");
+    if (type === "image") {
+      return getSlavicPlural(count, "slika", "sliki", "slike", "slik");
+    }
+    return getSlavicPlural(count, "vir", "vira", "viri", "virov");
   }
 
   if (language === "hr") {
     if (type === "teacher") {
       return getCroatianPlural(count, "nastavnik", "nastavnika", "nastavnika");
     }
-    return getCroatianPlural(count, "slika", "slike", "slika");
+    if (type === "image") {
+      return getCroatianPlural(count, "slika", "slike", "slika");
+    }
+    return getCroatianPlural(count, "resurs", "resursa", "resursa");
   }
 
   return "";
@@ -206,7 +223,9 @@ const getTranslations = (language: SupportedLanguage) => {
       // Activity accordion translations
       assignedTeachers: "Assigned Teachers",
       activityGallery: "Activity Gallery",
+      activityResources: "Activity Resources",
       gallery: "Gallery",
+      download: "Download",
       noActivityDetails: "No additional details available for this activity.",
     },
     sl: {
@@ -230,7 +249,9 @@ const getTranslations = (language: SupportedLanguage) => {
       // Activity accordion translations
       assignedTeachers: "Dodeljeni učitelji",
       activityGallery: "Galerija aktivnosti",
+      activityResources: "Viri aktivnosti",
       gallery: "Galerija",
+      download: "Prenesi",
       noActivityDetails: "Za to aktivnost ni na voljo dodatnih podrobnosti.",
     },
     hr: {
@@ -254,7 +275,9 @@ const getTranslations = (language: SupportedLanguage) => {
       // Activity accordion translations
       assignedTeachers: "Dodijeljeni nastavnici",
       activityGallery: "Galerija aktivnosti",
+      activityResources: "Resursi aktivnosti",
       gallery: "Galerija",
+      download: "Preuzmi",
       noActivityDetails: "Nema dodatnih detalja dostupnih za ovu aktivnost.",
     },
   };
@@ -529,6 +552,26 @@ export function ProjectDetailPage({
                                                     )}
                                                   </Badge>
                                                 )}
+                                              {(() => {
+                                                // Filter materials by current language for badge count
+                                                const languageFilteredMaterials = activity.materials?.filter(
+                                                  (materialRel) => materialRel.material.language === language
+                                                ) || [];
+                                                
+                                                return languageFilteredMaterials.length > 0 && (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 whitespace-nowrap"
+                                                  >
+                                                    📁 {languageFilteredMaterials.length}{" "}
+                                                    {getLocalizedCount(
+                                                      languageFilteredMaterials.length,
+                                                      "material",
+                                                      language
+                                                    )}
+                                                  </Badge>
+                                                );
+                                              })()}
                                             </div>
                                           </div>
                                         </div>
@@ -721,17 +764,78 @@ export function ProjectDetailPage({
                                               </div>
                                             )}
 
-                                          {/* Empty state */}
-                                          {(!activity.teachers ||
-                                            activity.teachers.length === 0) &&
-                                            (!activity.images ||
-                                              activity.images.length === 0) && (
-                                              <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg">
-                                                <p className="text-sm">
-                                                  {t.noActivityDetails}
-                                                </p>
+                                          {/* Materials Section */}
+                                          {(() => {
+                                            // Filter materials by current language
+                                            const languageFilteredMaterials = activity.materials?.filter(
+                                              (materialRel) => materialRel.material.language === language
+                                            ) || [];
+                                            
+                                            return languageFilteredMaterials.length > 0 && (
+                                              <div className="bg-muted/30 rounded-lg p-4">
+                                                <h6 className="font-medium mb-4 text-sm text-foreground flex items-center gap-2">
+                                                  📁 {t.activityResources}
+                                                </h6>
+                                                <div className="space-y-3">
+                                                  {languageFilteredMaterials.map((materialRel) => (
+                                                    <div
+                                                      key={materialRel.material.id}
+                                                      className="flex items-center justify-between p-3 bg-background rounded-lg border hover:bg-muted/50 transition-colors"
+                                                    >
+                                                      <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                                          <span className="text-sm font-semibold text-primary">
+                                                            {materialRel.material.type.charAt(0)}
+                                                          </span>
+                                                        </div>
+                                                        <div>
+                                                          <p className="font-medium text-sm">{materialRel.material.title}</p>
+                                                          <p className="text-xs text-muted-foreground">
+                                                            {materialRel.material.type} • {(materialRel.material.size / 1024 / 1024).toFixed(1)} MB
+                                                          </p>
+                                                        </div>
+                                                      </div>
+                                                      <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        asChild
+                                                        className="flex-shrink-0"
+                                                      >
+                                                        <a
+                                                          href={materialRel.material.url}
+                                                          target="_blank"
+                                                          rel="noopener noreferrer"
+                                                          download
+                                                        >
+                                                          {t.download}
+                                                        </a>
+                                                      </Button>
+                                                    </div>
+                                                  ))}
+                                                </div>
                                               </div>
-                                            )}
+                                            );
+                                          })()}
+
+                                          {/* Empty state */}
+                                          {(() => {
+                                            // Check if there are any resources for the current language
+                                            const hasLanguageFilteredMaterials = (activity.materials?.filter(
+                                              (materialRel) => materialRel.material.language === language
+                                            ).length || 0) > 0;
+                                            
+                                            return (!activity.teachers ||
+                                              activity.teachers.length === 0) &&
+                                              (!activity.images ||
+                                                activity.images.length === 0) &&
+                                              !hasLanguageFilteredMaterials && (
+                                                <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg">
+                                                  <p className="text-sm">
+                                                    {t.noActivityDetails}
+                                                  </p>
+                                                </div>
+                                              );
+                                          })()}
                                         </div>
                                       </AccordionContent>
                                     </AccordionItem>

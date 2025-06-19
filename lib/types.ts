@@ -32,6 +32,27 @@ export interface Teacher {
   createdAt?: string | Date;
 }
 
+export interface Material {
+  id: string;
+  title: string;
+  title_sl?: string | null;
+  title_hr?: string | null;
+  description?: string | null;
+  description_sl?: string | null;
+  description_hr?: string | null;
+  type: 'PDF' | 'WORD' | 'EXCEL' | 'POWERPOINT' | 'OTHER';
+  url: string;
+  filename: string;
+  fileKey: string;
+  size: number;
+  downloads?: number;
+  published?: boolean;
+  category?: string | null;
+  category_sl?: string | null;
+  category_hr?: string | null;
+  language?: string;
+}
+
 export interface ProjectPhase {
   id: string;
 
@@ -101,12 +122,14 @@ export interface ProjectFormData {
       description_sl?: string | null;
       description_hr?: string | null;
       order: number;
-      // Arrays for multiple teachers and images
+      // Arrays for multiple teachers, images, and materials
       teacherIds?: string[];
       imageIds?: string[];
+      materialIds?: string[];
       // Keep legacy support for raw API data
       teachers?: Array<{ teacher: { id: string; name: string } }>;
       images?: Array<{ media: { id: string; url: string } }>;
+      materials?: Array<{ material: { id: string; title: string; type: string } }>;
       // Legacy single fields (deprecated)
       teacherId?: string | null;
       teacher?: Teacher | null;

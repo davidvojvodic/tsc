@@ -2,7 +2,7 @@
 import { ProjectForm } from "@/components/forms/project-form";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { ProjectFormData, Teacher } from "@/lib/types";
+import { ProjectFormData, Teacher, Material } from "@/lib/types";
 
 interface PageParams {
   params: {
@@ -42,6 +42,20 @@ export default async function ProjectPage({ params }: PageParams) {
                       media: true,
                     },
                   },
+                  materials: {
+                    include: {
+                      material: {
+                        select: {
+                          id: true,
+                          title: true,
+                          type: true,
+                          url: true,
+                          size: true,
+                          language: true,
+                        },
+                      },
+                    },
+                  },
                 },
                 orderBy: {
                   order: "asc",
@@ -65,6 +79,16 @@ export default async function ProjectPage({ params }: PageParams) {
   const teachers = await prisma.teacher.findMany({
     include: {
       photo: true,
+    },
+  });
+
+  // Fetch all available materials
+  const materials = await prisma.material.findMany({
+    where: {
+      published: true,
+    },
+    orderBy: {
+      title: "asc",
     },
   });
 
@@ -109,9 +133,12 @@ export default async function ProjectPage({ params }: PageParams) {
               teacherIds: activity.teachers ? activity.teachers.map(t => t.teacher.id) : [],
               // Extract image IDs for the form  
               imageIds: activity.images ? activity.images.map(i => i.media.id) : [],
+              // Extract material IDs for the form
+              materialIds: activity.materials ? activity.materials.map(m => m.material.id) : [],
               // Keep raw data for reference
               teachers: activity.teachers,
               images: activity.images,
+              materials: activity.materials,
             };
           }) || []
           // Removed 'order' since it's not defined in ProjectFormData
@@ -130,12 +157,34 @@ export default async function ProjectPage({ params }: PageParams) {
     photo: teacher.photo ? { url: teacher.photo.url } : null,
   }));
 
+  const formattedMaterials: Material[] = materials.map((material) => ({
+    id: material.id,
+    title: material.title,
+    title_sl: material.title_sl,
+    title_hr: material.title_hr,
+    description: material.description,
+    description_sl: material.description_sl,
+    description_hr: material.description_hr,
+    type: material.type as 'PDF' | 'WORD' | 'EXCEL' | 'POWERPOINT' | 'OTHER',
+    url: material.url,
+    filename: material.filename,
+    fileKey: material.fileKey,
+    size: material.size,
+    downloads: material.downloads,
+    published: material.published,
+    category: material.category,
+    category_sl: material.category_sl,
+    category_hr: material.category_hr,
+    language: material.language,
+  }));
+
   return (
     <div className="flex-col">
       <div className="flex-1 space-y-4 p-8 pt-6">
         <ProjectForm
           initialData={formattedProject}
           availableTeachers={formattedTeachers}
+          availableMaterials={formattedMaterials}
         />
       </div>
     </div>

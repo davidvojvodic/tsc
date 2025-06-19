@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ProjectFormData, Teacher } from "@/lib/types";
+import { ProjectFormData, Teacher, Material } from "@/lib/types";
 import {
   ProjectPhase as StoreProjectPhase,
   ProjectImage,
@@ -49,11 +49,13 @@ const steps = [
 interface ProjectFormProps {
   initialData?: ProjectFormData;
   availableTeachers: Teacher[];
+  availableMaterials?: Material[];
 }
 
 export function ProjectForm({
   initialData,
   availableTeachers,
+  availableMaterials = [],
 }: ProjectFormProps) {
   const router = useRouter();
   const {
@@ -120,9 +122,11 @@ export function ProjectForm({
                 // Use the correctly populated arrays from the server
                 teacherIds: activity.teacherIds || [],
                 imageIds: activity.imageIds || [],
+                materialIds: activity.materialIds || [],
                 // Keep the raw data for reference
                 teachers: activity.teachers,
                 rawImages: activity.images,
+                materials: activity.materials,
               };
             }) || [],
         };
@@ -441,6 +445,7 @@ export function ProjectForm({
                 isLoading={isLoading}
                 galleryImages={gallery}
                 availableTeachers={availableTeachers}
+                availableMaterials={availableMaterials}
               />
             )}
 

@@ -16,6 +16,8 @@ import {
   X,
   Pencil,
   Check,
+  Search,
+  ChevronsUpDown,
 } from "lucide-react";
 import * as z from "zod";
 
@@ -54,7 +56,7 @@ import {
   ProjectImage,
   ProjectActivity,
 } from "@/store/use-project-form";
-import { Teacher } from "@/lib/types";
+import { Teacher, Material } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
@@ -85,6 +87,7 @@ interface TimelineEditorProps {
   isLoading?: boolean;
   galleryImages?: ProjectImage[];
   availableTeachers?: Teacher[];
+  availableMaterials?: Material[];
 }
 
 export function TimelineEditor({
@@ -93,6 +96,7 @@ export function TimelineEditor({
   isLoading = false,
   galleryImages = [],
   availableTeachers = [],
+  availableMaterials = [],
 }: TimelineEditorProps) {
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
@@ -584,6 +588,7 @@ export function TimelineEditor({
                                       }}
                                       galleryImages={galleryImages}
                                       availableTeachers={availableTeachers}
+                                      availableMaterials={availableMaterials}
                                       isLoading={isLoading}
                                     />
                                   </AccordionContent>
@@ -618,6 +623,7 @@ interface ActivityManagerProps {
   onActivitiesChange: (activities: ProjectActivity[]) => void;
   galleryImages: ProjectImage[];
   availableTeachers: Teacher[];
+  availableMaterials: Material[];
   isLoading?: boolean;
 }
 
@@ -626,12 +632,14 @@ function ActivityManager({
   onActivitiesChange,
   galleryImages,
   availableTeachers,
+  availableMaterials,
   isLoading = false,
 }: ActivityManagerProps) {
   const [isAddingActivity, setIsAddingActivity] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(
     null
   );
+  const [materialSearchQuery, setMaterialSearchQuery] = useState("");
 
   const activityFormSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -642,6 +650,7 @@ function ActivityManager({
     description_hr: z.string().nullable(),
     teacherIds: z.array(z.string()),
     imageIds: z.array(z.string()),
+    materialIds: z.array(z.string()),
   });
 
   const activityForm = useForm<z.infer<typeof activityFormSchema>>({
@@ -655,6 +664,7 @@ function ActivityManager({
       description_hr: null,
       teacherIds: [],
       imageIds: [],
+      materialIds: [],
     },
   });
 
@@ -721,6 +731,14 @@ function ActivityManager({
           ? activity.images.map((i: any) => i.media?.id || i.id).filter(Boolean)
           : []);
 
+    const materialIds =
+      activity.materialIds ||
+      (activity.materials
+        ? activity.materials
+            .map((m: any) => m.material?.id || m.id)
+            .filter(Boolean)
+        : []);
+
     activityForm.reset({
       title: activity.title,
       title_sl: activity.title_sl,
@@ -730,6 +748,7 @@ function ActivityManager({
       description_hr: activity.description_hr,
       teacherIds: teacherIds,
       imageIds: imageIds,
+      materialIds: materialIds,
     });
   };
 
@@ -1130,6 +1149,172 @@ function ActivityManager({
                 }}
               />
 
+              {/* Material Selection */}
+              <FormField
+                control={activityForm.control}
+                name="materialIds"
+                render={({ field }) => {
+                  const selectedMaterials = availableMaterials.filter(
+                    (material) => (field.value || []).includes(material.id)
+                  );
+
+                  const handleMaterialToggle = (materialId: string) => {
+                    const currentValue = field.value || [];
+                    const isSelected = currentValue.includes(materialId);
+                    if (isSelected) {
+                      field.onChange(
+                        currentValue.filter((id) => id !== materialId)
+                      );
+                    } else {
+                      field.onChange([...currentValue, materialId]);
+                    }
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Select Resources (Optional)</FormLabel>
+                      {availableMaterials.length > 0 ? (
+                        <div className="space-y-4">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className="w-full justify-between"
+                                >
+                                  {selectedMaterials.length === 0
+                                    ? "Select resources"
+                                    : `${selectedMaterials.length} resource${selectedMaterials.length !== 1 ? "s" : ""} selected`}
+                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0" align="start">
+                              <div className="max-h-[300px] overflow-y-auto p-2">
+                                {/* Search input */}
+                                <div className="flex items-center border-b px-3 mb-2">
+                                  <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                  <input
+                                    className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                    placeholder="Search resources..."
+                                    value={materialSearchQuery}
+                                    onChange={(e) => setMaterialSearchQuery(e.target.value)}
+                                  />
+                                </div>
+
+                                {/* Material list */}
+                                {(() => {
+                                  const filteredMaterials = availableMaterials.filter((material) => {
+                                    if (!materialSearchQuery) return true;
+                                    return material.title.toLowerCase().includes(materialSearchQuery.toLowerCase());
+                                  });
+
+                                  if (filteredMaterials.length === 0) {
+                                    return (
+                                      <div className="py-6 text-center text-sm text-muted-foreground">
+                                        {materialSearchQuery ? "No matching resources found." : "No resources found."}
+                                      </div>
+                                    );
+                                  }
+
+                                  return (
+                                    <div className="space-y-1">
+                                      {filteredMaterials.map((material) => {
+                                      const isSelected = (field.value || []).includes(material.id);
+                                      return (
+                                        <div
+                                          key={material.id}
+                                          onClick={() => handleMaterialToggle(material.id)}
+                                          className={cn(
+                                            "relative flex cursor-pointer select-none items-center rounded-sm p-3 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                            isSelected && "bg-primary/10 border border-primary"
+                                          )}
+                                        >
+                                          <Checkbox
+                                            checked={isSelected}
+                                            className="mr-3 shrink-0"
+                                          />
+                                          <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center shrink-0 mr-3">
+                                            <span className="text-xs font-semibold text-primary">
+                                              {material.type.charAt(0)}
+                                            </span>
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="font-medium text-sm truncate">
+                                              {material.title}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                              {material.type} • {(material.size / 1024 / 1024).toFixed(1)} MB
+                                            </div>
+                                          </div>
+                                          {isSelected && (
+                                            <Check className="h-4 w-4 text-primary shrink-0 ml-2" />
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+
+                          {/* Material Previews */}
+                          {selectedMaterials.length > 0 && (
+                            <div className="space-y-2">
+                              {selectedMaterials.map((material) => (
+                                <div
+                                  key={material.id}
+                                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
+                                      <span className="text-xs font-semibold text-primary">
+                                        {material.type.charAt(0)}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <p className="font-medium text-sm">
+                                        {material.title}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {material.type} •{" "}
+                                        {(material.size / 1024 / 1024).toFixed(
+                                          1
+                                        )}{" "}
+                                        MB
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() =>
+                                      handleMaterialToggle(material.id)
+                                    }
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No resources available. Create resources in the
+                          Materials section first.
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+
               <div className="flex gap-2 justify-end">
                 <Button
                   type="button"
@@ -1216,6 +1401,13 @@ function ActivityManager({
                         {activity.images.length !== 1 ? "s" : ""}
                       </Badge>
                     )}
+                    {activity.materialIds &&
+                      activity.materialIds.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {activity.materialIds.length} resource
+                          {activity.materialIds.length !== 1 ? "s" : ""}
+                        </Badge>
+                      )}
                   </div>
                 </div>
               </div>

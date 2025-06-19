@@ -55,6 +55,20 @@ async function getProject(slug: string) {
                   },
                 },
               },
+              materials: {
+                include: {
+                  material: {
+                    select: {
+                      id: true,
+                      title: true,
+                      type: true,
+                      url: true,
+                      size: true,
+                      language: true,
+                    },
+                  },
+                },
+              },
             },
             orderBy: {
               order: "asc",

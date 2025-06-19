@@ -29,21 +29,24 @@ export default function TestimonialsSection({
   const { language } = useLanguage();
 
   // Helper function to get localized content
-  const getLocalizedContent = (testimonial: Testimonial, field: 'role' | 'content') => {
-    if (field === 'role') {
+  const getLocalizedContent = (
+    testimonial: Testimonial,
+    field: "role" | "content"
+  ) => {
+    if (field === "role") {
       switch (language) {
-        case 'sl':
+        case "sl":
           return testimonial.role_sl || testimonial.role;
-        case 'hr':
+        case "hr":
           return testimonial.role_hr || testimonial.role;
         default:
           return testimonial.role;
       }
     } else {
       switch (language) {
-        case 'sl':
+        case "sl":
           return testimonial.content_sl || testimonial.content;
-        case 'hr':
+        case "hr":
           return testimonial.content_hr || testimonial.content;
         default:
           return testimonial.content;
@@ -55,16 +58,13 @@ export default function TestimonialsSection({
   const sectionContent = {
     en: {
       title: "What Our Students Say",
-      subtitle: "Hear from our students about their learning experiences and achievements."
     },
     sl: {
       title: "Kaj pravijo naši dijaki",
-      subtitle: "Poslušajte naše dijake o njihovih izkušnjah z učenjem in dosežkih."
     },
     hr: {
       title: "Što kažu naši učenici",
-      subtitle: "Čujte od naših učenika o njihovim iskustvima učenja i postignućima."
-    }
+    },
   };
 
   const currentContent = sectionContent[language] || sectionContent.en;
@@ -76,9 +76,6 @@ export default function TestimonialsSection({
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
             {currentContent.title}
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            {currentContent.subtitle}
-          </p>
         </div>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -93,7 +90,7 @@ export default function TestimonialsSection({
               {/* Testimonial Content */}
               <div className="relative">
                 <blockquote className="text-lg mb-6">
-                  {getLocalizedContent(testimonial, 'content')}
+                  {getLocalizedContent(testimonial, "content")}
                 </blockquote>
 
                 {/* Author */}
@@ -113,7 +110,7 @@ export default function TestimonialsSection({
                   <div>
                     <div className="font-semibold">{testimonial.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      {getLocalizedContent(testimonial, 'role')}
+                      {getLocalizedContent(testimonial, "role")}
                     </div>
                   </div>
                 </footer>

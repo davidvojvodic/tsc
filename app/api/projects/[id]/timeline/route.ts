@@ -15,6 +15,7 @@ const activitySchema = z.object({
   order: z.number(),
   teacherIds: z.array(z.string()),
   imageIds: z.array(z.string()),
+  materialIds: z.array(z.string()),
 });
 
 const timelinePhaseSchema = z.object({
@@ -170,6 +171,20 @@ export async function PATCH(
                   })
                 );
               }
+
+              // Create material associations
+              if (activity.materialIds && activity.materialIds.length > 0) {
+                await Promise.all(
+                  activity.materialIds.map(async (materialId) => {
+                    await tx.projectActivityToMaterial.create({
+                      data: {
+                        activityId: createdActivity.id,
+                        materialId: materialId,
+                      },
+                    });
+                  })
+                );
+              }
             }
           }
         }
@@ -196,6 +211,20 @@ export async function PATCH(
                 images: {
                   include: {
                     media: true,
+                  },
+                },
+                materials: {
+                  include: {
+                    material: {
+                      select: {
+                        id: true,
+                        title: true,
+                        type: true,
+                        url: true,
+                        size: true,
+                        language: true,
+                      },
+                    },
                   },
                 },
               },

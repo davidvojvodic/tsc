@@ -25,11 +25,14 @@ export interface ProjectActivity {
   order: number;
   teacherIds: string[];
   imageIds: string[];
+  materialIds: string[];
   images?: ProjectImage[];
   // Support for raw API data structure when loading from server
   teachers?: Array<{ teacher: { id: string; name: string } }>;
   // Support for raw images data from API
   rawImages?: Array<{ media: { id: string; url: string } }>;
+  // Support for raw materials data from API
+  materials?: Array<{ material: { id: string; title: string; type: string } }>;
 }
 
 export interface ProjectPhase {

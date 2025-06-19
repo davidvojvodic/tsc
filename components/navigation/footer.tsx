@@ -215,13 +215,14 @@ export function Footer() {
               <div className="space-y-2 pt-2">
                 <h3 className="text-sm font-semibold">{t.contactUs}</h3>
                 <div className="flex items-start text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>{t.address}</span>
-                </div>
-                <div className="flex items-start text-sm text-muted-foreground">
                   <User className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
                   <span className="font-medium">{t.coordinator}</span>
                 </div>
+                <div className="flex items-start text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>{t.address}</span>
+                </div>
+
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Phone className="h-4 w-4 mr-2" />
                   +386 51 227 990
@@ -284,9 +285,9 @@ export function Footer() {
                   {item.name}
                 </Link>
               ))}
-              <CookieSettingsButton 
-                variant="ghost" 
-                size="sm" 
+              <CookieSettingsButton
+                variant="ghost"
+                size="sm"
                 showIcon={false}
                 className="text-xs text-muted-foreground hover:text-foreground h-auto p-0 font-normal"
               />

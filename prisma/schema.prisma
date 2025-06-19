@@ -1,6 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -173,6 +174,7 @@ model Material {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   language       String       @default("en")
+  activities     ProjectActivityToMaterial[]
 
   @@map("material")
 }
@@ -348,6 +350,7 @@ model ProjectActivity {
   // Many-to-many relationships
   teachers       ProjectActivityToTeacher[]
   images         ProjectActivityToMedia[]
+  materials      ProjectActivityToMaterial[]
   
   createdAt      DateTime                      @default(now())
   updatedAt      DateTime                      @updatedAt
@@ -379,6 +382,19 @@ model ProjectActivityToMedia {
 
   @@unique([activityId, mediaId])
   @@map("project_activity_to_media")
+}
+
+// Junction table for ProjectActivity to Material many-to-many relationship
+model ProjectActivityToMaterial {
+  id         String          @id @default(uuid())
+  activity   ProjectActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId String
+  material   Material        @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  materialId String
+  createdAt  DateTime        @default(now())
+
+  @@unique([activityId, materialId])
+  @@map("project_activity_to_material")
 }
 
 enum Role {

@@ -28,7 +28,7 @@ const getTranslations = (language: SupportedLanguage) => {
       copyright: "© 2024 WaterWise. All rights reserved.",
       address:
         "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
-      coordinator: "Mitja Draškovič, project coordinator Waterwise",
+      coordinator: "Mitja Draškovič, Waterwise project coordinator",
       contactUs: "Contact",
       home: "Home",
       followUs: "Follow Us",

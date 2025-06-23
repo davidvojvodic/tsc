@@ -40,11 +40,7 @@ export function GalleryEditor({
   // Function to handle file selection via react-dropzone
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      // Optional: Limit the total number of images (e.g., max 10)
-      if (value.length + acceptedFiles.length > 10) {
-        toast.error("You can upload a maximum of 10 images.");
-        return;
-      }
+      // No limit on number of images - removed artificial restriction
       setSelectedFiles((prev) => [...prev, ...acceptedFiles]);
     },
     [value.length]

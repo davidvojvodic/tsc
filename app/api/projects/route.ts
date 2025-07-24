@@ -361,11 +361,19 @@ export async function POST(req: NextRequest) {
         include: {
           heroImage: true,
 
-          gallery: true,
+          gallery: {
+            include: {
+              media: true,
+            },
+          },
 
           teachers: {
             include: {
-              photo: true,
+              teacher: {
+                include: {
+                  photo: true,
+                },
+              },
             },
           },
 

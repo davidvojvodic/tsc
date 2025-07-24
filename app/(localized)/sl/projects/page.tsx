@@ -8,7 +8,11 @@ async function getProjects() {
     },
     include: {
       heroImage: true,
-      teachers: true,
+      teachers: {
+        include: {
+          teacher: true,
+        },
+      },
       timeline: {
         select: {
           startDate: true,
@@ -19,10 +23,11 @@ async function getProjects() {
     orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
   });
 
-  // Add empty tags array to each project to fix type error
+  // Transform the data to match the component's expected format
   return projects.map(project => ({
     ...project,
     tags: [],
+    teachers: project.teachers.map(t => t.teacher),
   }));
 }
 

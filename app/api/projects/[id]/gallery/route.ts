@@ -99,10 +99,14 @@ export async function PATCH(
         select: {
           id: true,
           gallery: {
-            select: {
-              id: true,
-              url: true,
-              filename: true,
+            include: {
+              media: {
+                select: {
+                  id: true,
+                  url: true,
+                  filename: true,
+                },
+              },
             },
           },
         },

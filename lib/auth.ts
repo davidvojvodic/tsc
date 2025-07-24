@@ -7,7 +7,7 @@ import { createPasswordResetEmailHtml, sendEmail } from "./email";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: "postgresql",
+    provider: "mysql",
   }),
   emailAndPassword: {
     enabled: true,
@@ -34,7 +34,16 @@ export const auth = betterAuth({
     }),
   ],
   cors: {
-    origin: process.env.NEXT_PUBLIC_APP_URL || "*",
+    origin: [
+      "https://ka2.tscmb.si",
+      "https://tsc-testing.vercel.app",
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    ].filter(Boolean),
     credentials: true,
   },
+  trustedOrigins: [
+    "https://ka2.tscmb.si",
+    "https://tsc-testing.vercel.app",
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ].filter(Boolean),
 });

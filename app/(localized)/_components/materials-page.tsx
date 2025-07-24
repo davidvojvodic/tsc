@@ -35,18 +35,18 @@ async function getMaterials(
           {
             // Use the appropriate language field for title search
             ...(language === "sl"
-              ? { title_sl: { contains: query, mode: "insensitive" } }
+              ? { title_sl: { contains: query } }
               : language === "hr"
-                ? { title_hr: { contains: query, mode: "insensitive" } }
-                : { title: { contains: query, mode: "insensitive" } }),
+                ? { title_hr: { contains: query } }
+                : { title: { contains: query } }),
           },
           {
             // Use the appropriate language field for description search
             ...(language === "sl"
-              ? { description_sl: { contains: query, mode: "insensitive" } }
+              ? { description_sl: { contains: query } }
               : language === "hr"
-                ? { description_hr: { contains: query, mode: "insensitive" } }
-                : { description: { contains: query, mode: "insensitive" } }),
+                ? { description_hr: { contains: query } }
+                : { description: { contains: query } }),
           },
         ],
       }),
@@ -55,21 +55,18 @@ async function getMaterials(
           ? {
               category_sl: {
                 equals: category,
-                mode: "insensitive",
-              } as Prisma.StringFilter,
+              },
             }
           : language === "hr"
           ? {
               category_hr: {
                 equals: category,
-                mode: "insensitive",
-              } as Prisma.StringFilter,
+              },
             }
           : {
               category: {
                 equals: category,
-                mode: "insensitive",
-              } as Prisma.StringFilter,
+              },
             }),
       }),
     };

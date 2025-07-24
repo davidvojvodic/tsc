@@ -308,10 +308,18 @@ export async function PATCH(
         },
         include: {
           heroImage: true,
-          gallery: true,
+          gallery: {
+            include: {
+              media: true,
+            },
+          },
           teachers: {
             include: {
-              photo: true,
+              teacher: {
+                include: {
+                  photo: true,
+                },
+              },
             },
           },
           timeline: {
@@ -549,10 +557,18 @@ export async function POST(req: NextRequest) {
         where: { id: newProject.id },
         include: {
           heroImage: true,
-          gallery: true,
+          gallery: {
+            include: {
+              media: true,
+            },
+          },
           teachers: {
             include: {
-              photo: true,
+              teacher: {
+                include: {
+                  photo: true,
+                },
+              },
             },
           },
           timeline: {

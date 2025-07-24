@@ -22,10 +22,18 @@ export default async function ProjectPage({ params }: PageParams) {
         },
         include: {
           heroImage: true,
-          gallery: true,
+          gallery: {
+            include: {
+              media: true,
+            },
+          },
           teachers: {
             include: {
-              photo: true,
+              teacher: {
+                include: {
+                  photo: true,
+                },
+              },
             },
           },
           timeline: {
@@ -106,10 +114,10 @@ export default async function ProjectPage({ params }: PageParams) {
               id: project.heroImage.id, // Include the 'id' property
             }
           : null,
-        gallery: project.gallery.map((image) => ({
-          id: image.id,
-          url: image.url,
-          alt: image.alt,
+        gallery: project.gallery.map((item) => ({
+          id: item.media.id,
+          url: item.media.url,
+          alt: item.media.alt,
         })),
         timeline: project.timeline.map((phase) => ({
           id: phase.id,
@@ -143,10 +151,10 @@ export default async function ProjectPage({ params }: PageParams) {
           }) || []
           // Removed 'order' since it's not defined in ProjectFormData
         })),
-        teachers: project.teachers.map((teacher) => ({
-          id: teacher.id,
-          name: teacher.name,
-          photo: teacher.photo ? { url: teacher.photo.url } : null,
+        teachers: project.teachers.map((t) => ({
+          id: t.teacher.id,
+          name: t.teacher.name,
+          photo: t.teacher.photo ? { url: t.teacher.photo.url } : null,
         })),
       }
     : undefined;

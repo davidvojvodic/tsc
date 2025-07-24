@@ -59,12 +59,16 @@ export async function PATCH(
       select: {
         id: true,
         teachers: {
-          select: {
-            id: true,
-            name: true,
-            title: true,
-            title_sl: true,
-            title_hr: true,
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                name: true,
+                title: true,
+                title_sl: true,
+                title_hr: true,
+              },
+            },
           },
         },
       },

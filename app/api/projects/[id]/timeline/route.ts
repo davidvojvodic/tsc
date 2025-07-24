@@ -76,9 +76,13 @@ export async function PATCH(
       select: {
         id: true,
         gallery: {
-          select: {
-            id: true,
-            filename: true,
+          include: {
+            media: {
+              select: {
+                id: true,
+                filename: true,
+              },
+            },
           },
         },
       },
@@ -90,8 +94,8 @@ export async function PATCH(
 
     // Create mapping from frontend image IDs (fileKeys) to database media IDs
     const imageIdMapping = new Map<string, string>();
-    currentProject.gallery.forEach(media => {
-      imageIdMapping.set(media.filename, media.id);
+    currentProject.gallery.forEach(item => {
+      imageIdMapping.set(item.media.filename, item.media.id);
     });
 
     // Update timeline in chunks to avoid timeout

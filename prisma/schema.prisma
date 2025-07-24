@@ -1,13 +1,11 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
-  binaryTargets   = ["native", "debian-openssl-3.0.x"]
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL_UNPOOLED")
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -16,11 +14,11 @@ model User {
   name            String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-  emailVerified   Boolean
-  image           String?
+  emailVerified   Boolean          @default(false)
+  image           String?          @db.Text
   banExpires      DateTime?
-  banReason       String?
-  banned          Boolean?
+  banReason       String?          @db.Text
+  banned          Boolean?         @default(false)
   role            Role             @default(USER)
   Account         Account[]
   pages           Page[]
@@ -33,15 +31,16 @@ model User {
 model Session {
   id             String   @id @default(uuid())
   expiresAt      DateTime
-  ipAddress      String?
-  userAgent      String?
+  ipAddress      String?  @db.VarChar(45)
+  userAgent      String?  @db.Text
   userId         String
   createdAt      DateTime @default(now())
   impersonatedBy String?
-  token          String   @unique
+  token          String   @unique @db.VarChar(255)
   updatedAt      DateTime @updatedAt
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("session")
 }
 
@@ -50,44 +49,46 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
   expiresAt             DateTime?
-  password              String?
+  password              String?   @db.Text
   accessTokenExpiresAt  DateTime?
   createdAt             DateTime  @default(now())
   refreshTokenExpiresAt DateTime?
-  scope                 String?
+  scope                 String?   @db.Text
   updatedAt             DateTime  @updatedAt
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("account")
 }
 
 model Verification {
   id         String    @id @default(uuid())
-  identifier String
-  value      String
+  identifier String    @db.VarChar(255)
+  value      String    @db.Text
   expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
 
+  @@index([identifier])
   @@map("verification")
 }
 
 model Post {
   id          String    @id @default(uuid())
-  title       String
-  title_sl    String?
-  title_hr    String?
-  slug        String    @unique
-  content     String
-  content_sl  String?
-  content_hr  String?
-  excerpt     String?
-  excerpt_sl  String?
-  excerpt_hr  String?
+  title       String    @db.VarChar(255)
+  title_sl    String?   @db.VarChar(255)
+  title_hr    String?   @db.VarChar(255)
+  slug        String    @unique @db.VarChar(255)
+  content     String    @db.Text
+  content_sl  String?   @db.Text
+  content_hr  String?   @db.Text
+  excerpt     String?   @db.Text
+  excerpt_sl  String?   @db.Text
+  excerpt_hr  String?   @db.Text
   featured    Boolean   @default(false)
   published   Boolean   @default(false)
   publishedAt DateTime?
@@ -95,22 +96,24 @@ model Post {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   projectId   String?
-  authorName  String    @default("Admin")
+  authorName  String    @default("Admin") @db.VarChar(255)
   cover       Media?    @relation(fields: [coverId], references: [id])
   Project     Project?  @relation(fields: [projectId], references: [id])
 
+  @@index([slug])
+  @@index([projectId])
   @@map("post")
 }
 
 model Page {
   id          String    @id @default(uuid())
-  title       String
-  title_sl    String?
-  title_hr    String?
-  slug        String    @unique
-  content     String
-  content_sl  String?
-  content_hr  String?
+  title       String    @db.VarChar(255)
+  title_sl    String?   @db.VarChar(255)
+  title_hr    String?   @db.VarChar(255)
+  slug        String    @unique @db.VarChar(255)
+  content     String    @db.Text
+  content_sl  String?   @db.Text
+  content_hr  String?   @db.Text
   published   Boolean   @default(false)
   publishedAt DateTime?
   authorId    String
@@ -125,19 +128,21 @@ model Page {
   children    Page[]    @relation("PageToPage")
   Project     Project?  @relation(fields: [projectId], references: [id])
 
+  @@index([slug])
+  @@index([authorId])
   @@map("page")
 }
 
 model Media {
   id               String                     @id @default(uuid())
-  filename         String
-  url              String
-  mimeType         String
+  filename         String                     @db.VarChar(255)
+  url              String                     @db.Text
+  mimeType         String                     @db.VarChar(100)
   size             Int
   type             MediaType                  @default(OTHER)
-  alt              String?
-  alt_sl           String?
-  alt_hr           String?
+  alt              String?                    @db.Text
+  alt_sl           String?                    @db.Text
+  alt_hr           String?                    @db.Text
   createdAt        DateTime                   @default(now())
   updatedAt        DateTime                   @updatedAt
   projectId        String?
@@ -147,56 +152,59 @@ model Media {
   projectHero      Project[]                  @relation("ProjectHero")
   teachers         Teacher[]
   testimonials     Testimonial[]
-  projectGallery   Project[]                  @relation("ProjectGallery")
+  projectGallery   ProjectToGallery[]
   activities       ProjectActivityToMedia[]
 
+  @@index([projectId])
   @@map("media")
 }
 
 model Material {
   id             String       @id @default(uuid())
-  title          String
-  title_sl       String?
-  title_hr       String?
-  description    String?
-  description_sl String?
-  description_hr String?
+  title          String       @db.VarChar(255)
+  title_sl       String?      @db.VarChar(255)
+  title_hr       String?      @db.VarChar(255)
+  description    String?      @db.Text
+  description_sl String?      @db.Text
+  description_hr String?      @db.Text
   type           MaterialType @default(OTHER)
-  url            String
-  filename       String
-  fileKey        String
+  url            String       @db.Text
+  filename       String       @db.VarChar(255)
+  fileKey        String       @db.VarChar(255)
   size           Int
   downloads      Int          @default(0)
   published      Boolean      @default(true)
-  category       String?
-  category_sl    String?
-  category_hr    String?
+  category       String?      @db.VarChar(100)
+  category_sl    String?      @db.VarChar(100)
+  category_hr    String?      @db.VarChar(100)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  language       String       @default("en")
+  language       String       @default("en") @db.VarChar(10)
   activities     ProjectActivityToMaterial[]
 
+  @@index([type])
+  @@index([category])
   @@map("material")
 }
 
 model Teacher {
   id           String                        @id @default(uuid())
-  name         String
-  title        String?
-  title_sl     String?
-  title_hr     String?
-  bio          String?
-  bio_sl       String?
-  bio_hr       String?
+  name         String                        @db.VarChar(255)
+  title        String?                       @db.VarChar(255)
+  title_sl     String?                       @db.VarChar(255)
+  title_hr     String?                       @db.VarChar(255)
+  bio          String?                       @db.Text
+  bio_sl       String?                       @db.Text
+  bio_hr       String?                       @db.Text
   photoId      String?
-  email        String?
+  email        String?                       @db.VarChar(255)
   displayOrder Int                           @default(0)
   createdAt    DateTime                      @default(now())
   updatedAt    DateTime                      @updatedAt
-  school       String?
+  school       String?                       @db.VarChar(255)
   quizzes      Quiz[]
   photo        Media?                        @relation(fields: [photoId], references: [id])
-  projects     Project[]                     @relation("ProjectToTeacher")
+  projects     TeacherToProject[]
   activities   ProjectActivityToTeacher[]
 
   @@map("teacher")
@@ -204,12 +212,12 @@ model Teacher {
 
 model Quiz {
   id             String           @id @default(uuid())
-  title          String
-  title_sl       String?
-  title_hr       String?
-  description    String?
-  description_sl String?
-  description_hr String?
+  title          String           @db.VarChar(255)
+  title_sl       String?          @db.VarChar(255)
+  title_hr       String?          @db.VarChar(255)
+  description    String?          @db.Text
+  description_sl String?          @db.Text
+  description_hr String?          @db.Text
   teacherId      String
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -219,14 +227,16 @@ model Quiz {
   teacher        Teacher          @relation(fields: [teacherId], references: [id])
   submissions    QuizSubmission[]
 
+  @@index([teacherId])
+  @@index([projectId])
   @@map("quiz")
 }
 
 model Question {
   id              String   @id @default(uuid())
-  text            String
-  text_sl         String?
-  text_hr         String?
+  text            String   @db.Text
+  text_sl         String?  @db.Text
+  text_hr         String?  @db.Text
   quizId          String
   correctOptionId String?  @unique
   createdAt       DateTime @default(now())
@@ -235,14 +245,15 @@ model Question {
   correctOption   Option?  @relation("CorrectAnswer", fields: [correctOptionId], references: [id])
   quiz            Quiz     @relation(fields: [quizId], references: [id])
 
+  @@index([quizId])
   @@map("question")
 }
 
 model Option {
   id                    String    @id @default(uuid())
-  text                  String
-  text_sl               String?
-  text_hr               String?
+  text                  String    @db.Text
+  text_sl               String?   @db.Text
+  text_hr               String?   @db.Text
   questionId            String
   correct               Boolean   @default(false)
   createdAt             DateTime  @default(now())
@@ -250,6 +261,7 @@ model Option {
   question              Question  @relation("QuestionOptions", fields: [questionId], references: [id], onDelete: Cascade)
   correctAnswerQuestion Question? @relation("CorrectAnswer")
 
+  @@index([questionId])
   @@map("option")
 }
 
@@ -270,37 +282,38 @@ model QuizSubmission {
 }
 
 model Project {
-  id             String         @id @default(uuid())
-  name           String
-  name_sl        String?
-  name_hr        String?
-  slug           String         @unique
-  description    String?
-  description_sl String?
-  description_hr String?
-  published      Boolean        @default(false)
+  id             String            @id @default(uuid())
+  name           String            @db.VarChar(255)
+  name_sl        String?           @db.VarChar(255)
+  name_hr        String?           @db.VarChar(255)
+  slug           String            @unique @db.VarChar(255)
+  description    String?           @db.Text
+  description_sl String?           @db.Text
+  description_hr String?           @db.Text
+  published      Boolean           @default(false)
   publishedAt    DateTime?
-  featured       Boolean        @default(false)
+  featured       Boolean           @default(false)
   heroImageId    String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   Media          Media[]
   pages          Page[]
   posts          Post[]
-  heroImage      Media?         @relation("ProjectHero", fields: [heroImageId], references: [id])
+  heroImage      Media?            @relation("ProjectHero", fields: [heroImageId], references: [id])
   timeline       ProjectPhase[]
   quizzes        Quiz[]
-  gallery        Media[]        @relation("ProjectGallery")
-  teachers       Teacher[]      @relation("ProjectToTeacher")
+  gallery        ProjectToGallery[]
+  teachers       TeacherToProject[]
 
+  @@index([slug])
   @@map("project")
 }
 
 model ProjectPhase {
   id             String            @id @default(uuid())
-  title          String
-  title_sl       String?
-  title_hr       String?
+  title          String            @db.VarChar(255)
+  title_sl       String?           @db.VarChar(255)
+  title_hr       String?           @db.VarChar(255)
   startDate      DateTime?
   endDate        DateTime?
   completed      Boolean           @default(false)
@@ -311,18 +324,19 @@ model ProjectPhase {
   project        Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   activities     ProjectActivity[]
 
+  @@index([projectId])
   @@map("project_phase")
 }
 
 model Testimonial {
   id         String   @id @default(uuid())
-  name       String
-  role       String
-  role_sl    String?
-  role_hr    String?
-  content    String
-  content_sl String?
-  content_hr String?
+  name       String   @db.VarChar(255)
+  role       String   @db.VarChar(255)
+  role_sl    String?  @db.VarChar(255)
+  role_hr    String?  @db.VarChar(255)
+  content    String   @db.Text
+  content_sl String?  @db.Text
+  content_hr String?  @db.Text
   photoId    String?
   featured   Boolean  @default(false)
   published  Boolean  @default(false)
@@ -335,27 +349,49 @@ model Testimonial {
 
 model ProjectActivity {
   id             String                        @id @default(uuid())
-  title          String                        // Primary language (English)
-  title_sl       String?                       // Slovenian
-  title_hr       String?                       // Croatian
-  description    String                        @db.Text // Primary language (English)
-  description_sl String?                       @db.Text // Slovenian
-  description_hr String?                       @db.Text // Croatian
+  title          String                        @db.VarChar(255)
+  title_sl       String?                       @db.VarChar(255)
+  title_hr       String?                       @db.VarChar(255)
+  description    String                        @db.Text
+  description_sl String?                       @db.Text
+  description_hr String?                       @db.Text
   order          Int                           @default(0)
-  
-  // Phase this activity belongs to
   phase          ProjectPhase                  @relation(fields: [phaseId], references: [id], onDelete: Cascade)
   phaseId        String
-  
-  // Many-to-many relationships
   teachers       ProjectActivityToTeacher[]
   images         ProjectActivityToMedia[]
   materials      ProjectActivityToMaterial[]
-  
   createdAt      DateTime                      @default(now())
   updatedAt      DateTime                      @updatedAt
   
+  @@index([phaseId])
   @@map("project_activity")
+}
+
+// Junction table for Project to Teacher many-to-many relationship
+model TeacherToProject {
+  id        String   @id @default(uuid())
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  createdAt DateTime @default(now())
+
+  @@unique([teacherId, projectId])
+  @@map("teacher_to_project")
+}
+
+// Junction table for Project to Media gallery many-to-many relationship
+model ProjectToGallery {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  mediaId   String
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, mediaId])
+  @@map("project_to_gallery")
 }
 
 // Junction table for ProjectActivity to Teacher many-to-many relationship

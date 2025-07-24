@@ -10,22 +10,16 @@ async function getProject(slug: string) {
     },
     include: {
       heroImage: true,
-      gallery: true,
+      gallery: {
+        include: {
+          media: true,
+        },
+      },
       teachers: {
-        select: {
-          id: true,
-          name: true,
-          bio: true,
-          bio_sl: true,
-          bio_hr: true,
-          title: true,
-          title_sl: true,
-          title_hr: true,
-          email: true,
-          displayOrder: true,
-          photo: {
-            select: {
-              url: true,
+        include: {
+          teacher: {
+            include: {
+              photo: true,
             },
           },
         },
@@ -96,5 +90,27 @@ export default async function ProjectPage({
     notFound();
   }
 
-  return <ProjectDetailPage project={project} language="hr" />;
+  // Transform the data to match the component's expected format
+  const transformedProject = {
+    ...project,
+    gallery: project.gallery.map((g) => ({
+      id: g.media.id,
+      url: g.media.url,
+    })),
+    teachers: project.teachers.map((t) => ({
+      id: t.teacher.id,
+      name: t.teacher.name,
+      bio: t.teacher.bio,
+      bio_sl: t.teacher.bio_sl,
+      bio_hr: t.teacher.bio_hr,
+      title: t.teacher.title,
+      title_sl: t.teacher.title_sl,
+      title_hr: t.teacher.title_hr,
+      email: t.teacher.email,
+      displayOrder: t.teacher.displayOrder,
+      photo: t.teacher.photo,
+    })),
+  };
+
+  return <ProjectDetailPage project={transformedProject} language="hr" />;
 }

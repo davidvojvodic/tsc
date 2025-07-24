@@ -39,20 +39,17 @@ async function getMaterials(
               ? {
                   title_sl: {
                     contains: query,
-                    mode: Prisma.QueryMode.insensitive,
                   },
                 }
               : language === "hr"
                 ? {
                     title_hr: {
                       contains: query,
-                      mode: Prisma.QueryMode.insensitive,
                     },
                   }
                 : {
                     title: {
                       contains: query,
-                      mode: Prisma.QueryMode.insensitive,
                     },
                   }),
           },
@@ -61,20 +58,17 @@ async function getMaterials(
               ? {
                   description_sl: {
                     contains: query,
-                    mode: Prisma.QueryMode.insensitive,
                   },
                 }
               : language === "hr"
                 ? {
                     description_hr: {
                       contains: query,
-                      mode: Prisma.QueryMode.insensitive,
                     },
                   }
                 : {
                     description: {
                       contains: query,
-                      mode: Prisma.QueryMode.insensitive,
                     },
                   }),
           },
@@ -83,7 +77,6 @@ async function getMaterials(
       ...(category && {
         category: {
           equals: category,
-          mode: Prisma.QueryMode.insensitive,
         },
       }),
     };

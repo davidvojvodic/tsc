@@ -25,10 +25,13 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Initialize language from URL or localStorage or default to 'en'
+  // Initialize language from URL or default to 'en'
   const [language, setLanguageState] = useState<SupportedLanguage>("en");
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
+    setIsHydrated(true);
+    
     // Skip language routing for admin routes
     if (pathname?.startsWith("/admin")) {
       return;
@@ -38,26 +41,30 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     const pathLanguage = pathname?.split("/")[1] as SupportedLanguage;
     if (["en", "sl", "hr"].includes(pathLanguage)) {
       setLanguageState(pathLanguage);
-      localStorage.setItem("preferredLanguage", pathLanguage);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("preferredLanguage", pathLanguage);
+      }
       // Also set cookie for server components
       setCookie('NEXT_LOCALE', pathLanguage, { path: '/', maxAge: 60 * 60 * 24 * 30 }); // 30 days
       return;
     }
 
-    // If not in URL, check localStorage
-    const storedLanguage = localStorage.getItem(
-      "preferredLanguage"
-    ) as SupportedLanguage;
-    if (["en", "sl", "hr"].includes(storedLanguage)) {
-      setLanguageState(storedLanguage);
-      // Also set cookie for server components
-      setCookie('NEXT_LOCALE', storedLanguage, { path: '/', maxAge: 60 * 60 * 24 * 30 }); // 30 days
+    // If not in URL, check localStorage (only on client)
+    if (typeof window !== 'undefined') {
+      const storedLanguage = localStorage.getItem(
+        "preferredLanguage"
+      ) as SupportedLanguage;
+      if (["en", "sl", "hr"].includes(storedLanguage)) {
+        setLanguageState(storedLanguage);
+        // Also set cookie for server components
+        setCookie('NEXT_LOCALE', storedLanguage, { path: '/', maxAge: 60 * 60 * 24 * 30 }); // 30 days
 
-      // Redirect to the localized URL if we're using stored language
-      // BUT NOT FOR ADMIN ROUTES
-      if (pathname && !pathname.startsWith("/admin")) {
-        const newPathname = `/${storedLanguage}${pathname}`;
-        router.push(newPathname);
+        // Redirect to the localized URL if we're using stored language
+        // BUT NOT FOR ADMIN ROUTES
+        if (pathname && !pathname.startsWith("/admin")) {
+          const newPathname = `/${storedLanguage}${pathname}`;
+          router.push(newPathname);
+        }
       }
     }
   }, [pathname, router]);
@@ -65,7 +72,9 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   // Also modify setLanguage to avoid redirecting admin routes
   const setLanguage = (lang: SupportedLanguage) => {
     setLanguageState(lang);
-    localStorage.setItem("preferredLanguage", lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("preferredLanguage", lang);
+    }
     // Set cookie for server-side components
     setCookie('NEXT_LOCALE', lang, { path: '/', maxAge: 60 * 60 * 24 * 30 }); // 30 days
 

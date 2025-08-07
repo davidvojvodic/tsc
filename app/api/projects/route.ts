@@ -263,11 +263,15 @@ export async function POST(req: NextRequest) {
           ...(heroImageId && { heroImageId }),
 
           gallery: {
-            connect: galleryImages.map((img) => ({ id: img.id })),
+            create: galleryImages.map((img) => ({
+              mediaId: img.id,
+            })),
           },
 
           teachers: {
-            connect: validatedData.teacherIds.map((id) => ({ id })),
+            create: validatedData.teacherIds.map((id) => ({
+              teacherId: id,
+            })),
           },
 
           // Inside the project creation:

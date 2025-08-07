@@ -48,30 +48,41 @@ export async function PATCH(
       return new NextResponse("Project not found", { status: 404 });
     }
 
-    // Update teachers
-    const project = await prisma.project.update({
-      where: { id: params.id },
-      data: {
-        teachers: {
-          set: validatedData.teacherIds.map((id) => ({ id })),
-        },
-      },
-      select: {
-        id: true,
-        teachers: {
-          include: {
-            teacher: {
-              select: {
-                id: true,
-                name: true,
-                title: true,
-                title_sl: true,
-                title_hr: true,
+    // Update teachers using transaction
+    const project = await prisma.$transaction(async (tx) => {
+      // Delete existing teacher relations
+      await tx.teacherToProject.deleteMany({
+        where: { projectId: params.id },
+      });
+
+      // Create new teacher relations
+      await tx.teacherToProject.createMany({
+        data: validatedData.teacherIds.map((teacherId) => ({
+          projectId: params.id,
+          teacherId: teacherId,
+        })),
+      });
+
+      // Return updated project with teachers
+      return await tx.project.findUnique({
+        where: { id: params.id },
+        select: {
+          id: true,
+          teachers: {
+            include: {
+              teacher: {
+                select: {
+                  id: true,
+                  name: true,
+                  title: true,
+                  title_sl: true,
+                  title_hr: true,
+                },
               },
             },
           },
         },
-      },
+      });
     });
 
     return NextResponse.json(project);

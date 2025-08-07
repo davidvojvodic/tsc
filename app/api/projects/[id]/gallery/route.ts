@@ -63,7 +63,12 @@ export async function PATCH(
 
     // Update gallery
     const project = await prisma.$transaction(async (tx) => {
-      // Delete old gallery images
+      // Delete old gallery relations
+      await tx.projectToGallery.deleteMany({
+        where: { projectId: params.id }
+      });
+
+      // Delete old gallery media if they exist
       if (currentProject.gallery.length > 0) {
         await tx.media.deleteMany({
           where: {
@@ -88,14 +93,17 @@ export async function PATCH(
         )
       );
 
-      // Update project with new gallery
-      return await tx.project.update({
+      // Create new gallery relations
+      await tx.projectToGallery.createMany({
+        data: newGalleryImages.map((img) => ({
+          projectId: params.id,
+          mediaId: img.id,
+        })),
+      });
+
+      // Return updated project
+      return await tx.project.findUnique({
         where: { id: params.id },
-        data: {
-          gallery: {
-            set: newGalleryImages.map((img) => ({ id: img.id })),
-          },
-        },
         select: {
           id: true,
           gallery: {

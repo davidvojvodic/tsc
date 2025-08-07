@@ -62,80 +62,86 @@ export async function PATCH(
     }
 
     // Update gallery
-    const project = await prisma.$transaction(async (tx) => {
-      // Delete old gallery relations
-      await tx.projectToGallery.deleteMany({
-        where: { projectId: params.id }
-      });
-
-      // Delete old gallery media if they exist
-      if (currentProject.gallery.length > 0) {
-        await tx.media.deleteMany({
-          where: {
-            id: { in: currentProject.gallery.map(img => img.id) }
-          }
+    const project = await prisma.$transaction(
+      async (tx) => {
+        // Delete old gallery relations
+        await tx.projectToGallery.deleteMany({
+          where: { projectId: params.id },
         });
-      }
 
-      // Create new gallery images
-      const newGalleryImages = await Promise.all(
-        validatedData.gallery.map((img) =>
-          tx.media.create({
-            data: {
-              filename: img.fileKey,
-              url: img.ufsUrl || img.url,
-              type: MediaType.IMAGE,
-              mimeType: img.mimeType || "image/jpeg",
-              size: img.size || 0,
-              alt: img.alt,
+        // Delete old gallery media if they exist
+        if (currentProject.gallery.length > 0) {
+          await tx.media.deleteMany({
+            where: {
+              id: { in: currentProject.gallery.map((img) => img.id) },
             },
-          })
-        )
-      );
+          });
+        }
 
-      // Create new gallery relations
-      await tx.projectToGallery.createMany({
-        data: newGalleryImages.map((img) => ({
-          projectId: params.id,
-          mediaId: img.id,
-        })),
-      });
+        // Create new gallery images
+        const newGalleryImages = await Promise.all(
+          validatedData.gallery.map((img) =>
+            tx.media.create({
+              data: {
+                filename: img.fileKey,
+                url: img.ufsUrl || img.url,
+                type: MediaType.IMAGE,
+                mimeType: img.mimeType || "image/jpeg",
+                size: img.size || 0,
+                alt: img.alt,
+              },
+            })
+          )
+        );
 
-      // Return updated project
-      return await tx.project.findUnique({
-        where: { id: params.id },
-        select: {
-          id: true,
-          gallery: {
-            include: {
-              media: {
-                select: {
-                  id: true,
-                  url: true,
-                  filename: true,
+        // Create new gallery relations
+        await tx.projectToGallery.createMany({
+          data: newGalleryImages.map((img) => ({
+            projectId: params.id,
+            mediaId: img.id,
+          })),
+        });
+
+        // Return updated project
+        return await tx.project.findUnique({
+          where: { id: params.id },
+          select: {
+            id: true,
+            gallery: {
+              include: {
+                media: {
+                  select: {
+                    id: true,
+                    url: true,
+                    filename: true,
+                  },
                 },
               },
             },
           },
-        },
-      });
-    }, {
-      maxWait: 5000,
-      timeout: 5000,
-    });
+        });
+      },
+      {
+        maxWait: 30000, // 30 seconds wait time
+        timeout: 35000, // 35 seconds execution time
+      }
+    );
 
     return NextResponse.json(project);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(error.issues, { status: 422 });
     }
-    
+
     console.error("[PROJECT_GALLERY_PATCH]", error);
-    
+
     let errorMessage = "Internal server error";
-    
+
     if (error instanceof Error) {
-      if (error.message.includes("Transaction already closed") || error.message.includes("timeout")) {
+      if (
+        error.message.includes("Transaction already closed") ||
+        error.message.includes("timeout")
+      ) {
         errorMessage = "The operation took too long. Please try again.";
       } else if (error.message.includes("not found")) {
         errorMessage = error.message;
@@ -144,9 +150,6 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }

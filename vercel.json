@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "app/api/projects/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/projects/[id]/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/projects/[id]/timeline/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/projects/[id]/gallery/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/projects/[id]/teachers/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/projects/[id]/basic-info/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

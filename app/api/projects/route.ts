@@ -71,7 +71,6 @@ const timelinePhaseSchema = z.object({
   order: z.number(),
 
   activities: z.array(activitySchema).optional(),
-
 });
 
 const galleryImageSchema = z.object({
@@ -198,218 +197,182 @@ export async function POST(req: NextRequest) {
 
     if (existingProject) {
       return NextResponse.json(
-        { message: "A project with this slug already exists. Please choose a different slug." },
+        {
+          message:
+            "A project with this slug already exists. Please choose a different slug.",
+        },
         { status: 400 }
       );
     }
 
-    // Create project with all related data
-
-    const project = await prisma.$transaction(async (tx) => {
-      // Create hero image if provided
-
-      let heroImageId: string | undefined;
-
-      if (validatedData.basicInfo.heroImage) {
-        const media = await tx.media.create({
-          data: {
-            filename: validatedData.basicInfo.heroImage.fileKey,
-            url: validatedData.basicInfo.heroImage.url,
-            type: MediaType.IMAGE,
-            mimeType: "image/jpeg",
-            size: 0,
-          },
-        });
-
-        heroImageId = media.id;
-      }
-
-      // Create gallery images
-      // Create a mutable array to hold all gallery images
-      // eslint-disable-next-line prefer-const
-      let galleryImages = await Promise.all(
-        validatedData.gallery.map((img) =>
-          tx.media.create({
+    // Create project with all related data in a single transaction
+    const project = await prisma.$transaction(
+      async (tx) => {
+        // Create hero image if provided
+        let heroImageId: string | undefined;
+        if (validatedData.basicInfo.heroImage) {
+          const media = await tx.media.create({
             data: {
-              filename: img.fileKey,
-              url: img.url,
+              filename: validatedData.basicInfo.heroImage.fileKey,
+              url: validatedData.basicInfo.heroImage.url,
               type: MediaType.IMAGE,
               mimeType: "image/jpeg",
               size: 0,
-              alt: img.alt,
             },
-          })
-        )
-      );
+          });
+          heroImageId = media.id;
+        }
 
-      // Create the project with all relations
+        // Create gallery images
+        const galleryImages = await Promise.all(
+          validatedData.gallery.map((img) =>
+            tx.media.create({
+              data: {
+                filename: img.fileKey,
+                url: img.url,
+                type: MediaType.IMAGE,
+                mimeType: "image/jpeg",
+                size: 0,
+                alt: img.alt,
+              },
+            })
+          )
+        );
+        const newProject = await tx.project.create({
+          data: {
+            name: validatedData.basicInfo.name,
+            name_sl: validatedData.basicInfo.name_sl,
+            name_hr: validatedData.basicInfo.name_hr,
 
-      const newProject = await tx.project.create({
-        data: {
-          name: validatedData.basicInfo.name,
-          name_sl: validatedData.basicInfo.name_sl,
-          name_hr: validatedData.basicInfo.name_hr,
+            slug: validatedData.basicInfo.slug,
 
-          slug: validatedData.basicInfo.slug,
+            description: validatedData.basicInfo.description,
+            description_sl: validatedData.basicInfo.description_sl,
+            description_hr: validatedData.basicInfo.description_hr,
 
-          description: validatedData.basicInfo.description,
-          description_sl: validatedData.basicInfo.description_sl,
-          description_hr: validatedData.basicInfo.description_hr,
+            published: validatedData.basicInfo.published,
 
-          published: validatedData.basicInfo.published,
+            featured: validatedData.basicInfo.featured,
 
-          featured: validatedData.basicInfo.featured,
+            ...(heroImageId && { heroImageId }),
 
-          ...(heroImageId && { heroImageId }),
+            gallery: {
+              create: galleryImages.map((img) => ({
+                mediaId: img.id,
+              })),
+            },
 
-          gallery: {
-            create: galleryImages.map((img) => ({
-              mediaId: img.id,
-            })),
-          },
+            teachers: {
+              create: validatedData.teacherIds.map((id) => ({
+                teacherId: id,
+              })),
+            },
 
-          teachers: {
-            create: validatedData.teacherIds.map((id) => ({
-              teacherId: id,
-            })),
-          },
-
-          // Inside the project creation:
-
-          timeline: {
-            create: await Promise.all(validatedData.timeline.map(async (phase) => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const phaseData: any = {
+            timeline: {
+              create: validatedData.timeline.map((phase) => ({
                 title: phase.title,
                 title_sl: phase.title_sl,
                 title_hr: phase.title_hr,
-
+                startDate: phase.startDate || null,
+                endDate: phase.endDate || null,
                 completed: phase.completed,
-
                 order: phase.order,
-
-                startDate: null, // Default to null
-
-                endDate: null, // Default to null
-              };
-
-              // Only set dates if they exist
-              if (phase.startDate) {
-                phaseData.startDate = phase.startDate;
-              }
-
-              if (phase.endDate) {
-                phaseData.endDate = phase.endDate;
-              }
-
-              // Create activities for this phase
-              if (phase.activities && phase.activities.length > 0) {
-                phaseData.activities = {
-                  create: await Promise.all(
-                    phase.activities.map(async (activity) => {
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const activityData: any = {
-                        title: activity.title,
-                        title_sl: activity.title_sl,
-                        title_hr: activity.title_hr,
-                        description: activity.description,
-                        description_sl: activity.description_sl,
-                        description_hr: activity.description_hr,
-                        order: activity.order,
-                      };
-
-                      // Create teacher associations
-                      if (activity.teacherIds && activity.teacherIds.length > 0) {
-                        activityData.teachers = {
-                          create: activity.teacherIds.map((teacherId) => ({
-                            teacherId: teacherId,
-                          })),
-                        };
-                      }
-
-                      // Create image associations using the mapping
-                      if (activity.imageIds && activity.imageIds.length > 0) {
-                        const routeImageIdMapping = new Map<string, string>();
-                        galleryImages.forEach(media => {
-                          routeImageIdMapping.set(media.filename, media.id);
+                activities: phase.activities
+                  ? {
+                      create: phase.activities.map((activity) => {
+                        const imageIdMapping = new Map<string, string>();
+                        galleryImages.forEach((media) => {
+                          imageIdMapping.set(media.filename, media.id);
                         });
 
-                        const validImageIds = activity.imageIds
-                          .map(frontendId => routeImageIdMapping.get(frontendId))
-                          .filter(Boolean) as string[];
-                        
-                        if (validImageIds.length > 0) {
-                          activityData.images = {
-                            create: validImageIds.map((databaseImageId) => ({
-                              mediaId: databaseImageId,
-                            })),
-                          };
-                        }
-                      }
+                        const validImageIds =
+                          (activity.imageIds
+                            ?.map((frontendId) =>
+                              imageIdMapping.get(frontendId)
+                            )
+                            .filter(Boolean) as string[]) || [];
 
-                      return activityData;
-                    })
-                  ),
-                };
-              }
-
-              return phaseData;
-            })),
-          },
-        },
-
-        include: {
-          heroImage: true,
-
-          gallery: {
-            include: {
-              media: true,
+                        return {
+                          title: activity.title,
+                          title_sl: activity.title_sl,
+                          title_hr: activity.title_hr,
+                          description: activity.description,
+                          description_sl: activity.description_sl,
+                          description_hr: activity.description_hr,
+                          order: activity.order,
+                          teachers: activity.teacherIds?.length
+                            ? {
+                                create: activity.teacherIds.map(
+                                  (teacherId) => ({
+                                    teacherId: teacherId,
+                                  })
+                                ),
+                              }
+                            : undefined,
+                          images: validImageIds.length
+                            ? {
+                                create: validImageIds.map((mediaId) => ({
+                                  mediaId: mediaId,
+                                })),
+                              }
+                            : undefined,
+                        };
+                      }),
+                    }
+                  : undefined,
+              })),
             },
           },
-
-          teachers: {
-            include: {
-              teacher: {
-                include: {
-                  photo: true,
+          include: {
+            heroImage: true,
+            gallery: {
+              include: {
+                media: true,
+              },
+            },
+            teachers: {
+              include: {
+                teacher: {
+                  include: {
+                    photo: true,
+                  },
                 },
               },
             },
-          },
-
-          timeline: {
-            include: {
-              activities: {
-                include: {
-                  teachers: {
-                    include: {
-                      teacher: true,
+            timeline: {
+              include: {
+                activities: {
+                  include: {
+                    teachers: {
+                      include: {
+                        teacher: true,
+                      },
+                    },
+                    images: {
+                      include: {
+                        media: true,
+                      },
                     },
                   },
-                  images: {
-                    include: {
-                      media: true,
-                    },
+                  orderBy: {
+                    order: "asc",
                   },
-                },
-                orderBy: {
-                  order: "asc",
                 },
               },
-            },
-
-            orderBy: {
-              order: "asc",
+              orderBy: {
+                order: "asc",
+              },
             },
           },
-        },
-      });
+        });
 
-      return newProject;
-    }, {
-      maxWait: 9000, // Maximum time to wait for a transaction slot (9s)
-      timeout: 9000, // Maximum time the transaction can run (9s to fit within Vercel's 10s limit)
-    });
+        return newProject;
+      },
+      {
+        maxWait: 30000, // 30 seconds wait time
+        timeout: 50000, // 50 seconds execution time (well within 60s function limit)
+      }
+    );
 
     return NextResponse.json(project);
   } catch (error) {
@@ -418,18 +381,24 @@ export async function POST(req: NextRequest) {
     }
 
     console.error("[PROJECTS_POST]", error);
-    
+
     // Provide more detailed error information
     let errorMessage = "Internal server error";
-    
+
     if (error instanceof Error) {
       // Check for specific database errors
-      if (error.message.includes("Transaction already closed") || error.message.includes("timeout")) {
-        errorMessage = "The operation took too long to complete. This can happen with large projects. Please try again or contact support if the issue persists.";
+      if (
+        error.message.includes("Transaction already closed") ||
+        error.message.includes("timeout")
+      ) {
+        errorMessage =
+          "The operation took too long. Try reducing the number of images or phases, or create the project with basic info first and add details later.";
       } else if (error.message.includes("foreign key constraint")) {
-        errorMessage = "Invalid reference: One or more selected items (teacher, image) do not exist";
+        errorMessage =
+          "Invalid reference: One or more selected items (teacher, image) do not exist";
       } else if (error.message.includes("unique constraint")) {
-        errorMessage = "A duplicate value was detected. Please check your input.";
+        errorMessage =
+          "A duplicate value was detected. Please check your input.";
       } else if (error.message.includes("not found")) {
         errorMessage = error.message;
       } else {
@@ -438,9 +407,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }

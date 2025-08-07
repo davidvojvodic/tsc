@@ -54,10 +54,6 @@ const timelinePhaseSchema = z.object({
   title_sl: z.string().nullable(),
   title_hr: z.string().nullable(),
 
-  description: z.string(),
-  description_sl: z.string().nullable(),
-  description_hr: z.string().nullable(),
-
   startDate: z.preprocess(
     (val) => (val ? new Date(val as string) : null),
 

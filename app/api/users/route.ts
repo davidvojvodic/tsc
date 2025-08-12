@@ -28,7 +28,7 @@ async function checkAdminAccess(userId: string) {
 export async function GET() {
   try {
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -64,7 +64,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {

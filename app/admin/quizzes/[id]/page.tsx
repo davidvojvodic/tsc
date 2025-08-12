@@ -11,7 +11,7 @@ export default async function QuizPage({
   params: { id: string };
 }) {
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: await headers(),
   });
 
   if (!session) {

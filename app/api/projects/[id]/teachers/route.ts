@@ -19,11 +19,12 @@ async function checkAdminAccess(userId: string) {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -40,7 +41,7 @@ export async function PATCH(
 
     // Check if project exists
     const projectExists = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true },
     });
 
@@ -52,20 +53,20 @@ export async function PATCH(
     const project = await prisma.$transaction(async (tx) => {
       // Delete existing teacher relations
       await tx.teacherToProject.deleteMany({
-        where: { projectId: params.id },
+        where: { projectId: id },
       });
 
       // Create new teacher relations
       await tx.teacherToProject.createMany({
         data: validatedData.teacherIds.map((teacherId) => ({
-          projectId: params.id,
+          projectId: id,
           teacherId: teacherId,
         })),
       });
 
       // Return updated project with teachers
       return await tx.project.findUnique({
-        where: { id: params.id },
+        where: { id },
         select: {
           id: true,
           teachers: {

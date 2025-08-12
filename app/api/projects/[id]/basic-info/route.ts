@@ -39,11 +39,12 @@ async function checkAdminAccess(userId: string) {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -62,7 +63,7 @@ export async function PATCH(
     const existingProject = await prisma.project.findFirst({
       where: {
         slug: validatedData.slug,
-        NOT: { id: params.id },
+        NOT: { id },
       },
     });
 
@@ -75,7 +76,7 @@ export async function PATCH(
 
     // Get current project
     const currentProject = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         heroImage: { select: { id: true } },
       },
@@ -117,7 +118,7 @@ export async function PATCH(
 
       // Update the project basic info
       return await tx.project.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           name: validatedData.name,
           name_sl: validatedData.name_sl,

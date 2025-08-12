@@ -172,7 +172,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {

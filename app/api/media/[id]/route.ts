@@ -15,11 +15,12 @@ async function checkAdminAccess(userId: string) {
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -33,7 +34,7 @@ export async function DELETE(
 
     // Check if the media is in use
     const media = await prisma.media.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         posts: true,
         pages: true,
@@ -66,7 +67,7 @@ export async function DELETE(
 
     // Delete the media
     await prisma.media.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     // TODO: You might want to also delete the file from uploadthing here

@@ -21,7 +21,7 @@ export default async function TestimonialPage({
   params: { id: string };
 }) {
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: await headers(),
   });
 
   if (!session) {

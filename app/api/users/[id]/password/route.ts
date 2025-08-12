@@ -19,11 +19,12 @@ const passwordSchema = z
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -31,7 +32,7 @@ export async function POST(
     }
 
     // Check if user is updating their own password
-    if (session.user.id !== params.id) {
+    if (session.user.id !== id) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
@@ -41,7 +42,7 @@ export async function POST(
     // Get user's current password from account
     const account = await prisma.account.findFirst({
       where: {
-        userId: params.id,
+        userId: id,
         providerId: "credentials",
       },
     });

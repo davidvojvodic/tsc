@@ -4,7 +4,7 @@ import { SupportedLanguage } from "@/store/language-context";
 
 export default function LoginRedirect() {
   // Get the language from cookie or default to English
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const langCookie = cookieStore.get("NEXT_LOCALE");
   const language = (langCookie?.value || "en") as SupportedLanguage;
   

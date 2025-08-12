@@ -235,8 +235,8 @@ async function updateQuestion(
  * @param params - The route parameters containing the quiz ID.
  * @returns A JSON response with the updated quiz data or an error message.
  */
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const quizId = params.id;
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: quizId } = await params;
 
   // Validate quizId as a UUID
   const quizIdSchema = z.string().uuid();
@@ -248,7 +248,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   try {
     // Step 1: Authenticate the user
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -370,8 +370,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
  * @param params - The route parameters containing the quiz ID.
  * @returns A JSON response confirming deletion or an error message.
  */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const quizId = params.id;
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: quizId } = await params;
 
   // Validate quizId as a UUID
   const quizIdSchema = z.string().uuid();
@@ -383,7 +383,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   try {
     // Step 1: Authenticate the user
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -443,8 +443,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
  * @param params - The route parameters containing the quiz ID.
  * @returns A JSON response with the quiz data or an error message.
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const quizId = params.id;
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: quizId } = await params;
 
   // Validate quizId as a UUID
   const quizIdSchema = z.string().uuid();
@@ -456,7 +456,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   try {
     // Step 1: Authenticate the user
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {

@@ -59,7 +59,7 @@ export default async function QuizSubmissionsPage({
   params: { id: string };
 }) {
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: await headers(),
   });
 
   if (!session) {

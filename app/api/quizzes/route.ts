@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
   try {
     // Step 1: Authenticate the user
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -211,7 +211,7 @@ export async function GET(req: NextRequest) {
   try {
     // Step 1: Authenticate the user
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {

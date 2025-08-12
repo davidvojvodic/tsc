@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 export default function ProjectsPage() {
   // Get the current language from cookies
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const langCookie = cookieStore.get("NEXT_LOCALE");
   const language = langCookie?.value || "en";
   

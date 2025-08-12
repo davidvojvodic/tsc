@@ -21,11 +21,12 @@ const profileSchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -33,7 +34,7 @@ export async function PATCH(
     }
 
     // Check if user is updating their own profile
-    if (session.user.id !== params.id) {
+    if (session.user.id !== id) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
@@ -46,7 +47,7 @@ export async function PATCH(
         where: {
           email: validatedData.email,
           NOT: {
-            id: params.id,
+            id,
           },
         },
       });
@@ -57,7 +58,7 @@ export async function PATCH(
     }
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...validatedData,
         // Set emailVerified to false if email is changed

@@ -51,11 +51,12 @@ async function checkAdminAccess(userId: string) {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -72,7 +73,7 @@ export async function PATCH(
 
     // Check if project exists and get gallery for image mapping
     const currentProject = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         gallery: {
@@ -108,7 +109,7 @@ export async function PATCH(
 
     // First, delete all existing phases
     await prisma.projectPhase.deleteMany({
-      where: { projectId: params.id },
+      where: { projectId: id },
     });
 
     // Process timeline in chunks
@@ -125,7 +126,7 @@ export async function PATCH(
                 endDate: phase.endDate,
                 completed: phase.completed,
                 order: phase.order,
-                projectId: params.id,
+                projectId: id,
               },
             });
 
@@ -203,7 +204,7 @@ export async function PATCH(
 
     // Return updated timeline
     const updatedProject = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         timeline: {

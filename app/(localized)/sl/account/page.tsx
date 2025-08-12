@@ -7,7 +7,7 @@ import AccountPage from "../../_components/account-page";
 
 export default async function LocalizedAccountPage() {
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: await headers(),
   });
 
   if (!session) {

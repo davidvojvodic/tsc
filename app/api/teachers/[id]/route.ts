@@ -62,11 +62,12 @@ async function checkAdminAccess(userId: string) {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -112,7 +113,7 @@ export async function PATCH(
 
       // Get existing teacher to handle photo cleanup
       const existingTeacher = await tx.teacher.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: { photo: true },
       });
 
@@ -128,7 +129,7 @@ export async function PATCH(
       }
 
       return await tx.teacher.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           name: validatedData.name,
           title: validatedData.title,
@@ -161,7 +162,7 @@ export async function PATCH(
 export async function POST(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -228,11 +229,12 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -246,7 +248,7 @@ export async function DELETE(
 
     await prisma.$transaction(async (tx) => {
       const teacher = await tx.teacher.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: { photo: true },
       });
 
@@ -257,7 +259,7 @@ export async function DELETE(
       }
 
       await tx.teacher.delete({
-        where: { id: params.id },
+        where: { id },
       });
     });
 

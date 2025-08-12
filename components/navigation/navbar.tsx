@@ -126,7 +126,7 @@ export async function Navbar() {
   const user = await getUserWithRole();
 
   // Get current language from cookies
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const langCookie = cookieStore.get("NEXT_LOCALE");
   const language = (langCookie?.value || "en") as SupportedLanguage;
 

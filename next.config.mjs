@@ -52,9 +52,9 @@ const nextConfig = {
         serverActions: {
             bodySizeLimit: '5mb',
         },
-        // Properly handle language detection and server components
-        serverComponentsExternalPackages: ['cookies-next', 'https'],
     },
+    // Moved from experimental.serverComponentsExternalPackages in Next.js 15
+    serverExternalPackages: ['cookies-next', 'https'],
     async headers() {
         return [
             {

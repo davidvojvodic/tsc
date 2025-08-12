@@ -56,7 +56,7 @@ async function getQuizWithSubmissions(quizId: string) {
 export default async function QuizSubmissionsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -71,7 +71,10 @@ export default async function QuizSubmissionsPage({
     redirect("/");
   }
 
-  const quiz = await getQuizWithSubmissions(params.id);
+  // Await params before using
+  const { id } = await params;
+
+  const quiz = await getQuizWithSubmissions(id);
   if (!quiz) {
     redirect("/admin/quizzes");
   }

@@ -8,7 +8,7 @@ import { checkAdminAccess } from "@/lib/utils";
 export default async function QuizPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -23,6 +23,9 @@ export default async function QuizPage({
     redirect("/");
   }
 
+  // Await params before using
+  const { id } = await params;
+
   // Fetch all teachers for the form
   const teachers = await prisma.teacher.findMany({
     select: {
@@ -36,9 +39,9 @@ export default async function QuizPage({
 
   // Fetch existing quiz if we're editing
   const quiz =
-    params.id !== "new"
+    id !== "new"
       ? await prisma.quiz.findUnique({
-          where: { id: params.id },
+          where: { id },
           include: {
             questions: {
               include: {

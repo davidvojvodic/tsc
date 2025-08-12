@@ -18,7 +18,7 @@ async function checkAdminAccess(userId: string) {
 export default async function TestimonialPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -33,10 +33,13 @@ export default async function TestimonialPage({
     redirect("/");
   }
 
+  // Await params before using
+  const { id } = await params;
+
   const testimonial =
-    params.id !== "new"
+    id !== "new"
       ? await prisma.testimonial.findUnique({
-          where: { id: params.id },
+          where: { id },
           include: {
             photo: {
               select: {

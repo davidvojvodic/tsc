@@ -4,12 +4,15 @@ import { TeacherForm } from "@/components/forms/teacher-form";
 export default async function TeacherPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  // Await params before using
+  const { id } = await params;
+
   const teacher =
-    params.id !== "new"
+    id !== "new"
       ? await prisma.teacher.findUnique({
-          where: { id: params.id },
+          where: { id },
           include: {
             photo: true,
           },

@@ -18,7 +18,7 @@ async function checkAdminAccess(userId: string) {
 export default async function MaterialPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const headersObj = await headers();
   const session = await auth.api.getSession({
@@ -34,11 +34,14 @@ export default async function MaterialPage({
     redirect("/");
   }
 
+  // Await params before using
+  const { id } = await params;
+
   // Fetch existing material if we're editing
   const material =
-    params.id !== "new"
+    id !== "new"
       ? await prisma.material.findUnique({
-          where: { id: params.id },
+          where: { id },
         })
       : null;
 

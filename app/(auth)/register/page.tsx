@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { SupportedLanguage } from "@/store/language-context";
 
-export default function RegisterRedirect() {
+export default async function RegisterRedirect() {
   // Get the language from cookie or default to English
   const cookieStore = await cookies();
   const langCookie = cookieStore.get("NEXT_LOCALE");

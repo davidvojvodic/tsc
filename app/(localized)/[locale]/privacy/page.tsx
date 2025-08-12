@@ -2,9 +2,9 @@ import { Container } from "@/components/container";
 import { SupportedLanguage } from "@/store/language-context";
 
 interface PrivacyPageProps {
-  params: {
+  params: Promise<{
     locale: SupportedLanguage;
-  };
+  }>;
 }
 
 const privacyContent = {
@@ -178,8 +178,8 @@ Telefon: +386 51 227 990`
   }
 };
 
-export default function PrivacyPage({ params }: PrivacyPageProps) {
-  const { locale } = params;
+export default async function PrivacyPage({ params }: PrivacyPageProps) {
+  const { locale } = await params;
   const content = privacyContent[locale] || privacyContent.en;
 
   return (

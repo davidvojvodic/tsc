@@ -2,9 +2,9 @@ import { Container } from "@/components/container";
 import { SupportedLanguage } from "@/store/language-context";
 
 interface TermsPageProps {
-  params: {
+  params: Promise<{
     locale: SupportedLanguage;
-  };
+  }>;
 }
 
 const termsContent = {
@@ -190,8 +190,8 @@ Telefon: +386 51 227 990`
   }
 };
 
-export default function TermsPage({ params }: TermsPageProps) {
-  const { locale } = params;
+export default async function TermsPage({ params }: TermsPageProps) {
+  const { locale } = await params;
   const content = termsContent[locale] || termsContent.en;
 
   return (

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
   // Get the current language from cookies
   const cookieStore = await cookies();
   const langCookie = cookieStore.get("NEXT_LOCALE");

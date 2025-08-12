@@ -1,22 +1,67 @@
 {
   "functions": {
     "app/api/projects/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "app/api/projects/[id]/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "app/api/projects/[id]/timeline/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "app/api/projects/[id]/gallery/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "app/api/projects/[id]/teachers/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "app/api/projects/[id]/basic-info/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
+    },
+    "app/api/materials/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/materials/[id]/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/materials/[id]/download/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/media/[id]/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/quizzes/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/quizzes/[id]/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/quizzes/[id]/submit/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/teachers/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/teachers/[id]/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/testimonials/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/testimonials/[id]/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/users/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/users/[id]/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/users/[id]/profile/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/uploadthing/route.ts": {
+      "maxDuration": 300
     }
   }
 }

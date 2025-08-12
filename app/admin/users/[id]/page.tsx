@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-export default async function UserPage({ params }: { params: { id: string } }) {
+export default async function UserPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: await headers(),
   });
 
   if (!session) {
@@ -23,9 +23,12 @@ export default async function UserPage({ params }: { params: { id: string } }) {
     redirect("/");
   }
 
+  // Await params before using
+  const { id } = await params;
+
   // Fetch the user
   const user = await prisma.user.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       name: true,

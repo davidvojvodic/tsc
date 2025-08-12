@@ -12,18 +12,19 @@ const submissionSchema = z.object({
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Get user session
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     // Get quiz with correct answers
     const quiz = await prisma.quiz.findUnique({
       where: { 
-        id: params.id 
+        id 
       },
       include: {
         questions: {
@@ -66,7 +67,7 @@ export async function POST(
       try {
         await prisma.quizSubmission.create({
           data: {
-            quizId: params.id,
+            quizId: id,
             userId: session.user.id,
             score,
             answers: results, // Store the detailed results

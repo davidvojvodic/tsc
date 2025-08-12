@@ -7,7 +7,7 @@ import { UserClient } from "./components/user-client";
 
 export default async function AdminUsersPage() {
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: await headers(),
   });
 
   if (!session) {

@@ -19,11 +19,12 @@ async function checkAdminAccess(userId: string) {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -41,7 +42,7 @@ export async function PATCH(
     // Prevent removing the last admin
     if (validatedData.role !== "ADMIN") {
       const currentUser = await prisma.user.findUnique({
-        where: { id: params.id },
+        where: { id },
         select: { role: true },
       });
 
@@ -59,7 +60,7 @@ export async function PATCH(
     }
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         role: validatedData.role,
       },
@@ -86,11 +87,12 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -104,7 +106,7 @@ export async function DELETE(
 
     // Prevent deleting the last admin user
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { role: true },
     });
 
@@ -121,7 +123,7 @@ export async function DELETE(
     }
 
     await prisma.user.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return new NextResponse(null, { status: 204 });

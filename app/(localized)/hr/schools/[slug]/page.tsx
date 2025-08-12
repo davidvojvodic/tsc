@@ -1,11 +1,12 @@
 import { SchoolDetailPage } from "@/app/(localized)/_components/school-detail-page";
 
 interface SchoolDetailPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
-export default function Page({ params: { slug } }: SchoolDetailPageProps) {
+export default async function Page({ params }: SchoolDetailPageProps) {
+  const { slug } = await params;
   return <SchoolDetailPage slug={slug} language="hr" />;
 }

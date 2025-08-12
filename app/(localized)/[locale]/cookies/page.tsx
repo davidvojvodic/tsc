@@ -2,9 +2,9 @@ import { Container } from "@/components/container";
 import { SupportedLanguage } from "@/store/language-context";
 
 interface CookiesPageProps {
-  params: {
+  params: Promise<{
     locale: SupportedLanguage;
-  };
+  }>;
 }
 
 const cookiesContent = {
@@ -229,8 +229,8 @@ Telefon: +386 51 227 990`
   }
 };
 
-export default function CookiesPage({ params }: CookiesPageProps) {
-  const { locale } = params;
+export default async function CookiesPage({ params }: CookiesPageProps) {
+  const { locale } = await params;
   const content = cookiesContent[locale] || cookiesContent.en;
 
   return (

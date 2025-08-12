@@ -35,9 +35,10 @@ const updateMaterialSchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const headersObj = await headers();
     const session = await auth.api.getSession({
       headers: headersObj,
@@ -106,7 +107,7 @@ export async function PATCH(
     }
 
     const material = await prisma.material.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     });
 
@@ -204,9 +205,10 @@ export async function POST(req: NextRequest) {
 // DELETE Route Handler
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const headersObj = await headers();
     const session = await auth.api.getSession({
       headers: headersObj,
@@ -223,7 +225,7 @@ export async function DELETE(
 
     // Find the material to be deleted
     const material = await prisma.material.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!material) {
@@ -232,7 +234,7 @@ export async function DELETE(
 
     // Delete the material
     await prisma.material.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return new NextResponse(null, { status: 204 });

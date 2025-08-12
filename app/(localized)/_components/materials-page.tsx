@@ -132,11 +132,12 @@ type SearchParams = { [key: string]: string | string[] | undefined };
 type Params = { [key: string]: string | string[] | undefined };
 
 export default async function MaterialsPage(props: {
-  params: Params;
-  searchParams: SearchParams;
+  params: Promise<Params>;
+  searchParams: Promise<SearchParams>;
   language: SupportedLanguage;
 }) {
-  const { searchParams, language } = props;
+  const { searchParams: searchParamsPromise, language } = props;
+  const searchParams = await searchParamsPromise;
   const query =
     typeof searchParams.query === "string" ? searchParams.query : undefined;
   const category =

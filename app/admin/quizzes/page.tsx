@@ -17,7 +17,7 @@ async function checkAdminAccess(userId: string) {
 
 export default async function QuizzesPage() {
   const session = await auth.api.getSession({
-    headers: headers(),
+    headers: await headers(),
   });
 
   if (!session) {

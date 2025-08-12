@@ -95,11 +95,12 @@ async function checkAdminAccess(userId: string) {
 // PATCH Route Handler
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -119,7 +120,7 @@ export async function PATCH(
     const existingProject = await prisma.project.findFirst({
       where: {
         slug: validatedData.basicInfo.slug,
-        NOT: { id: params.id },
+        NOT: { id },
       },
     });
 
@@ -132,7 +133,7 @@ export async function PATCH(
 
     // OPTIMIZED: Get current project data in one query
     const currentProject = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         heroImage: { select: { id: true } },
         gallery: { select: { id: true } },
@@ -209,7 +210,7 @@ export async function PATCH(
       // Phases no longer have media - images are only attached to activities
       
       // Delete old phases (activities will be cascade deleted)
-      await tx.projectPhase.deleteMany({ where: { projectId: params.id } });
+      await tx.projectPhase.deleteMany({ where: { projectId: id } });
       
       // Create new timeline phases with activities
       await Promise.all(
@@ -223,7 +224,7 @@ export async function PATCH(
               endDate: phase.endDate,
               completed: phase.completed,
               order: phase.order,
-              projectId: params.id,
+              projectId: id,
             },
           });
 
@@ -287,7 +288,7 @@ export async function PATCH(
       
       // Update the project with all new data
       return await tx.project.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           name: validatedData.basicInfo.name,
           name_sl: validatedData.basicInfo.name_sl,
@@ -390,7 +391,7 @@ export async function PATCH(
 export async function POST(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -638,11 +639,12 @@ export async function POST(req: NextRequest) {
 // DELETE Route Handler
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: projectId } = await params;
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
 
     if (!session) {
@@ -653,8 +655,6 @@ export async function DELETE(
     if (!isAdmin) {
       return new NextResponse("Forbidden", { status: 403 });
     }
-
-    const projectId = params.id;
     console.log("Deleting project with ID:", projectId);
 
     // First, get the project with all its relations to make sure it exists

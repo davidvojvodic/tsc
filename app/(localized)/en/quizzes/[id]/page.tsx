@@ -28,9 +28,10 @@ async function getQuiz(id: string) {
 export default async function QuizPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const quiz = await getQuiz(params.id);
+  const { id } = await params;
+  const quiz = await getQuiz(id);
 
   if (!quiz) {
     notFound();

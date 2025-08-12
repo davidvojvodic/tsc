@@ -5,20 +5,23 @@ import { notFound } from "next/navigation";
 import { ProjectFormData, Teacher, Material } from "@/lib/types";
 
 interface PageParams {
-  params: {
+  params: Promise<{
     id: string; // Changed from projectId to id to match route parameter
-  };
+  }>;
 }
 
 export default async function ProjectPage({ params }: PageParams) {
+  // Await params before using
+  const { id } = await params;
+
   // Only fetch project data if we're not creating a new project
-  const isNew = params.id === "new";
+  const isNew = id === "new";
 
   // Fetch project data if editing
   const project = !isNew
     ? await prisma.project.findUnique({
         where: {
-          id: params.id, // Changed from projectId to id
+          id, // Changed from projectId to id
         },
         include: {
           heroImage: true,

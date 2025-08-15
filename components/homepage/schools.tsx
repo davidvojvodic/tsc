@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/store/language-context";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { optimizedImages } from "@/lib/optimized-images";
 
 // Multilingual content for schools
 const schoolsContent = {
@@ -16,7 +17,10 @@ const schoolsContent = {
       description:
         "Technical School Center Maribor (TŠC Maribor) is an educational center offering quality general, theoretical vocational, and practical education and training for youth and adults. The school offers various educational programs in mechanical engineering, mechatronics, and automotive industry that adapt to labor market needs. With modern equipped classrooms, workshops, and laboratories, TŠC Maribor ensures quality education adapted to contemporary needs.",
       buttonText: "Learn more",
-      imageUrl: "/sola.jpg",
+      imageUrl: optimizedImages.sola.src,
+      imageBlur: optimizedImages.sola.blur,
+      imageWidth: optimizedImages.sola.width,
+      imageHeight: optimizedImages.sola.height,
     },
     {
       id: "ptz-dubrovnik",
@@ -24,7 +28,10 @@ const schoolsContent = {
       description:
         "Dubrovnik Maritime Technical School is a secondary vocational school founded in 1852, offering education in four vocational professions: marine navigator, marine engineering technician, mechanical computer technician, and electrical technician. The school provides practical training in specialized classrooms with modern simulators and workshops, including optional robotics classes. With an ISO 9001:2015 certified quality system and active participation in Erasmus+ projects since 2017, the school ensures high-quality education adapted to contemporary maritime and technical industry needs.",
       buttonText: "Learn more",
-      imageUrl: "/cro.jpg",
+      imageUrl: optimizedImages.cro.src,
+      imageBlur: optimizedImages.cro.blur,
+      imageWidth: optimizedImages.cro.width,
+      imageHeight: optimizedImages.cro.height,
     },
   ],
   sl: [
@@ -34,7 +41,10 @@ const schoolsContent = {
       description:
         "Tehniški šolski center Maribor (TŠC Maribor) je izobraževalno središče, ki ponuja kakovostno splošno-izobraževalno, strokovno-teoretično in praktično izobraževanje ter usposabljanje za mladino in odrasle. Šola ponuja različne izobraževalne programe na področju strojništva, mehatronike in avtoservisa, ki se prilagajajo potrebam trga dela. S sodobno opremljenimi učilnicami, delavnicami in laboratoriji TŠC Maribor zagotavlja kakovostno izobraževanje, prilagojeno potrebam sodobnega časa.",
       buttonText: "Več informacij",
-      imageUrl: "/sola.jpg",
+      imageUrl: optimizedImages.sola.src,
+      imageBlur: optimizedImages.sola.blur,
+      imageWidth: optimizedImages.sola.width,
+      imageHeight: optimizedImages.sola.height,
     },
     {
       id: "ptz-dubrovnik",
@@ -42,7 +52,10 @@ const schoolsContent = {
       description:
         "Pomorsko-tehniška šola Dubrovnik je srednja poklicna šola, ustanovljena leta 1852, ki izobražuje dijake v štirih strokovnih smereh: pomorski navtik, pomorski strojni tehnik, strojni računalniški tehnik in elektrotehnik. Šola ponuja praktično usposabljanje v specializiranih učilnicah z modernimi simulatorji in delavnicami, vključno z izbirnim poukom robotike. S sistemom kakovosti, certificiranim po standardu ISO 9001:2015 in aktivnim sodelovanjem v projektih Erasmus+ od leta 2017, šola zagotavlja visokokakovostno izobraževanje, prilagojeno sodobnim potrebam pomorske in tehnične industrije.",
       buttonText: "Več informacij",
-      imageUrl: "/cro.jpg",
+      imageUrl: optimizedImages.cro.src,
+      imageBlur: optimizedImages.cro.blur,
+      imageWidth: optimizedImages.cro.width,
+      imageHeight: optimizedImages.cro.height,
     },
   ],
   hr: [
@@ -52,7 +65,10 @@ const schoolsContent = {
       description:
         "Tehnički školski centar Maribor (TŠC Maribor) je obrazovni centar koji nudi kvalitetno opće, stručno-teoretsko i praktično obrazovanje i osposobljavanje za mlade i odrasle. Škola nudi različite obrazovne programe u području strojarstva, mehatronike i autoindustrije koji se prilagođavaju potrebama tržišta rada. Sa suvremeno opremljenim učionicama, radionicama i laboratorijima, TŠC Maribor osigurava kvalitetno obrazovanje prilagođeno suvremenim potrebama.",
       buttonText: "Saznaj više",
-      imageUrl: "/sola.jpg",
+      imageUrl: optimizedImages.sola.src,
+      imageBlur: optimizedImages.sola.blur,
+      imageWidth: optimizedImages.sola.width,
+      imageHeight: optimizedImages.sola.height,
     },
     {
       id: "ptz-dubrovnik",
@@ -60,7 +76,10 @@ const schoolsContent = {
       description:
         "Pomorsko-tehnička škola Dubrovnik je srednja strukovna škola osnovana 1852. godine koja obrazuje učenike u četiri strukovna zanimanja: pomorski nautičar, tehničar za brodostrojarstvo, računalni tehničar za strojarstvo i elektrotehničar. Škola pruža praktičnu nastavu u specijaliziranim učionicama s modernim simulatorima i radionicama, uključujući izbornu nastavu robotike. Sa sustavom kvalitete certificiranim prema normi ISO 9001:2015 i aktivnim sudjelovanjem u Erasmus+ projektima od 2017. godine, škola osigurava visokokvalitetno obrazovanje prilagođeno suvremenim potrebama pomorske i tehničke industrije.",
       buttonText: "Saznaj više",
-      imageUrl: "/cro.jpg",
+      imageUrl: optimizedImages.cro.src,
+      imageBlur: optimizedImages.cro.blur,
+      imageWidth: optimizedImages.cro.width,
+      imageHeight: optimizedImages.cro.height,
     },
   ],
 };
@@ -93,6 +112,10 @@ export default function SchoolsSection() {
                   alt={school.title}
                   fill
                   className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  placeholder={school.imageBlur ? "blur" : undefined}
+                  blurDataURL={school.imageBlur}
+                  loading="lazy"
                 />
               </div>
             </div>

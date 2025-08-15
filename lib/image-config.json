@@ -1,0 +1,218 @@
+{
+  "hero": {
+    "src": "/optimized/hero.webp",
+    "blur": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAT0lEQVR4nAFEALv/APj49//2/f3/R01d/4qVp/8AtJWU/zwLEP8ACCP/XnqU/wCvnZ//Pxob/5uCM/++r2n/AP79/v////7/eF1M/4aAZf+hfipQDEDVowAAAABJRU5ErkJggg==",
+    "width": 757,
+    "height": 759,
+    "sizes": [
+      {
+        "width": 640,
+        "filename": "/optimized/hero-640w.webp",
+        "size": 33442
+      },
+      {
+        "width": 750,
+        "filename": "/optimized/hero-750w.webp",
+        "size": 40342
+      }
+    ]
+  },
+  "hero-upscaled": {
+    "src": "/optimized/hero-upscaled.webp",
+    "blur": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAP0lEQVR4nAE0AMv/APj49/f9/UZMXIuVpwC1lZQ8CxAACCRie5cAsJufPxobl34zuqtoAP79/v///ndcSoR+ZLeLGk64fEU6AAAAAElFTkSuQmCC",
+    "width": 1514,
+    "height": 1518,
+    "sizes": [
+      {
+        "width": 640,
+        "filename": "/optimized/hero-upscaled-640w.webp",
+        "size": 36334
+      },
+      {
+        "width": 750,
+        "filename": "/optimized/hero-upscaled-750w.webp",
+        "size": 45306
+      },
+      {
+        "width": 828,
+        "filename": "/optimized/hero-upscaled-828w.webp",
+        "size": 51594
+      },
+      {
+        "width": 1080,
+        "filename": "/optimized/hero-upscaled-1080w.webp",
+        "size": 74510
+      },
+      {
+        "width": 1200,
+        "filename": "/optimized/hero-upscaled-1200w.webp",
+        "size": 84508
+      }
+    ]
+  },
+  "tsc-hero": {
+    "src": "/optimized/tsc-hero.webp",
+    "blur": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAP0lEQVR4nAE0AMv/AP////39/kxaYn6DhQCZk46bmpkABwR9f3oAYVRRRDw7U05Gn5uUAP39/fL09SYiIoR6d8RqGbTYALt1AAAAAElFTkSuQmCC",
+    "width": 1444,
+    "height": 1444,
+    "sizes": [
+      {
+        "width": 640,
+        "filename": "/optimized/tsc-hero-640w.webp",
+        "size": 50006
+      },
+      {
+        "width": 750,
+        "filename": "/optimized/tsc-hero-750w.webp",
+        "size": 64142
+      },
+      {
+        "width": 828,
+        "filename": "/optimized/tsc-hero-828w.webp",
+        "size": 75520
+      },
+      {
+        "width": 1080,
+        "filename": "/optimized/tsc-hero-1080w.webp",
+        "size": 116084
+      },
+      {
+        "width": 1200,
+        "filename": "/optimized/tsc-hero-1200w.webp",
+        "size": 137178
+      }
+    ]
+  },
+  "cro": {
+    "src": "/optimized/cro.webp",
+    "blur": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAIAAAA7ljmRAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAL0lEQVR4nGO4+P7/8///o+PdmNkZGLqrsiuLEqIig2VUlBjqCx0LClyb2iqjU5IAXqUPylXE3oMAAAAASUVORK5CYII=",
+    "width": 1600,
+    "height": 1200,
+    "sizes": [
+      {
+        "width": 640,
+        "filename": "/optimized/cro-640w.webp",
+        "size": 81274
+      },
+      {
+        "width": 750,
+        "filename": "/optimized/cro-750w.webp",
+        "size": 110008
+      },
+      {
+        "width": 828,
+        "filename": "/optimized/cro-828w.webp",
+        "size": 129952
+      },
+      {
+        "width": 1080,
+        "filename": "/optimized/cro-1080w.webp",
+        "size": 201750
+      },
+      {
+        "width": 1200,
+        "filename": "/optimized/cro-1200w.webp",
+        "size": 239208
+      }
+    ]
+  },
+  "sola": {
+    "src": "/optimized/sola.webp",
+    "blur": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAI0lEQVR4nGOYu3y7lLqtQdmhoN47DHV5jvwMDMtn1///egcAiEcLaq3+brgAAAAASUVORK5CYII=",
+    "width": 1600,
+    "height": 739,
+    "sizes": [
+      {
+        "width": 640,
+        "filename": "/optimized/sola-640w.webp",
+        "size": 41192
+      },
+      {
+        "width": 750,
+        "filename": "/optimized/sola-750w.webp",
+        "size": 53994
+      },
+      {
+        "width": 828,
+        "filename": "/optimized/sola-828w.webp",
+        "size": 63854
+      },
+      {
+        "width": 1080,
+        "filename": "/optimized/sola-1080w.webp",
+        "size": 102582
+      },
+      {
+        "width": 1200,
+        "filename": "/optimized/sola-1200w.webp",
+        "size": 122438
+      }
+    ]
+  },
+  "school-start-times": {
+    "src": "/optimized/school-start-times.webp",
+    "blur": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAI0lEQVR4nGNIys6/dOvZoVNXvvz6z8AjySAix8DAyyDGzwAArgEJpUceNg8AAAAASUVORK5CYII=",
+    "width": 1280,
+    "height": 720,
+    "sizes": [
+      {
+        "width": 640,
+        "filename": "/optimized/school-start-times-640w.webp",
+        "size": 60046
+      },
+      {
+        "width": 750,
+        "filename": "/optimized/school-start-times-750w.webp",
+        "size": 81614
+      },
+      {
+        "width": 828,
+        "filename": "/optimized/school-start-times-828w.webp",
+        "size": 100056
+      },
+      {
+        "width": 1080,
+        "filename": "/optimized/school-start-times-1080w.webp",
+        "size": 162522
+      },
+      {
+        "width": 1200,
+        "filename": "/optimized/school-start-times-1200w.webp",
+        "size": 200506
+      }
+    ]
+  },
+  "waterwise": {
+    "src": "/optimized/waterwise.webp",
+    "blur": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAIAAAA7ljmRAAAACXBIWXMAAB7CAAAewgFu0HU+AAAAMklEQVR4nAEnANj/AOTu5bGwf8nDju/16ACDl4cACAAUIRKNnYkA2d3ip7C4oq622uDktrEWbDD6MLcAAAAASUVORK5CYII=",
+    "width": 1449,
+    "height": 977,
+    "sizes": [
+      {
+        "width": 640,
+        "filename": "/optimized/waterwise-640w.webp",
+        "size": 16382
+      },
+      {
+        "width": 750,
+        "filename": "/optimized/waterwise-750w.webp",
+        "size": 19606
+      },
+      {
+        "width": 828,
+        "filename": "/optimized/waterwise-828w.webp",
+        "size": 21568
+      },
+      {
+        "width": 1080,
+        "filename": "/optimized/waterwise-1080w.webp",
+        "size": 28226
+      },
+      {
+        "width": 1200,
+        "filename": "/optimized/waterwise-1200w.webp",
+        "size": 31524
+      }
+    ]
+  }
+}

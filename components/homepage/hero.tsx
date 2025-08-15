@@ -11,6 +11,7 @@ import {
   Globe,
   Languages,
 } from "lucide-react";
+import { optimizedImages } from "@/lib/optimized-images";
 
 // Stats data with localization and icons
 const statsData = [
@@ -119,12 +120,15 @@ export function HeroSection() {
           {/* Right column - Hero Image */}
           <div className="relative aspect-square max-h-[600px] w-full">
             <Image
-              src="/tsc-hero.jpg"
+              src={optimizedImages.tscHero.src}
               alt="Student Profiles"
-              width={1080}
-              height={1080}
+              width={optimizedImages.tscHero.width || 1444}
+              height={optimizedImages.tscHero.height || 1444}
               className="object-contain"
               priority
+              placeholder={optimizedImages.tscHero.blur ? "blur" : undefined}
+              blurDataURL={optimizedImages.tscHero.blur}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
             />
           </div>
         </div>

@@ -12,6 +12,7 @@ const EXCLUDED_PATHS = [
   "/api",
   "/_next",
   "/favicon.ico",
+  "/optimized",
   "/tsc-hero.jpg",
   "/hero.png",
   "/school-start-times.jpg",
@@ -97,6 +98,6 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Explicitly exclude admin routes and static files from the matcher
-    "/((?!admin|api|_next/static|_next/image|favicon.ico|hero-upscaled.png|hero.png|school-start-times.jpg|waterwise.png).*)",
+    "/((?!admin|api|_next|favicon.ico|optimized|hero-upscaled.png|hero.png|school-start-times.jpg|waterwise.png).*)",
   ],
 };

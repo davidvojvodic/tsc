@@ -4,7 +4,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Expand, Image as ImageIcon } from "lucide-react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogVisuallyHidden } from "@/components/ui/dialog";
 import {
   Carousel,
   CarouselApi,
@@ -115,6 +115,9 @@ export function GalleryView({
                   </div>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl">
+                  <DialogVisuallyHidden>
+                    <DialogTitle>Image Gallery - View More Images</DialogTitle>
+                  </DialogVisuallyHidden>
                   <ImageGallery
                     images={allImages}
                     initialIndex={maxRegularImages}
@@ -198,6 +201,9 @@ function GalleryImageThumbnail({
         </div>
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
+        <DialogVisuallyHidden>
+          <DialogTitle>Image Gallery - Full Size View</DialogTitle>
+        </DialogVisuallyHidden>
         <ImageGallery
           images={images}
           initialIndex={index}
@@ -350,6 +356,9 @@ export function PhaseGalleryThumbnail({
           </div>
         </DialogTrigger>
         <DialogContent className="max-w-4xl">
+          <DialogVisuallyHidden>
+            <DialogTitle>Phase Gallery - Timeline Images</DialogTitle>
+          </DialogVisuallyHidden>
           <ImageGallery
             images={images}
             initialIndex={selectedIndex}
@@ -379,6 +388,9 @@ export function PhaseGalleryThumbnail({
         </div>
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
+        <DialogVisuallyHidden>
+          <DialogTitle>Project Gallery - All Images</DialogTitle>
+        </DialogVisuallyHidden>
         <ImageGallery
           images={images}
           initialIndex={selectedIndex}

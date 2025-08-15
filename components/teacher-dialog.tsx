@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogVisuallyHidden } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Mail, BookOpen } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -41,6 +41,9 @@ export function TeacherDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 max-w-4xl overflow-hidden">
+        <DialogVisuallyHidden>
+          <DialogTitle>{teacher.name} - Teacher Profile</DialogTitle>
+        </DialogVisuallyHidden>
         <div className="flex flex-col lg:flex-row max-h-[85vh]">
           {/* Left Column - Photo and Basic Info */}
           <div className="bg-muted p-6 lg:w-[280px] flex-shrink-0">

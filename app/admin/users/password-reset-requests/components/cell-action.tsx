@@ -58,7 +58,6 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
     }
   };
 
-  const canResetPassword = true; // Always allow password reset for any request
 
   return (
     <>

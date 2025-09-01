@@ -63,7 +63,7 @@ export function validateAdminPermissions(
 export async function validateAdminAuth(
   headers?: Headers,
   requiredRole: string = 'ADMIN'
-): Promise<{ error?: NextResponse; session?: any }> {
+): Promise<{ error?: NextResponse; session?: { user: { id: string; role?: string | null; email: string } } }> {
   try {
     const { auth } = await import('@/lib/auth');
     const session = await auth.api.getSession({ headers: headers || new Headers() });

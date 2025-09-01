@@ -6,8 +6,7 @@ import {
   projectCreateSchema
 } from "@/lib/schemas/schema";
 import { 
-  validateAdminAuth, 
-  createDetailedErrorResponse 
+  validateAdminAuth
 } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {

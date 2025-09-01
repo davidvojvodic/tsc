@@ -68,26 +68,50 @@ const nextConfig = {
                   { key: "Access-Control-Allow-Origin", value: process.env.NEXT_PUBLIC_APP_URL || "*" },
                   { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
                   { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
+                  // Security headers for API routes
+                  { key: "X-Content-Type-Options", value: "nosniff" },
+                  { key: "X-Frame-Options", value: "DENY" },
+                  { key: "X-XSS-Protection", value: "1; mode=block" },
+                  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+                  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
                 ]
             },
             {
-                // Add Content Security Policy for iframe access
+                // Comprehensive security headers for all routes
                 source: "/(.*)",
                 headers: [
+                  // Content Security Policy
                   { 
                     key: "Content-Security-Policy", 
-                    value: "frame-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://www.youtube.com https://*.youtube.com https://tsc-testing.vercel.app https://vercel.live; img-src 'self' data: blob: https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://res.cloudinary.com https://utfs.io https://*.ufs.sh https://tsc-testing.vercel.app; media-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* rtsp://194.249.165.38:*; connect-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://tsc-testing.vercel.app https://api.uploadthing.com https://*.ingest.uploadthing.com;" 
-                  }
+                    value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://res.cloudinary.com https://utfs.io https://*.ufs.sh https://tsc-testing.vercel.app; media-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* rtsp://194.249.165.38:*; connect-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://tsc-testing.vercel.app https://api.uploadthing.com https://*.ingest.uploadthing.com wss:; frame-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://www.youtube.com https://*.youtube.com https://tsc-testing.vercel.app https://vercel.live; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';" 
+                  },
+                  // Additional Security Headers
+                  { key: "X-Content-Type-Options", value: "nosniff" },
+                  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+                  { key: "X-XSS-Protection", value: "1; mode=block" },
+                  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+                  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
+                  // Strict Transport Security (HSTS)
+                  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+                  // Prevent MIME type sniffing
+                  { key: "X-DNS-Prefetch-Control", value: "off" },
+                  // Cross-Origin Policies
+                  { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
+                  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+                  { key: "Cross-Origin-Resource-Policy", value: "same-origin" }
                 ]
             }
         ];
     },
-    // Disable SSL certificate verification for specific hosts (industrial controllers often use self-signed certs)
-    // This only affects server-side requests
+    // Configure TLS settings for specific industrial controller endpoints only
     webpack: (config, { isServer }) => {
         if (isServer) {
-            // This allows the server to ignore SSL certificate errors when proxying requests
-            process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+            // Configure custom TLS handling for industrial controllers
+            // This will be handled in specific API routes instead of globally
+            config.resolve.fallback = {
+                ...config.resolve.fallback,
+                "https": false
+            };
         }
         return config;
     },

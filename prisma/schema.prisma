@@ -9,21 +9,22 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(uuid())
-  email           String           @unique
-  name            String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  emailVerified   Boolean          @default(false)
-  image           String?          @db.Text
-  banExpires      DateTime?
-  banReason       String?          @db.Text
-  banned          Boolean?         @default(false)
-  role            Role             @default(USER)
-  Account         Account[]
-  pages           Page[]
-  quizSubmissions QuizSubmission[]
-  Session         Session[]
+  id                    String                  @id @default(uuid())
+  email                 String                  @unique
+  name                  String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  emailVerified         Boolean                 @default(false)
+  image                 String?                 @db.Text
+  banExpires            DateTime?
+  banReason             String?                 @db.Text
+  banned                Boolean?                @default(false)
+  role                  Role                    @default(USER)
+  Account               Account[]
+  pages                 Page[]
+  quizSubmissions       QuizSubmission[]
+  Session               Session[]
+  passwordResetRequests PasswordResetRequest[]
 
   @@map("user")
 }
@@ -431,6 +432,26 @@ model ProjectActivityToMaterial {
 
   @@unique([activityId, materialId])
   @@map("project_activity_to_material")
+}
+
+model PasswordResetRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED, EXPIRED
+  reason      String?  @db.Text
+  requestedAt DateTime @default(now())
+  processedAt DateTime?
+  processedBy String?
+  adminNotes  String?  @db.Text
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("password_reset_request")
 }
 
 enum Role {

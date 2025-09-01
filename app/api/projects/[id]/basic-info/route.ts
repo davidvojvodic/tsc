@@ -1,41 +1,13 @@
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { MediaType } from "@prisma/client";
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-
-const heroImageSchema = z
-  .object({
-    url: z.string().url(),
-    ufsUrl: z.string().url().optional(),
-    fileKey: z.string(),
-    size: z.number().optional(),
-    mimeType: z.string().optional(),
-  })
-  .nullable();
-
-const basicInfoSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  name_sl: z.string().nullable(),
-  name_hr: z.string().nullable(),
-  slug: z.string().min(1, "Slug is required"),
-  description: z.string().nullable(),
-  description_sl: z.string().nullable(),
-  description_hr: z.string().nullable(),
-  published: z.boolean(),
-  featured: z.boolean(),
-  heroImage: heroImageSchema,
-});
-
-async function checkAdminAccess(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-
-  return user?.role === "ADMIN";
-}
+import { 
+  projectUpdateBasicInfoSchema
+} from "@/lib/schemas/schema";
+import { 
+  validateAdminAuth 
+} from "@/lib/auth-utils";
 
 export async function PATCH(
   req: NextRequest,
@@ -43,21 +15,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    const isAdmin = await checkAdminAccess(session.user.id);
-    if (!isAdmin) {
-      return new NextResponse("Forbidden", { status: 403 });
-    }
+    const { error } = await validateAdminAuth(req.headers);
+    if (error) return error;
 
     const body = await req.json();
-    const validatedData = basicInfoSchema.parse(body);
+    const validatedData = projectUpdateBasicInfoSchema.parse(body);
 
     // Check if slug is unique
     const existingProject = await prisma.project.findFirst({
@@ -157,22 +119,6 @@ export async function PATCH(
     }
     
     console.error("[PROJECT_BASIC_INFO_PATCH]", error);
-    
-    let errorMessage = "Internal server error";
-    
-    if (error instanceof Error) {
-      if (error.message.includes("Transaction already closed") || error.message.includes("timeout")) {
-        errorMessage = "The operation took too long. Please try again.";
-      } else if (error.message.includes("not found")) {
-        errorMessage = error.message;
-      } else {
-        errorMessage = `Server error: ${error.message}`;
-      }
-    }
-
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
+    return new NextResponse("Failed to update project basic info", { status: 500 });
   }
 }

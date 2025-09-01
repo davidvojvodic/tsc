@@ -12,10 +12,7 @@ export const formSchema = z.object({
     .min(2)
     .max(50),
 
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters long" })
-    .max(50, { message: "Password cannot exceed 50 characters" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
 });
 
 export const signInFormSchema = z.object({

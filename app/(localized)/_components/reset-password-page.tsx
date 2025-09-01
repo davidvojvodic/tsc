@@ -1,11 +1,14 @@
 "use client";
 
 import { Suspense } from "react";
-
 import { Loader2 } from "lucide-react";
-import ResetPasswordForm from "@/components/forms/reset-password-form";
+import ResetPasswordForm from "./reset-password-form";
 
-export default function ResetPasswordPage() {
+interface ResetPasswordPageProps {
+  language: string;
+}
+
+export default function ResetPasswordPage({ language }: ResetPasswordPageProps) {
   return (
     <Suspense
       fallback={
@@ -14,7 +17,7 @@ export default function ResetPasswordPage() {
         </div>
       }
     >
-      <ResetPasswordForm />
+      <ResetPasswordForm language={language} />
     </Suspense>
   );
 }

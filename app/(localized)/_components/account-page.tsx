@@ -19,6 +19,7 @@ import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
 import { Container } from "@/components/container";
 import { SupportedLanguage } from "@/store/language-context";
+import { SecurityForm } from "@/components/forms/security-form";
 
 // User interface
 interface User {
@@ -255,7 +256,7 @@ export default function AccountPage({ user, language = "en" }: { user: User; lan
           <Tabs defaultValue="profile" className="space-y-4">
             <TabsList>
               <TabsTrigger value="profile">{t.profileTab}</TabsTrigger>
-              {/* <TabsTrigger value="security">{t.securityTab}</TabsTrigger> */}
+              <TabsTrigger value="security">{t.securityTab}</TabsTrigger>
             </TabsList>
             <TabsContent value="profile">
               <div className="space-y-6">
@@ -374,9 +375,9 @@ export default function AccountPage({ user, language = "en" }: { user: User; lan
                 </Card>
               </div>
             </TabsContent>
-            {/* <TabsContent value="security">
-              <SecurityForm user={user} />
-            </TabsContent> */}
+            <TabsContent value="security">
+              <SecurityForm />
+            </TabsContent>
           </Tabs>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,13 +39,7 @@ const passwordFormSchema = z
 
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
-interface User {
-  id: string;
-  email: string;
-  emailVerified: boolean;
-}
-
-export function SecurityForm({ user }: { user: User }) {
+export function SecurityForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<PasswordFormValues>({
@@ -60,23 +55,36 @@ export function SecurityForm({ user }: { user: User }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/users/${user.id}/password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+      const { error } = await authClient.changePassword({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+        revokeOtherSessions: true, // Security: Revoke all other sessions
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to update password");
+      if (error) {
+        throw new Error(error.message || "Failed to update password");
       }
 
       toast.success("Password updated successfully");
       form.reset();
     } catch (error) {
       console.error("[PASSWORD_UPDATE]", error);
-      toast.error("Failed to update password");
+      const errorMessage = error instanceof Error ? error.message : "Failed to update password";
+      
+      // Handle Better Auth specific errors
+      if (errorMessage.includes("current password is incorrect") || errorMessage.includes("incorrect password")) {
+        form.setError("currentPassword", {
+          type: "manual",
+          message: "Current password is incorrect",
+        });
+      } else if (errorMessage.includes("password")) {
+        form.setError("newPassword", {
+          type: "manual", 
+          message: errorMessage,
+        });
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }

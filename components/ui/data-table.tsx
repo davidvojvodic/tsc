@@ -26,12 +26,16 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   searchKey: string;
+  filterKey?: string;
+  filterOptions?: { label: string; value: string }[];
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   searchKey,
+  // filterKey, // Commented out as unused
+  // filterOptions, // Commented out as unused
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 

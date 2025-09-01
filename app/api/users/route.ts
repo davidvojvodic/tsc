@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { headers } from "next/headers";
-import { hash } from "bcrypt";
 
 const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -11,7 +10,29 @@ const userSchema = z.object({
   role: z.enum(["ADMIN", "USER", "TEACHER"]),
   password: z
     .string()
-    .min(6, "Password must be at least 6 characters")
+    .min(12, { message: "Password must be at least 12 characters long" })
+    .max(128, { message: "Password cannot exceed 128 characters" })
+    .refine((password) => {
+      // Check for at least one uppercase letter
+      if (!/[A-Z]/.test(password)) {
+        return false;
+      }
+      // Check for at least one lowercase letter
+      if (!/[a-z]/.test(password)) {
+        return false;
+      }
+      // Check for at least one number
+      if (!/[0-9]/.test(password)) {
+        return false;
+      }
+      // Check for at least one special character
+      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+        return false;
+      }
+      return true;
+    }, {
+      message: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+    })
     .optional(),
   emailVerified: z.boolean().default(false),
 });
@@ -88,40 +109,69 @@ export async function POST(req: NextRequest) {
       return new NextResponse("Email already in use", { status: 400 });
     }
 
-    // Hash password if provided
-    if (validatedData.password) {
-      validatedData.password = await hash(validatedData.password, 10);
+    try {
+      // Use Better Auth's admin plugin to create user with secure password handling
+      if (!validatedData.password) {
+        return new NextResponse("Password is required for user creation", { status: 400 });
+      }
+
+      const createUserResult = await auth.api.createUser({
+        body: {
+          email: validatedData.email,
+          password: validatedData.password, // Better Auth will securely hash this
+          name: validatedData.name,
+        },
+        headers: await headers(),
+      });
+
+      if (!createUserResult?.user) {
+        throw new Error("Failed to create user via Better Auth admin plugin");
+      }
+
+      // Update the user with admin-specific fields (role, emailVerified)
+      const updatedUser = await prisma.user.update({
+        where: { id: createUserResult.user.id },
+        data: {
+          role: validatedData.role,
+          emailVerified: validatedData.emailVerified,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          emailVerified: true,
+          createdAt: true,
+        },
+      });
+
+      // Return sanitized user data (no password info)
+      return NextResponse.json(updatedUser);
+
+    } catch (betterAuthError: unknown) {
+      console.error("[BETTER_AUTH_CREATE_USER]", betterAuthError);
+      
+      // Handle Better Auth specific errors
+      const errorMessage = betterAuthError instanceof Error ? betterAuthError.message : String(betterAuthError);
+      if (errorMessage.includes("email already exists")) {
+        return new NextResponse("Email already in use", { status: 400 });
+      }
+      if (errorMessage.includes("invalid email")) {
+        return new NextResponse("Invalid email address", { status: 400 });
+      }
+      if (errorMessage.includes("password")) {
+        return new NextResponse("Password requirements not met", { status: 400 });
+      }
+      
+      throw betterAuthError; // Re-throw to be caught by outer catch
     }
 
-    const user = await prisma.user.create({
-      data: {
-        name: validatedData.name,
-        email: validatedData.email,
-        role: validatedData.role,
-        emailVerified: validatedData.emailVerified,
-        Account: validatedData.password
-          ? {
-              create: {
-                providerId: "credentials",
-                accountId: validatedData.email,
-                password: validatedData.password,
-              },
-            }
-          : undefined,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        emailVerified: true,
-      },
-    });
-
-    return NextResponse.json(user);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(error.issues, { status: 422 });
+      return NextResponse.json(
+        { error: "Invalid input", details: error.issues }, 
+        { status: 422 }
+      );
     }
     console.error("[USERS_POST]", error);
     return new NextResponse("Internal error", { status: 500 });

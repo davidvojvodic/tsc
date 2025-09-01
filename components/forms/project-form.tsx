@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, memo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -52,11 +52,11 @@ interface ProjectFormProps {
   availableMaterials?: Material[];
 }
 
-export function ProjectForm({
+const ProjectFormComponent = ({
   initialData,
   availableTeachers,
   availableMaterials = [],
-}: ProjectFormProps) {
+}: ProjectFormProps) => {
   const router = useRouter();
   const {
     currentStep,
@@ -91,6 +91,7 @@ export function ProjectForm({
           ? {
               url: initialData.heroImage.url,
               fileKey: initialData.heroImage.id,
+              id: initialData.heroImage.id,
             }
           : null,
       });
@@ -149,8 +150,7 @@ export function ProjectForm({
     }
 
     return () => reset();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData, reset, setBasicInfo]);
+  }, [initialData, reset, setBasicInfo, setTimeline, setGallery, setTeachers]);
 
   const isStepValid = (step: number) => {
     switch (step) {
@@ -319,7 +319,7 @@ export function ProjectForm({
     }
   };
 
-  const parseError = async (response: Response): Promise<string> => {
+  const parseError = useCallback(async (response: Response): Promise<string> => {
     const contentType = response.headers.get("content-type");
     let errorMessage = "Failed to save project";
 
@@ -327,19 +327,30 @@ export function ProjectForm({
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
 
-        // Handle Zod validation errors
+        // Handle Zod validation errors with more user-friendly messages
         if (Array.isArray(errorData)) {
-          const errors = errorData
+          const userFriendlyErrors = errorData
             .map((err) => {
-              const path = err.path.join(" > ");
-              return `${path}: ${err.message}`;
+              // Transform validation path to user-friendly names
+              const pathMap: Record<string, string> = {
+                "basicInfo.name": "Project name",
+                "basicInfo.slug": "Project slug",
+                "basicInfo.description": "Project description",
+                "timeline": "Timeline",
+                "gallery": "Gallery",
+                "teacherIds": "Teachers"
+              };
+              
+              const path = err.path.join(".");
+              const friendlyPath = pathMap[path] || path;
+              return `${friendlyPath}: ${err.message}`;
             })
             .join("\n");
-          errorMessage = `Validation errors:\n${errors}`;
+          errorMessage = `Please fix the following issues:\n${userFriendlyErrors}`;
         } else if (errorData.message) {
           errorMessage = errorData.message;
         } else if (typeof errorData === "object") {
-          errorMessage = JSON.stringify(errorData);
+          errorMessage = "An unexpected error occurred while processing your request";
         }
       } else {
         // Handle text responses
@@ -349,28 +360,27 @@ export function ProjectForm({
         }
       }
 
-      // Add status code information
+      // Add user-friendly status code messages
       if (response.status === 400) {
-        errorMessage = `Bad Request: ${errorMessage}`;
+        errorMessage = errorMessage.includes("Bad Request") ? errorMessage : `Invalid request: ${errorMessage}`;
       } else if (response.status === 401) {
-        errorMessage = "Unauthorized: Please log in again";
+        errorMessage = "Your session has expired. Please log in again";
       } else if (response.status === 403) {
-        errorMessage =
-          "Forbidden: You don't have permission to perform this action";
+        errorMessage = "You don't have permission to perform this action";
       } else if (response.status === 422) {
-        errorMessage = `Invalid data: ${errorMessage}`;
+        errorMessage = errorMessage.includes("Please fix") ? errorMessage : `Data validation failed: ${errorMessage}`;
       } else if (response.status === 500) {
-        errorMessage = `Server error: ${errorMessage}`;
+        errorMessage = errorMessage.includes("Server error") ? errorMessage : "A server error occurred. Please try again";
       } else if (response.status === 504) {
-        errorMessage =
-          "Request timeout: The operation took too long to complete";
+        errorMessage = "The request took too long to process. Please try again with fewer changes";
       }
     } catch (parseError) {
       console.error("Error parsing response:", parseError);
+      errorMessage = "Unable to process the error response. Please try again";
     }
 
     return errorMessage;
-  };
+  }, []);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -493,4 +503,6 @@ export function ProjectForm({
       </Card>
     </div>
   );
-}
+};
+
+export const ProjectForm = memo(ProjectFormComponent);

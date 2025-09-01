@@ -11,7 +11,7 @@ export interface ProjectBasicInfo {
   description_hr: string | null;
   published: boolean;
   featured: boolean;
-  heroImage: { url: string; fileKey: string } | null;
+  heroImage: { url: string; fileKey: string; id?: string } | null;
 }
 
 export interface ProjectActivity {

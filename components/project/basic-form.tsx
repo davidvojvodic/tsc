@@ -1,7 +1,7 @@
 // components/project/basic-form.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, memo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Trash2 } from "lucide-react";
@@ -71,11 +71,11 @@ interface BasicFormProps {
   isLoading?: boolean;
 }
 
-export function BasicForm({
+const BasicFormComponent = ({
   value,
   onChange,
   isLoading = false,
-}: BasicFormProps) {
+}: BasicFormProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -371,4 +371,6 @@ export function BasicForm({
       </form>
     </Form>
   );
-}
+};
+
+export const BasicForm = memo(BasicFormComponent);

@@ -11,7 +11,7 @@ export default async function LocalizedAccountPage() {
   });
 
   if (!session) {
-    redirect("/hr/login");
+    redirect("/login");
   }
 
   const user = await prisma.user.findUnique({
@@ -27,7 +27,7 @@ export default async function LocalizedAccountPage() {
   });
 
   if (!user) {
-    redirect("/hr/login");
+    redirect("/login");
   }
 
   return <AccountPage user={user} language="hr" />;

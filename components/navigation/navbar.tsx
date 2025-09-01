@@ -71,8 +71,6 @@ const getNavigationLinks = (language: SupportedLanguage) => {
     waterwise: "/projects/Waterwise",
     materials: "/materials",
     quizzes: "/quizzes",
-    login: "/login",
-    register: "/register",
     account: "/account",
   };
 
@@ -85,8 +83,6 @@ const getNavigationLinks = (language: SupportedLanguage) => {
     waterwise: `${prefix}${basePaths.waterwise}`,
     materials: `${prefix}${basePaths.materials}`,
     quizzes: `${prefix}${basePaths.quizzes}`,
-    login: `${prefix}${basePaths.login}`,
-    register: `${prefix}${basePaths.register}`,
     account: `${prefix}${basePaths.account}`,
   };
 
@@ -136,7 +132,7 @@ export async function Navbar() {
   // Get navigation with translated links
   const navigation = getNavigationLinks(language);
 
-  // Generate language-specific auth links
+  // Generate links - now all routes including auth have language prefixes
   const prefix = language === "en" ? "" : `/${language}`;
   const loginLink = `${prefix}/login`;
   const registerLink = `${prefix}/register`;

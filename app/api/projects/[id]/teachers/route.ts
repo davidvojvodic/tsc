@@ -1,21 +1,13 @@
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-
-const teachersSchema = z.object({
-  teacherIds: z.array(z.string()),
-});
-
-async function checkAdminAccess(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-
-  return user?.role === "ADMIN";
-}
+import { 
+  projectUpdateTeachersSchema 
+} from "@/lib/schemas/schema";
+import { 
+  validateAdminAuth, 
+  createDetailedErrorResponse 
+} from "@/lib/auth-utils";
 
 export async function PATCH(
   req: NextRequest,
@@ -23,21 +15,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    const isAdmin = await checkAdminAccess(session.user.id);
-    if (!isAdmin) {
-      return new NextResponse("Forbidden", { status: 403 });
-    }
+    const { error } = await validateAdminAuth(req.headers);
+    if (error) return error;
 
     const body = await req.json();
-    const validatedData = teachersSchema.parse(body);
+    const validatedData = projectUpdateTeachersSchema.parse(body);
 
     // Check if project exists
     const projectExists = await prisma.project.findUnique({
@@ -93,22 +75,6 @@ export async function PATCH(
     }
     
     console.error("[PROJECT_TEACHERS_PATCH]", error);
-    
-    let errorMessage = "Internal server error";
-    
-    if (error instanceof Error) {
-      if (error.message.includes("foreign key constraint")) {
-        errorMessage = "One or more teacher IDs are invalid";
-      } else if (error.message.includes("not found")) {
-        errorMessage = error.message;
-      } else {
-        errorMessage = `Server error: ${error.message}`;
-      }
-    }
-
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
+    return new NextResponse("Failed to update project teachers", { status: 500 });
   }
 }

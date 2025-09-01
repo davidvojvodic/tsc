@@ -13,16 +13,11 @@ const EXCLUDED_PATHS = [
   "/_next",
   "/favicon.ico",
   "/optimized",
-  "/tsc-hero.jpg",
-  "/hero.png",
-  "/school-start-times.jpg",
-  "/sola.jpg",
-  "/cro.jpg",
-  "/waterwise.png",
 ];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
 
   // Skip language routing for admin and other excluded paths - explicit check for admin paths
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
@@ -97,7 +92,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Explicitly exclude admin routes and static files from the matcher
-    "/((?!admin|api|_next|favicon.ico|optimized|hero-upscaled.png|hero.png|school-start-times.jpg|waterwise.png).*)",
+    // Match all routes except API, static files, and Next.js internals
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.svg|.*\\.gif|.*\\.webp).*)",
   ],
 };

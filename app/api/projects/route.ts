@@ -1,123 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-
-import { auth } from "@/lib/auth";
-
-import prisma from "@/lib/prisma";
-
-import { z } from "zod";
-
-import { headers } from "next/headers";
-
 import { MediaType } from "@prisma/client";
-
-// Define schema for each part of the project
-
-const heroImageSchema = z
-
-  .object({
-    url: z.string().url(),
-
-    fileKey: z.string(),
-  })
-
-  .nullable();
-
-// const mediaSchema = z
-
-//   .object({
-
-//     url: z.string(),
-
-//     fileKey: z.string().optional(), // Make fileKey optional
-
-//   })
-
-//   .nullable();
-
-const activitySchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  title_sl: z.string().nullable(),
-  title_hr: z.string().nullable(),
-  description: z.string(),
-  description_sl: z.string().nullable(),
-  description_hr: z.string().nullable(),
-  order: z.number(),
-  teacherIds: z.array(z.string()),
-  imageIds: z.array(z.string()),
-});
-
-const timelinePhaseSchema = z.object({
-  id: z.string(),
-
-  title: z.string(),
-  title_sl: z.string().nullable(),
-  title_hr: z.string().nullable(),
-
-  startDate: z.preprocess(
-    (val) => (val ? new Date(val as string) : null),
-
-    z.date().nullable().optional()
-  ),
-
-  endDate: z.preprocess(
-    (val) => (val ? new Date(val as string) : null),
-
-    z.date().nullable().optional()
-  ),
-
-  completed: z.boolean(),
-
-  order: z.number(),
-
-  activities: z.array(activitySchema).optional(),
-});
-
-const galleryImageSchema = z.object({
-  id: z.string(),
-
-  url: z.string(),
-
-  fileKey: z.string(),
-
-  alt: z.string().nullable(),
-});
-
-const projectSchema = z.object({
-  basicInfo: z.object({
-    name: z.string().min(1, "Name is required"),
-    name_sl: z.string().nullable(),
-    name_hr: z.string().nullable(),
-
-    slug: z.string().min(1, "Slug is required"),
-
-    description: z.string().nullable(),
-    description_sl: z.string().nullable(),
-    description_hr: z.string().nullable(),
-
-    published: z.boolean(),
-
-    featured: z.boolean(),
-
-    heroImage: heroImageSchema,
-  }),
-
-  timeline: z.array(timelinePhaseSchema),
-
-  gallery: z.array(galleryImageSchema),
-
-  teacherIds: z.array(z.string()),
-});
-
-async function checkAdminAccess(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-
-    select: { role: true },
-  });
-
-  return user?.role === "ADMIN";
-}
+import { z } from "zod";
+import prisma from "@/lib/prisma";
+import { 
+  projectCreateSchema
+} from "@/lib/schemas/schema";
+import { 
+  validateAdminAuth, 
+  createDetailedErrorResponse 
+} from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -171,23 +62,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    const isAdmin = await checkAdminAccess(session.user.id);
-
-    if (!isAdmin) {
-      return new NextResponse("Forbidden", { status: 403 });
-    }
+    const { error } = await validateAdminAuth(req.headers);
+    if (error) return error;
 
     const body = await req.json();
-
-    const validatedData = projectSchema.parse(body);
+    const validatedData = projectCreateSchema.parse(body);
 
     // Check if slug is unique
 
@@ -381,32 +260,6 @@ export async function POST(req: NextRequest) {
     }
 
     console.error("[PROJECTS_POST]", error);
-
-    // Provide more detailed error information
-    let errorMessage = "Internal server error";
-
-    if (error instanceof Error) {
-      // Check for specific database errors
-      if (
-        error.message.includes("Transaction already closed") ||
-        error.message.includes("timeout")
-      ) {
-        errorMessage =
-          "The operation took too long. Try reducing the number of images or phases, or create the project with basic info first and add details later.";
-      } else if (error.message.includes("foreign key constraint")) {
-        errorMessage =
-          "Invalid reference: One or more selected items (teacher, image) do not exist";
-      } else if (error.message.includes("unique constraint")) {
-        errorMessage =
-          "A duplicate value was detected. Please check your input.";
-      } else if (error.message.includes("not found")) {
-        errorMessage = error.message;
-      } else {
-        // Include the actual error for debugging in development
-        errorMessage = `Server error: ${error.message}`;
-      }
-    }
-
-    return NextResponse.json({ message: errorMessage }, { status: 500 });
+    return new NextResponse("Failed to create project", { status: 500 });
   }
 }

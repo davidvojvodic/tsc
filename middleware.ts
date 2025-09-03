@@ -13,6 +13,11 @@ const EXCLUDED_PATHS = [
   "/_next",
   "/favicon.ico",
   "/optimized",
+  // Add common static file paths
+  "/images",
+  "/icons",
+  "/fonts",
+  "/public",
 ];
 
 export function middleware(request: NextRequest) {
@@ -93,6 +98,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Match all routes except API, static files, and Next.js internals
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.svg|.*\\.gif|.*\\.webp).*)",
+    // Static files in /public (including /optimized) should be served directly by Next.js
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.svg|.*\\.gif|.*\\.webp|.*\\.ico|.*\\.css|.*\\.js).*)",
   ],
 };

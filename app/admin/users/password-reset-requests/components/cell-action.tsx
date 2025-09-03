@@ -33,6 +33,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleDetailsClose = () => {
     setDetailsOpen(false);
@@ -40,6 +41,14 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
 
   const handleResetPasswordClose = () => {
     setResetPasswordOpen(false);
+  };
+
+  const handleResetPasswordOpen = () => {
+    // Close dropdown first, then open modal after a brief delay to avoid focus conflicts
+    setDropdownOpen(false);
+    setTimeout(() => {
+      setResetPasswordOpen(true);
+    }, 100);
   };
 
   const onCopy = (id: string) => {
@@ -66,6 +75,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
         onClose={handleDetailsClose}
         data={data}
       />
+      
       <ResetPasswordModal
         isOpen={resetPasswordOpen}
         onClose={handleResetPasswordClose}
@@ -73,7 +83,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
         onSuccess={handleSuccess}
       />
       
-      <DropdownMenu>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0" disabled={isRefreshing}>
             <span className="sr-only">Open menu</span>
@@ -96,8 +106,9 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />
+          
           <DropdownMenuItem 
-            onClick={() => setResetPasswordOpen(true)}
+            onClick={handleResetPasswordOpen}
             className="text-blue-600 focus:text-blue-600"
             disabled={isRefreshing}
           >

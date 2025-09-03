@@ -2,14 +2,14 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   Tooltip, 
   TooltipContent, 
   TooltipProvider, 
   TooltipTrigger 
 } from "@/components/ui/tooltip";
-import { Clock, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-import { CellAction } from "./cell-action";
+import { Clock, CheckCircle, XCircle, AlertTriangle, Key, Copy, Eye } from "lucide-react";
 
 export type PasswordResetRequestColumn = {
   id: string;
@@ -64,7 +64,20 @@ const getStatusBadge = (status: string) => {
   );
 };
 
-export const passwordResetRequestColumns: ColumnDef<PasswordResetRequestColumn>[] = [
+// Props interface for column callbacks
+interface PasswordResetRequestColumnsProps {
+  expandedRow: string | null;
+  onToggleExpansion: (rowId: string) => void;
+  onViewDetails: (rowId: string) => void;
+  onCopyId: (id: string) => void;
+}
+
+export const createPasswordResetRequestColumns = ({
+  expandedRow,
+  onToggleExpansion,
+  onViewDetails,
+  onCopyId,
+}: PasswordResetRequestColumnsProps): ColumnDef<PasswordResetRequestColumn>[] => [
   {
     accessorKey: "userEmail",
     header: "User",
@@ -134,6 +147,57 @@ export const passwordResetRequestColumns: ColumnDef<PasswordResetRequestColumn>[
   },
   {
     id: "actions",
-    cell: ({ row }) => <CellAction data={row.original} />,
+    header: "Actions",
+    cell: ({ row }) => {
+      const isExpanded = expandedRow === row.original.id;
+      const canReset = row.original.status === "PENDING" || row.original.status === "APPROVED";
+      
+      return (
+        <div className="flex items-center gap-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onCopyId(row.original.id)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Copy ID</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onViewDetails(row.original.id)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View Details</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <Button
+            variant={isExpanded ? "default" : "outline"}
+            size="sm"
+            onClick={() => onToggleExpansion(row.original.id)}
+            disabled={!canReset}
+            className={isExpanded ? "bg-blue-600 hover:bg-blue-700" : ""}
+          >
+            <Key className="mr-1 h-3 w-3" />
+            {isExpanded ? "Cancel" : "Reset"}
+          </Button>
+        </div>
+      );
+    },
   },
 ];

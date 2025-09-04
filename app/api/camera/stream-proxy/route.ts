@@ -8,11 +8,9 @@ const CAMERA_PORT = parseInt(process.env.CAMERA_PORT || (isDevelopment ? "4560" 
 const CAMERA_USERNAME = process.env.CAMERA_USERNAME || (isDevelopment ? "tsc" : undefined);
 const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD || (isDevelopment ? "tscmb2025" : undefined);
 
-// Connection management
+// Simple rate limiting (removed connection management for serverless)
 let lastRequestTime = 0;
-let activeConnections = 0;
-const MAX_CONNECTIONS = 2;
-const MIN_REQUEST_INTERVAL = 500; // Minimum 500ms between requests
+const MIN_REQUEST_INTERVAL = 100; // Minimum 100ms between requests
 
 // Stream endpoints to try - keep original working order
 const STREAM_ENDPOINTS = [
@@ -38,7 +36,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const endpointIndex = parseInt(searchParams.get("endpoint") || "0");
   const endpoint = STREAM_ENDPOINTS[endpointIndex] || STREAM_ENDPOINTS[0];
 
-  // Rate limiting and connection management
+  // Simple rate limiting
   const now = Date.now();
   if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
     console.log(
@@ -47,18 +45,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return createErrorResponse("Rate limited - too many requests");
   }
 
-  if (activeConnections >= MAX_CONNECTIONS) {
-    console.log(
-      `Connection limit reached: ${activeConnections} active connections`
-    );
-    return createErrorResponse("Connection limit reached");
-  }
-
-  activeConnections++;
   lastRequestTime = now;
-  console.log(
-    `Proxying camera stream: ${endpoint} (connection ${activeConnections}/${MAX_CONNECTIONS})`
-  );
+  console.log(`Proxying camera stream: ${endpoint}`);
 
   try {
     const result = await getAuthenticatedStream(endpoint);
@@ -78,18 +66,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             });
 
             result.stream!.on("end", () => {
-              activeConnections--;
-              controller.close();
+                            controller.close();
             });
 
             result.stream!.on("error", (error: Error) => {
-              activeConnections--;
-              controller.error(error);
+                            controller.error(error);
             });
           },
           cancel() {
-            activeConnections--;
-            result.stream!.destroy();
+                        result.stream!.destroy();
           },
         });
 
@@ -131,8 +116,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           return createErrorResponse(`Data too small for ${endpoint}`);
         }
 
-        activeConnections--;
-        return new NextResponse(result.data, {
+                return new NextResponse(result.data, {
           headers: {
             "Content-Type": contentType,
             "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -147,8 +131,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const fallbackResult = await tryStreamFallbackProxy(endpointIndex, request);
         
         if (fallbackResult.success && fallbackResult.data) {
-          activeConnections--;
-          return new NextResponse(fallbackResult.data, {
+                    return new NextResponse(fallbackResult.data, {
             headers: {
               "Content-Type": fallbackResult.contentType || "image/jpeg",
               "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -164,15 +147,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       console.log(
         `Endpoint ${endpointIndex} failed: ${result.error || "Unknown error"}`
       );
-      activeConnections--;
-      return createErrorResponse(
+            return createErrorResponse(
         `Endpoint ${endpointIndex} failed: ${result.error || "Unknown error"}`
       );
     }
   } catch (error) {
     console.error("Stream proxy error:", error);
-    activeConnections--;
-    return createErrorResponse("Stream error");
+        return createErrorResponse("Stream error");
   }
 
   // Default return for any unexpected cases

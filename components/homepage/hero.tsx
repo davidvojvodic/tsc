@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Container } from "../container";
 import { useLanguage } from "@/store/language-context";
@@ -111,9 +112,11 @@ export function HeroSection() {
               {localContent.description}
             </p>
             <div>
-              <Button size="lg" className="h-12 px-8">
-                {localContent.buttonText}
-              </Button>
+              <Link href={`/${language}/projects/waterwise`}>
+                <Button size="lg" className="h-12 px-8">
+                  {localContent.buttonText}
+                </Button>
+              </Link>
             </div>
           </div>
 

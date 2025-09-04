@@ -9,7 +9,7 @@ export function getBaseURL() {
       return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     case "preview":
       return (
-        process.env.NEXT_PUBLIC_TEST_APP_URL || "https://tsc-testing.vercel.app"
+        process.env.NEXT_PUBLIC_TEST_APP_URL || "https://ka2-waterwise.eu"
       );
     case "production":
       return process.env.NEXT_PUBLIC_PROD_APP_URL;

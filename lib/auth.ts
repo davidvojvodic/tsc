@@ -75,14 +75,14 @@ export const auth = betterAuth({
   cors: {
     origin: [
       "https://ka2.tscmb.si",
-      "https://tsc-testing.vercel.app",
+      "https://ka2-waterwise.eu",
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     ].filter(Boolean),
     credentials: true,
   },
   trustedOrigins: [
     "https://ka2.tscmb.si",
-    "https://tsc-testing.vercel.app",
+    "https://ka2-waterwise.eu",
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   ].filter(Boolean),
 });

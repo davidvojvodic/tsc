@@ -76,7 +76,6 @@ export const auth = betterAuth({
     origin: [
       "https://ka2.tscmb.si",
       "https://ka2-waterwise.eu",
-      "https://www.ka2-waterwise.eu",
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     ].filter(Boolean),
     credentials: true,
@@ -84,7 +83,6 @@ export const auth = betterAuth({
   trustedOrigins: [
     "https://ka2.tscmb.si",
     "https://ka2-waterwise.eu",
-    "https://www.ka2-waterwise.eu",
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   ].filter(Boolean),
 });

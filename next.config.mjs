@@ -83,7 +83,7 @@ const nextConfig = {
                   // Content Security Policy
                   { 
                     key: "Content-Security-Policy", 
-                    value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://res.cloudinary.com https://utfs.io https://*.ufs.sh https://ka2-waterwise.eu https://www.ka2-waterwise.eu; media-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* rtsp://194.249.165.38:*; connect-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://ka2-waterwise.eu https://www.ka2-waterwise.eu https://api.uploadthing.com https://*.ingest.uploadthing.com wss:; frame-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://www.youtube.com https://*.youtube.com https://ka2-waterwise.eu https://www.ka2-waterwise.eu https://vercel.live; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';" 
+                    value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://res.cloudinary.com https://utfs.io https://*.ufs.sh https://ka2-waterwise.eu; media-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* rtsp://194.249.165.38:*; connect-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://ka2-waterwise.eu https://api.uploadthing.com https://*.ingest.uploadthing.com wss:; frame-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://www.youtube.com https://*.youtube.com https://ka2-waterwise.eu https://vercel.live; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';" 
                   },
                   // Additional Security Headers
                   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -95,10 +95,10 @@ const nextConfig = {
                   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
                   // Prevent MIME type sniffing
                   { key: "X-DNS-Prefetch-Control", value: "off" },
-                  // Cross-Origin Policies - relaxed for external resources
-                  { key: "Cross-Origin-Embedder-Policy", value: "unsafe-none" },
+                  // Cross-Origin Policies
+                  { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
                   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-                  { key: "Cross-Origin-Resource-Policy", value: "cross-origin" }
+                  { key: "Cross-Origin-Resource-Policy", value: "same-origin" }
                 ]
             }
         ];

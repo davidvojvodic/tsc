@@ -16,9 +16,6 @@ export default function LiveStreams({
   isLoading = false,
   error,
 }: StreamProps) {
-  const CAMERA_HOST = "194.249.165.38:4560";
-  const CAMERA_USERNAME = "tsc";
-  const CAMERA_PASSWORD = "tscmb2025";
   const [isStreamLoading, setIsStreamLoading] = useState(true);
   const [streamError, setStreamError] = useState(false);
 
@@ -156,18 +153,6 @@ export default function LiveStreams({
               <RefreshCw className="h-3 w-3" />
               Refresh
             </button>
-            {/*<button
-                onClick={() => {
-                  window.open(
-                    `http://${CAMERA_USERNAME}:${CAMERA_PASSWORD}@${CAMERA_HOST}/`,
-                    "_blank"
-                  );
-                }}
-                className="bg-gray-600/80 hover:bg-gray-700/80 text-white text-xs px-3 py-1 rounded-md"
-                title="Open camera interface directly"
-              >
-                Direct Access
-              </button> */}
           </div>
         )}
       </div>

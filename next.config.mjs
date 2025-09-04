@@ -95,10 +95,10 @@ const nextConfig = {
                   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
                   // Prevent MIME type sniffing
                   { key: "X-DNS-Prefetch-Control", value: "off" },
-                  // Cross-Origin Policies
-                  { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
+                  // Cross-Origin Policies - relaxed for external resources
+                  { key: "Cross-Origin-Embedder-Policy", value: "unsafe-none" },
                   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-                  { key: "Cross-Origin-Resource-Policy", value: "same-origin" }
+                  { key: "Cross-Origin-Resource-Policy", value: "cross-origin" }
                 ]
             }
         ];

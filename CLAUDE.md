@@ -179,6 +179,12 @@ Required environment variables:
 - `UPLOADTHING_TOKEN` - File upload service token
 - `BETTER_AUTH_SECRET` - Authentication secret
 
+Optional controller/camera integration variables:
+- `CAMERA_HOST` - Camera IP address (default: 194.249.165.38)
+- `CAMERA_PORT` - Camera port (default: 4560)
+- `CAMERA_USERNAME` - Camera authentication username (default: tsc)
+- `CAMERA_PASSWORD` - Camera authentication password (default: tscmb2025)
+
 ## Security Considerations
 - CSRF protection with SameSite cookies
 - Input validation with Zod schemas

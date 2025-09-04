@@ -56,32 +56,40 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Edge stream error:", error);
 
-    // Try fallback proxy before giving up
-    try {
-      console.log("Direct edge stream access failed, trying fallback proxy");
-      const fallbackResponse = await fetch("https://tsc-testing.vercel.app/api/camera/stream-edge", {
-        headers: {
-          "User-Agent": "Vercel-Edge-Fallback-Proxy",
-        },
-        signal: AbortSignal.timeout(15000), // 15 second timeout
-      });
+    // Check current domain to prevent infinite recursion
+    const host = request.headers.get('host') || '';
+    const isTestingDomain = host.includes('tsc-testing.vercel.app');
 
-      if (fallbackResponse.ok && fallbackResponse.body) {
-        const contentType = fallbackResponse.headers.get("content-type") || "multipart/x-mixed-replace";
-        
-        console.log("Edge stream fallback proxy success");
-        
-        return new Response(fallbackResponse.body, {
+    // Try fallback proxy before giving up (but not if we're already on testing domain)
+    if (!isTestingDomain) {
+      try {
+        console.log("Direct edge stream access failed, trying fallback proxy");
+        const fallbackResponse = await fetch("https://tsc-testing.vercel.app/api/camera/stream-edge", {
           headers: {
-            "Content-Type": contentType,
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Access-Control-Allow-Origin": "*",
-            "Transfer-Encoding": "chunked",
+            "User-Agent": "Vercel-Edge-Fallback-Proxy",
           },
+          signal: AbortSignal.timeout(15000), // 15 second timeout
         });
+
+        if (fallbackResponse.ok && fallbackResponse.body) {
+          const contentType = fallbackResponse.headers.get("content-type") || "multipart/x-mixed-replace";
+          
+          console.log("Edge stream fallback proxy success");
+          
+          return new Response(fallbackResponse.body, {
+            headers: {
+              "Content-Type": contentType,
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              "Access-Control-Allow-Origin": "*",
+              "Transfer-Encoding": "chunked",
+            },
+          });
+        }
+      } catch (fallbackError) {
+        console.error("Edge stream fallback proxy failed:", fallbackError);
       }
-    } catch (fallbackError) {
-      console.error("Edge stream fallback proxy failed:", fallbackError);
+    } else {
+      console.log("Skipping fallback proxy - already on testing domain to prevent infinite recursion");
     }
 
     // Return error as JSON if both direct and fallback failed

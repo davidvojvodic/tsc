@@ -129,23 +129,31 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         });
       }
     } else {
-      // Try fallback proxy before giving up
-      console.log("Direct stream access failed, trying fallback proxy");
-      try {
-        const fallbackResult = await tryStreamFallbackProxy(endpointIndex);
-        
-        if (fallbackResult.success && fallbackResult.data) {
-          activeConnections--;
-          return new NextResponse(fallbackResult.data, {
-            headers: {
-              "Content-Type": fallbackResult.contentType || "image/jpeg",
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-              "Access-Control-Allow-Origin": "*",
-            },
-          });
+      // Check current domain to prevent infinite recursion
+      const host = request.headers.get('host') || '';
+      const isTestingDomain = host.includes('tsc-testing.vercel.app');
+      
+      // Try fallback proxy before giving up (but not if we're already on testing domain)
+      if (!isTestingDomain) {
+        console.log("Direct stream access failed, trying fallback proxy");
+        try {
+          const fallbackResult = await tryStreamFallbackProxy(endpointIndex);
+          
+          if (fallbackResult.success && fallbackResult.data) {
+            activeConnections--;
+            return new NextResponse(fallbackResult.data, {
+              headers: {
+                "Content-Type": fallbackResult.contentType || "image/jpeg",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Access-Control-Allow-Origin": "*",
+              },
+            });
+          }
+        } catch (fallbackError) {
+          console.error("Fallback proxy failed:", fallbackError);
         }
-      } catch (fallbackError) {
-        console.error("Fallback proxy failed:", fallbackError);
+      } else {
+        console.log("Skipping fallback proxy - already on testing domain to prevent infinite recursion");
       }
 
       // Return error response if both direct and fallback failed

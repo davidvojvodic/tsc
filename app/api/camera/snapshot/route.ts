@@ -28,18 +28,26 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // If direct access fails, try fallback proxy through working domain
-    console.log("Direct camera access failed, trying fallback proxy");
-    const fallbackResult = await tryFallbackProxy();
+    // Check current domain to prevent infinite recursion
+    const host = request.headers.get('host') || '';
+    const isTestingDomain = host.includes('tsc-testing.vercel.app');
     
-    if (fallbackResult.success && fallbackResult.data) {
-      return new NextResponse(fallbackResult.data, {
-        headers: {
-          "Content-Type": fallbackResult.contentType || "image/jpeg",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
+    // If direct access fails, try fallback proxy through working domain (but not if we're already on testing domain)
+    if (!isTestingDomain) {
+      console.log("Direct camera access failed, trying fallback proxy");
+      const fallbackResult = await tryFallbackProxy();
+      
+      if (fallbackResult.success && fallbackResult.data) {
+        return new NextResponse(fallbackResult.data, {
+          headers: {
+            "Content-Type": fallbackResult.contentType || "image/jpeg",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      }
+    } else {
+      console.log("Skipping fallback proxy - already on testing domain to prevent infinite recursion");
     }
     
     // Return error image if failed

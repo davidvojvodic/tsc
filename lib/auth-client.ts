@@ -4,6 +4,12 @@ import { adminClient } from "better-auth/client/plugins";
 const environment = process.env.NEXT_PUBLIC_VERCEL_ENV || "development";
 
 export function getBaseURL() {
+  // Use current origin if in browser to avoid cross-origin requests
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  
+  // Fallback to environment variables for server-side
   switch (environment) {
     case "development":
       return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -12,7 +18,7 @@ export function getBaseURL() {
         process.env.NEXT_PUBLIC_TEST_APP_URL || "https://ka2-waterwise.eu"
       );
     case "production":
-      return process.env.NEXT_PUBLIC_PROD_APP_URL;
+      return process.env.NEXT_PUBLIC_PROD_APP_URL || "https://ka2-waterwise.eu";
     default:
       return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   }

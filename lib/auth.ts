@@ -73,13 +73,22 @@ export const auth = betterAuth({
     }
   },
   cors: {
-    origin: [
-      "https://ka2.tscmb.si",
-      "https://ka2-waterwise.eu",
-      "https://www.ka2-waterwise.eu",
-      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-    ].filter(Boolean),
+    origin: (origin: string | undefined) => {
+      const allowedOrigins = [
+        "https://ka2.tscmb.si",
+        "https://ka2-waterwise.eu", 
+        "https://www.ka2-waterwise.eu",
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+      ].filter(Boolean);
+      
+      if (!origin) return true; // Allow same-origin requests
+      return allowedOrigins.includes(origin);
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    preflightContinue: false,
+    optionsSuccessStatus: 200
   },
   trustedOrigins: [
     "https://ka2.tscmb.si",

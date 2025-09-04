@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { checkCameraSecurity } from "@/lib/camera-security";
 
 // Use Edge Runtime for streaming support
 export const runtime = "edge";
@@ -12,6 +13,20 @@ const STREAM_ENDPOINT = "/cgi-bin/mjpg/video.cgi?channel=1&subtype=1";
 
 export async function GET(request: NextRequest) {
   try {
+    // Security check (rate limiting + logging, auth controlled by CAMERA_REQUIRE_AUTH env var)
+    const securityCheck = await checkCameraSecurity(request, "stream-edge");
+    if (!securityCheck.allowed) {
+      return new Response(
+        JSON.stringify({ error: securityCheck.error || "Access denied" }),
+        {
+          status: securityCheck.status || 503,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
     // Validate camera configuration
     if (!CAMERA_HOST || !CAMERA_USERNAME || !CAMERA_PASSWORD) {
       console.error("Missing camera configuration:", {

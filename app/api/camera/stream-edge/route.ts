@@ -3,14 +3,35 @@ import { NextRequest } from "next/server";
 // Use Edge Runtime for streaming support
 export const runtime = "edge";
 
-const CAMERA_HOST = "194.249.165.38";
-const CAMERA_PORT = 4560;
-const CAMERA_USERNAME = "tsc";
-const CAMERA_PASSWORD = "tscmb2025";
+const isDevelopment = process.env.NODE_ENV === 'development';
+const CAMERA_HOST = process.env.CAMERA_HOST || (isDevelopment ? "194.249.165.38" : undefined);
+const CAMERA_PORT = parseInt(process.env.CAMERA_PORT || (isDevelopment ? "4560" : "")) || 4560;
+const CAMERA_USERNAME = process.env.CAMERA_USERNAME || (isDevelopment ? "tsc" : undefined);
+const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD || (isDevelopment ? "tscmb2025" : undefined);
 const STREAM_ENDPOINT = "/cgi-bin/mjpg/video.cgi?channel=1&subtype=1";
 
 export async function GET(request: NextRequest) {
   try {
+    // Validate camera configuration
+    if (!CAMERA_HOST || !CAMERA_USERNAME || !CAMERA_PASSWORD) {
+      console.error("Missing camera configuration:", {
+        hasHost: !!CAMERA_HOST,
+        hasUsername: !!CAMERA_USERNAME,
+        hasPassword: !!CAMERA_PASSWORD,
+        nodeEnv: process.env.NODE_ENV
+      });
+      
+      return new Response(
+        JSON.stringify({ error: "Camera configuration missing" }),
+        {
+          status: 503,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
     // Create basic auth header
     const auth = btoa(`${CAMERA_USERNAME}:${CAMERA_PASSWORD}`);
 

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import http from "http";
 import crypto from "crypto";
 
-const CAMERA_HOST = "194.249.165.38";
-const CAMERA_PORT = 4560;
-const CAMERA_USERNAME = "tsc";
-const CAMERA_PASSWORD = "tscmb2025";
+const isDevelopment = process.env.NODE_ENV === 'development';
+const CAMERA_HOST = process.env.CAMERA_HOST || (isDevelopment ? "194.249.165.38" : undefined);
+const CAMERA_PORT = parseInt(process.env.CAMERA_PORT || (isDevelopment ? "4560" : "")) || 4560;
+const CAMERA_USERNAME = process.env.CAMERA_USERNAME || (isDevelopment ? "tsc" : undefined);
+const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD || (isDevelopment ? "tscmb2025" : undefined);
 
 // Connection management
 let lastRequestTime = 0;
@@ -22,6 +23,17 @@ const STREAM_ENDPOINTS = [
 ];
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  // Validate camera configuration
+  if (!CAMERA_HOST || !CAMERA_USERNAME || !CAMERA_PASSWORD) {
+    console.error("Missing camera configuration:", {
+      hasHost: !!CAMERA_HOST,
+      hasUsername: !!CAMERA_USERNAME,
+      hasPassword: !!CAMERA_PASSWORD,
+      nodeEnv: process.env.NODE_ENV
+    });
+    return createErrorResponse("Camera configuration missing");
+  }
+
   const { searchParams } = new URL(request.url);
   const endpointIndex = parseInt(searchParams.get("endpoint") || "0");
   const endpoint = STREAM_ENDPOINTS[endpointIndex] || STREAM_ENDPOINTS[0];

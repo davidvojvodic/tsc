@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import http from "http";
 import crypto from "crypto";
 
-const CAMERA_HOST = "194.249.165.38";
-const CAMERA_PORT = 4560;
-const CAMERA_USERNAME = "tsc";
-const CAMERA_PASSWORD = "tscmb2025";
+const isDevelopment = process.env.NODE_ENV === 'development';
+const CAMERA_HOST = process.env.CAMERA_HOST || (isDevelopment ? "194.249.165.38" : undefined);
+const CAMERA_PORT = parseInt(process.env.CAMERA_PORT || (isDevelopment ? "4560" : "")) || 4560;
+const CAMERA_USERNAME = process.env.CAMERA_USERNAME || (isDevelopment ? "tsc" : undefined);
+const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD || (isDevelopment ? "tscmb2025" : undefined);
 
 // Force this route to be dynamic
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,29 @@ const SNAPSHOT_ENDPOINT = "/cgi-bin/snapshot.cgi?channel=1";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
+    // Validate camera configuration
+    if (!CAMERA_HOST || !CAMERA_USERNAME || !CAMERA_PASSWORD) {
+      console.error("Missing camera configuration:", {
+        hasHost: !!CAMERA_HOST,
+        hasUsername: !!CAMERA_USERNAME,
+        hasPassword: !!CAMERA_PASSWORD,
+        nodeEnv: process.env.NODE_ENV
+      });
+      
+      const errorPixel = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+        "base64"
+      );
+      
+      return new NextResponse(errorPixel, {
+        status: 503,
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "no-cache",
+        },
+      });
+    }
+
     // Try to get a single snapshot directly first
     const result = await getAuthenticatedSnapshot();
     

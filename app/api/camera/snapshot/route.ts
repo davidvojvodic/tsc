@@ -30,7 +30,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // If direct access fails, try fallback proxy through working domain
     console.log("Direct camera access failed, trying fallback proxy");
-    const fallbackResult = await tryFallbackProxy();
+    const fallbackResult = await tryFallbackProxy(request);
     
     if (fallbackResult.success && fallbackResult.data) {
       return new NextResponse(fallbackResult.data, {
@@ -229,13 +229,23 @@ function generateDigestAuth(
 }
 
 // Fallback proxy function to use working domain when direct access fails
-async function tryFallbackProxy(): Promise<{
+async function tryFallbackProxy(request: NextRequest): Promise<{
   success: boolean;
   data?: Buffer;
   contentType?: string;
   error?: string;
 }> {
   try {
+    // Check if we're already on tsc-testing.vercel.app to prevent infinite recursion
+    const currentHost = request.headers.get('host') || '';
+    if (currentHost.includes('tsc-testing.vercel.app')) {
+      console.log("Already on tsc-testing.vercel.app, skipping fallback proxy to prevent infinite recursion");
+      return {
+        success: false,
+        error: "Cannot use fallback proxy on the proxy domain itself"
+      };
+    }
+    
     console.log("Attempting fallback proxy through tsc-testing.vercel.app");
     
     // Use the working domain as a proxy

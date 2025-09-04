@@ -58,6 +58,13 @@ export async function GET(request: NextRequest) {
 
     // Try fallback proxy before giving up
     try {
+      // Check if we're already on tsc-testing.vercel.app to prevent infinite recursion
+      const currentHost = request.headers.get('host') || '';
+      if (currentHost.includes('tsc-testing.vercel.app')) {
+        console.log("Already on tsc-testing.vercel.app, skipping fallback proxy to prevent infinite recursion");
+        throw new Error("Cannot use fallback proxy on the proxy domain itself");
+      }
+      
       console.log("Direct edge stream access failed, trying fallback proxy");
       const fallbackResponse = await fetch("https://tsc-testing.vercel.app/api/camera/stream-edge", {
         headers: {

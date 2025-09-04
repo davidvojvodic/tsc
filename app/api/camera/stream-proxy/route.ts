@@ -132,7 +132,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       // Try fallback proxy before giving up
       console.log("Direct stream access failed, trying fallback proxy");
       try {
-        const fallbackResult = await tryStreamFallbackProxy(endpointIndex);
+        const fallbackResult = await tryStreamFallbackProxy(endpointIndex, request);
         
         if (fallbackResult.success && fallbackResult.data) {
           activeConnections--;
@@ -549,13 +549,23 @@ function createErrorResponse(message: string): NextResponse {
 }
 
 // Fallback proxy function for stream endpoints
-async function tryStreamFallbackProxy(endpointIndex: number): Promise<{
+async function tryStreamFallbackProxy(endpointIndex: number, request: NextRequest): Promise<{
   success: boolean;
   data?: Buffer;
   contentType?: string;
   error?: string;
 }> {
   try {
+    // Check if we're already on tsc-testing.vercel.app to prevent infinite recursion
+    const currentHost = request.headers.get('host') || '';
+    if (currentHost.includes('tsc-testing.vercel.app')) {
+      console.log("Already on tsc-testing.vercel.app, skipping fallback proxy to prevent infinite recursion");
+      return {
+        success: false,
+        error: "Cannot use fallback proxy on the proxy domain itself"
+      };
+    }
+    
     console.log(`Attempting stream fallback proxy through tsc-testing.vercel.app (endpoint ${endpointIndex})`);
     
     // Use the working domain as a proxy

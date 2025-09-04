@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import http from "http";
 import crypto from "crypto";
 
@@ -13,15 +13,29 @@ export const dynamic = 'force-dynamic';
 // Snapshot endpoint - usually more reliable than streams
 const SNAPSHOT_ENDPOINT = "/cgi-bin/snapshot.cgi?channel=1";
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    // Try to get a single snapshot
+    // Try to get a single snapshot directly first
     const result = await getAuthenticatedSnapshot();
     
     if (result.success && result.data) {
       return new NextResponse(result.data, {
         headers: {
           "Content-Type": result.contentType || "image/jpeg",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    // If direct access fails, try fallback proxy through working domain
+    console.log("Direct camera access failed, trying fallback proxy");
+    const fallbackResult = await tryFallbackProxy();
+    
+    if (fallbackResult.success && fallbackResult.data) {
+      return new NextResponse(fallbackResult.data, {
+        headers: {
+          "Content-Type": fallbackResult.contentType || "image/jpeg",
           "Cache-Control": "no-cache, no-store, must-revalidate",
           "Access-Control-Allow-Origin": "*",
         },
@@ -212,4 +226,49 @@ function generateDigestAuth(
   }
 
   return authHeader;
+}
+
+// Fallback proxy function to use working domain when direct access fails
+async function tryFallbackProxy(): Promise<{
+  success: boolean;
+  data?: Buffer;
+  contentType?: string;
+  error?: string;
+}> {
+  try {
+    console.log("Attempting fallback proxy through tsc-testing.vercel.app");
+    
+    // Use the working domain as a proxy
+    const response = await fetch("https://tsc-testing.vercel.app/api/camera/snapshot", {
+      headers: {
+        "User-Agent": "Vercel-Fallback-Proxy",
+      },
+      // Add a timeout to prevent hanging
+      signal: AbortSignal.timeout(10000), // 10 second timeout
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `Fallback proxy failed: ${response.status} ${response.statusText}`,
+      };
+    }
+
+    const data = Buffer.from(await response.arrayBuffer());
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    
+    console.log(`Fallback proxy success: received ${data.length} bytes`);
+    
+    return {
+      success: true,
+      data,
+      contentType,
+    };
+  } catch (error) {
+    console.error("Fallback proxy error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown fallback error",
+    };
+  }
 }

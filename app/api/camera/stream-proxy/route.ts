@@ -129,7 +129,26 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         });
       }
     } else {
-      // Return error response instead of redirecting
+      // Try fallback proxy before giving up
+      console.log("Direct stream access failed, trying fallback proxy");
+      try {
+        const fallbackResult = await tryStreamFallbackProxy(endpointIndex);
+        
+        if (fallbackResult.success && fallbackResult.data) {
+          activeConnections--;
+          return new NextResponse(fallbackResult.data, {
+            headers: {
+              "Content-Type": fallbackResult.contentType || "image/jpeg",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              "Access-Control-Allow-Origin": "*",
+            },
+          });
+        }
+      } catch (fallbackError) {
+        console.error("Fallback proxy failed:", fallbackError);
+      }
+
+      // Return error response if both direct and fallback failed
       console.log(
         `Endpoint ${endpointIndex} failed: ${result.error || "Unknown error"}`
       );
@@ -527,4 +546,49 @@ function createErrorResponse(message: string): NextResponse {
       "Cache-Control": "no-cache",
     },
   });
+}
+
+// Fallback proxy function for stream endpoints
+async function tryStreamFallbackProxy(endpointIndex: number): Promise<{
+  success: boolean;
+  data?: Buffer;
+  contentType?: string;
+  error?: string;
+}> {
+  try {
+    console.log(`Attempting stream fallback proxy through tsc-testing.vercel.app (endpoint ${endpointIndex})`);
+    
+    // Use the working domain as a proxy
+    const response = await fetch(`https://tsc-testing.vercel.app/api/camera/stream-proxy?endpoint=${endpointIndex}`, {
+      headers: {
+        "User-Agent": "Vercel-Stream-Fallback-Proxy",
+      },
+      // Add a timeout to prevent hanging
+      signal: AbortSignal.timeout(15000), // 15 second timeout for streams
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `Stream fallback proxy failed: ${response.status} ${response.statusText}`,
+      };
+    }
+
+    const data = Buffer.from(await response.arrayBuffer());
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    
+    console.log(`Stream fallback proxy success: received ${data.length} bytes`);
+    
+    return {
+      success: true,
+      data,
+      contentType,
+    };
+  } catch (error) {
+    console.error("Stream fallback proxy error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown stream fallback error",
+    };
+  }
 }

@@ -56,7 +56,35 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Edge stream error:", error);
 
-    // Return error as JSON
+    // Try fallback proxy before giving up
+    try {
+      console.log("Direct edge stream access failed, trying fallback proxy");
+      const fallbackResponse = await fetch("https://tsc-testing.vercel.app/api/camera/stream-edge", {
+        headers: {
+          "User-Agent": "Vercel-Edge-Fallback-Proxy",
+        },
+        signal: AbortSignal.timeout(15000), // 15 second timeout
+      });
+
+      if (fallbackResponse.ok && fallbackResponse.body) {
+        const contentType = fallbackResponse.headers.get("content-type") || "multipart/x-mixed-replace";
+        
+        console.log("Edge stream fallback proxy success");
+        
+        return new Response(fallbackResponse.body, {
+          headers: {
+            "Content-Type": contentType,
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Access-Control-Allow-Origin": "*",
+            "Transfer-Encoding": "chunked",
+          },
+        });
+      }
+    } catch (fallbackError) {
+      console.error("Edge stream fallback proxy failed:", fallbackError);
+    }
+
+    // Return error as JSON if both direct and fallback failed
     return new Response(
       JSON.stringify({ error: "Failed to connect to camera stream" }),
       {

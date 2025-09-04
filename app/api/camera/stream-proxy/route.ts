@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import http from "http";
 import crypto from "crypto";
+import { checkCameraSecurity } from "@/lib/simple-camera-security";
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const CAMERA_HOST = process.env.CAMERA_HOST || (isDevelopment ? "194.249.165.38" : undefined);
@@ -21,6 +22,12 @@ const STREAM_ENDPOINTS = [
 ];
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  // Basic security check (rate limiting + logging)
+  const securityCheck = checkCameraSecurity(request, "stream-proxy");
+  if (!securityCheck.allowed) {
+    return createErrorResponse(securityCheck.message || "Access denied", securityCheck.status || 503);
+  }
+
   // Validate camera configuration
   if (!CAMERA_HOST || !CAMERA_USERNAME || !CAMERA_PASSWORD) {
     console.error("Missing camera configuration:", {
@@ -526,14 +533,14 @@ function generateDigestAuth(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function createErrorResponse(message: string): NextResponse {
+function createErrorResponse(message: string, status: number = 503): NextResponse {
   const errorPixel = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
     "base64"
   );
 
   return new NextResponse(errorPixel, {
-    status: 503,
+    status: status,
     headers: {
       "Content-Type": "image/png",
       "Cache-Control": "no-cache",

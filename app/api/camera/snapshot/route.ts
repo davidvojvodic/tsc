@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import http from "http";
 import crypto from "crypto";
+import { checkCameraSecurity } from "@/lib/simple-camera-security";
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const CAMERA_HOST = process.env.CAMERA_HOST || (isDevelopment ? "194.249.165.38" : undefined);
@@ -16,6 +17,23 @@ const SNAPSHOT_ENDPOINT = "/cgi-bin/snapshot.cgi?channel=1";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
+    // Basic security check (rate limiting + logging)
+    const securityCheck = checkCameraSecurity(request, "snapshot");
+    if (!securityCheck.allowed) {
+      const errorPixel = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+        "base64"
+      );
+      
+      return new NextResponse(errorPixel, {
+        status: securityCheck.status || 503,
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "no-cache",
+        },
+      });
+    }
+
     // Validate camera configuration
     if (!CAMERA_HOST || !CAMERA_USERNAME || !CAMERA_PASSWORD) {
       console.error("Missing camera configuration:", {

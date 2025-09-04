@@ -3,13 +3,26 @@ import { NextRequest } from "next/server";
 // Use Edge Runtime for streaming support
 export const runtime = "edge";
 
-const CAMERA_HOST = "194.249.165.38";
-const CAMERA_PORT = 4560;
-const CAMERA_USERNAME = "tsc";
-const CAMERA_PASSWORD = "tscmb2025";
+// Camera configuration from environment variables
+// In development, use fallbacks if not configured (for testing)
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+const CAMERA_HOST = process.env.CAMERA_HOST || (isDevelopment ? "194.249.165.38" : undefined);
+const CAMERA_PORT = process.env.CAMERA_PORT || (isDevelopment ? "4560" : undefined);
+const CAMERA_USERNAME = process.env.CAMERA_USERNAME || (isDevelopment ? "tsc" : undefined);
+const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD || (isDevelopment ? "tscmb2025" : undefined);
 const STREAM_ENDPOINT = "/cgi-bin/mjpg/video.cgi?channel=1&subtype=1";
 
 export async function GET(request: NextRequest) {
+  // Check if camera is configured
+  if (!CAMERA_HOST || !CAMERA_PORT || !CAMERA_USERNAME || !CAMERA_PASSWORD) {
+    return new Response("Camera not configured", { status: 503 });
+  }
+
+  // Note: Edge runtime doesn't support Better Auth session checks directly
+  // You should implement a JWT token check here for production
+  // For now, this endpoint should be protected by middleware or disabled
+
   try {
     // Create basic auth header
     const auth = btoa(`${CAMERA_USERNAME}:${CAMERA_PASSWORD}`);

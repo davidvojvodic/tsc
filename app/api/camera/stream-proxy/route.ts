@@ -2,10 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import http from "http";
 import crypto from "crypto";
 
-const CAMERA_HOST = "194.249.165.38";
-const CAMERA_PORT = 4560;
-const CAMERA_USERNAME = "tsc";
-const CAMERA_PASSWORD = "tscmb2025";
+// Camera configuration from environment variables
+// In development, use fallbacks if not configured (for testing)
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+const CAMERA_HOST = process.env.CAMERA_HOST || (isDevelopment ? "194.249.165.38" : undefined);
+const CAMERA_PORT = process.env.CAMERA_PORT ? parseInt(process.env.CAMERA_PORT) : (isDevelopment ? 4560 : undefined);
+const CAMERA_USERNAME = process.env.CAMERA_USERNAME || (isDevelopment ? "tsc" : undefined);
+const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD || (isDevelopment ? "tscmb2025" : undefined);
+
+// Validate camera configuration
+if (!CAMERA_HOST || !CAMERA_PORT || !CAMERA_USERNAME || !CAMERA_PASSWORD) {
+  console.error("Camera configuration missing from environment variables");
+}
 
 // Connection management
 let lastRequestTime = 0;
@@ -22,6 +31,14 @@ const STREAM_ENDPOINTS = [
 ];
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  // Check if camera is configured
+  if (!CAMERA_HOST || !CAMERA_PORT || !CAMERA_USERNAME || !CAMERA_PASSWORD) {
+    return new NextResponse("Camera not configured", { status: 503 });
+  }
+
+  // PUBLIC ACCESS - Camera stream is available to all visitors
+  // No authentication required
+
   const { searchParams } = new URL(request.url);
   const endpointIndex = parseInt(searchParams.get("endpoint") || "0");
   const endpoint = STREAM_ENDPOINTS[endpointIndex] || STREAM_ENDPOINTS[0];

@@ -3,7 +3,6 @@ import { QuizForm } from "@/components/forms/quiz-form";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { checkAdminAccess } from "@/lib/utils";
 
 export default async function QuizPage({
   params,
@@ -18,8 +17,13 @@ export default async function QuizPage({
     redirect("/login");
   }
 
-  const isAuthorized = await checkAdminAccess(session.user.id);
-  if (!isAuthorized) {
+  // Check if user has quiz access (admin or teacher)
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  });
+
+  if (!user || (user.role !== "ADMIN" && user.role !== "TEACHER")) {
     redirect("/");
   }
 

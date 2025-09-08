@@ -12,9 +12,10 @@ import { columns, QuizColumn } from "./columns";
 
 interface QuizClientProps {
   data: QuizColumn[];
+  canCreateQuiz?: boolean;
 }
 
-export const QuizClient: React.FC<QuizClientProps> = ({ data }) => {
+export const QuizClient: React.FC<QuizClientProps> = ({ data, canCreateQuiz = true }) => {
   const router = useRouter();
 
   return (
@@ -24,9 +25,11 @@ export const QuizClient: React.FC<QuizClientProps> = ({ data }) => {
           title={`Quizzes (${data.length})`}
           description="Manage your quizzes and assessments"
         />
-        <Button onClick={() => router.push(`/admin/quizzes/new`)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Quiz
-        </Button>
+        {canCreateQuiz && (
+          <Button onClick={() => router.push(`/admin/quizzes/new`)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Quiz
+          </Button>
+        )}
       </div>
       <Separator />
       <DataTable searchKey="title" columns={columns} data={data} />

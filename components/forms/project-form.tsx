@@ -71,6 +71,12 @@ const ProjectFormComponent = ({
     setGallery,
     setTeachers,
     setIsLoading,
+    setOriginalData,
+    hasBasicInfoChanged,
+    hasGalleryChanged,
+    hasHeroImageChanged,
+    hasTeachersChanged,
+    hasTimelineChanged,
     reset,
   } = useProjectForm();
 
@@ -147,10 +153,35 @@ const ProjectFormComponent = ({
       setGallery(transformedGallery);
 
       setTeachers(initialData.teachers.map((t) => t.id));
+
+      // Store original data for change detection
+      setOriginalData({
+        basicInfo: {
+          name: initialData.name,
+          name_sl: initialData.name_sl || null,
+          name_hr: initialData.name_hr || null,
+          slug: initialData.slug,
+          description: initialData.description || "",
+          description_sl: initialData.description_sl || null,
+          description_hr: initialData.description_hr || null,
+          published: initialData.published,
+          featured: initialData.featured,
+          heroImage: initialData.heroImage
+            ? {
+                url: initialData.heroImage.url,
+                fileKey: initialData.heroImage.id,
+                id: initialData.heroImage.id,
+              }
+            : null,
+        },
+        gallery: transformedGallery,
+        teachers: initialData.teachers.map((t) => t.id),
+        timeline: transformedTimeline,
+      });
     }
 
     return () => reset();
-  }, [initialData, reset, setBasicInfo, setTimeline, setGallery, setTeachers]);
+  }, [initialData, reset, setBasicInfo, setTimeline, setGallery, setTeachers, setOriginalData]);
 
   const isStepValid = (step: number) => {
     switch (step) {
@@ -228,43 +259,58 @@ const ProjectFormComponent = ({
 
   const handleChunkedUpdate = async () => {
     const projectId = initialData!.id;
+    const updatedSections: string[] = [];
 
-    // Step 1: Update basic info and hero image
-    const basicInfoResponse = await fetch(
-      `/api/projects/${projectId}/basic-info`,
-      {
+    // Check what changed and only update those sections
+    const basicChanged = hasBasicInfoChanged();
+    const heroChanged = hasHeroImageChanged();
+    const galleryChanged = hasGalleryChanged();
+    const teachersChanged = hasTeachersChanged();
+    const timelineChanged = hasTimelineChanged();
+
+    // Step 1: Update basic info only if basic fields or hero image changed
+    if (basicChanged || heroChanged) {
+      const basicInfoResponse = await fetch(
+        `/api/projects/${projectId}/basic-info`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(basicInfo),
+        }
+      );
+
+      if (!basicInfoResponse.ok) {
+        const error = await parseError(basicInfoResponse);
+        throw new Error(error);
+      }
+      updatedSections.push("basic info");
+    }
+
+    // Step 2: Update gallery only if gallery changed
+    if (galleryChanged) {
+      const galleryResponse = await fetch(`/api/projects/${projectId}/gallery`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(basicInfo),
+        body: JSON.stringify({ gallery: gallery.map(({ ...rest }) => rest) }),
+      });
+
+      if (!galleryResponse.ok) {
+        const error = await parseError(galleryResponse);
+        throw new Error(error);
       }
-    );
-
-    if (!basicInfoResponse.ok) {
-      const error = await parseError(basicInfoResponse);
-      throw new Error(error);
+      updatedSections.push("gallery");
     }
 
-    // Step 2: Update gallery
-    const galleryResponse = await fetch(`/api/projects/${projectId}/gallery`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ gallery: gallery.map(({ ...rest }) => rest) }),
-    });
-
-    if (!galleryResponse.ok) {
-      const error = await parseError(galleryResponse);
-      throw new Error(error);
-    }
-
-    // Step 3: Update teachers
-    const teachersResponse = await fetch(
-      `/api/projects/${projectId}/teachers`,
-      {
-        method: "PATCH",
+    // Step 3: Update teachers only if teachers changed
+    if (teachersChanged) {
+      const teachersResponse = await fetch(
+        `/api/projects/${projectId}/teachers`,
+        {
+          method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
@@ -272,13 +318,15 @@ const ProjectFormComponent = ({
       }
     );
 
-    if (!teachersResponse.ok) {
-      const error = await parseError(teachersResponse);
-      throw new Error(error);
+      if (!teachersResponse.ok) {
+        const error = await parseError(teachersResponse);
+        throw new Error(error);
+      }
+      updatedSections.push("teachers");
     }
 
-    // Step 4: Update timeline (this is the most complex part)
-    if (timeline.length > 0) {
+    // Step 4: Update timeline only if timeline changed
+    if (timelineChanged && timeline.length > 0) {
       const timelineResponse = await fetch(
         `/api/projects/${projectId}/timeline`,
         {
@@ -294,6 +342,18 @@ const ProjectFormComponent = ({
         const error = await parseError(timelineResponse);
         throw new Error(error);
       }
+      updatedSections.push("timeline");
+    }
+
+    // Show what was actually updated
+    console.log(`[PROJECT_UPDATE] Updated sections: ${updatedSections.join(", ")}`);
+    
+    if (updatedSections.length === 1 && updatedSections[0] === "basic info") {
+      toast.success("Project basic information updated successfully");
+    } else if (updatedSections.length > 0) {
+      toast.success(`Project updated successfully (${updatedSections.join(", ")})`);
+    } else {
+      toast.success("No changes detected - project is up to date");
     }
   };
 
@@ -494,7 +554,24 @@ const ProjectFormComponent = ({
                   {isLoading && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {initialData ? "Save Changes" : "Create Project"}
+                  {initialData ? (
+                    <>
+                      Save Changes
+                      {initialData && (
+                        <span className="ml-2 text-xs opacity-70">
+                          ({[
+                            hasBasicInfoChanged() && "basic info",
+                            hasGalleryChanged() && "gallery",
+                            hasHeroImageChanged() && "hero",
+                            hasTeachersChanged() && "teachers", 
+                            hasTimelineChanged() && "timeline"
+                          ].filter(Boolean).join(", ") || "no changes"})
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    "Create Project"
+                  )}
                 </Button>
               )}
             </div>

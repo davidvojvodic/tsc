@@ -18,7 +18,7 @@ import {
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 
-async function getStats() {
+async function getStats(teacherId?: string) {
   const [
     totalUsers,
     totalTeachers,
@@ -33,12 +33,17 @@ async function getStats() {
     prisma.teacher.count(),
     prisma.post.count(),
     prisma.page.count(),
-    prisma.quiz.count(),
+    teacherId 
+      ? prisma.quiz.count({ where: { teacherId } })
+      : prisma.quiz.count(),
     prisma.post.count({ where: { published: true } }),
     // Get recent quiz submissions
     prisma.quizSubmission.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
+      where: teacherId ? {
+        quiz: { teacherId }
+      } : undefined,
       include: {
         user: {
           select: {
@@ -56,6 +61,9 @@ async function getStats() {
     // Get quiz statistics
     prisma.quizSubmission.groupBy({
       by: ["quizId"],
+      where: teacherId ? {
+        quiz: { teacherId }
+      } : undefined,
       _avg: {
         score: true,
       },
@@ -108,54 +116,68 @@ async function getUserWithRole() {
 }
 
 export default async function AdminDashboard() {
-  const stats = await getStats();
   const user = await getUserWithRole();
   
+  if (!user) {
+    return <div>Unauthorized</div>;
+  }
 
-  const cards = [
-    {
-      label: "Total Users",
-      number: stats.totalUsers,
-      icon: Users,
-      color: "text-violet-500",
-    },
-    {
-      label: "Teachers",
-      number: stats.totalTeachers,
-      icon: GraduationCap,
-      color: "text-yellow-500",
-    },
-    {
-      label: "Total Posts",
-      number: stats.totalPosts,
-      icon: FileText,
-      color: "text-pink-700",
-    },
-    {
-      label: "Published Posts",
-      number: stats.publishedPosts,
-      icon: Newspaper,
-      color: "text-emerald-500",
-    },
-    {
-      label: "Pages",
-      number: stats.totalPages,
-      icon: BookOpen,
-      color: "text-orange-500",
-    },
-    {
-      label: "Quizzes",
-      number: stats.totalQuizzes,
-      icon: BrainCircuit,
-      color: "text-purple-500",
-    },
-  ];
+  // Teachers should see all quizzes, not filtered by teacherId
+  const stats = await getStats();
+
+  const cards = [];
+  
+  if (user.role === "ADMIN") {
+    cards.push(
+      {
+        label: "Total Users",
+        number: stats.totalUsers,
+        icon: Users,
+        color: "text-violet-500",
+      },
+      {
+        label: "Teachers",
+        number: stats.totalTeachers,
+        icon: GraduationCap,
+        color: "text-yellow-500",
+      },
+      {
+        label: "Total Posts",
+        number: stats.totalPosts,
+        icon: FileText,
+        color: "text-pink-700",
+      },
+      {
+        label: "Published Posts",
+        number: stats.publishedPosts,
+        icon: Newspaper,
+        color: "text-emerald-500",
+      },
+      {
+        label: "Pages",
+        number: stats.totalPages,
+        icon: BookOpen,
+        color: "text-orange-500",
+      }
+    );
+  }
+  
+  // Both admin and teacher can see quizzes
+  cards.push({
+    label: user.role === "ADMIN" ? "All Quizzes" : "My Quizzes",
+    number: stats.totalQuizzes,
+    icon: BrainCircuit,
+    color: "text-purple-500",
+  });
 
   return (
     <div className="space-y-8 p-8">
       <Heading
-        title="Dashboard"
-        description="Overview of your site's statistics"
+        title={user.role === "ADMIN" ? "Admin Dashboard" : "Teacher Dashboard"}
+        description={user.role === "ADMIN" 
+          ? "Overview of your site's statistics" 
+          : "Overview of your quiz performance and submissions"
+        }
       />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -205,7 +227,7 @@ export default async function AdminDashboard() {
 
             <Button variant="outline" asChild className="w-full">
               <Link href="/admin/quizzes">
-                View All Quizzes
+                {user.role === "ADMIN" ? "View All Quizzes" : "View My Quizzes"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

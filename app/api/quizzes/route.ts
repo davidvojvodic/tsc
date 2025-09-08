@@ -58,13 +58,13 @@ const quizSchema = z.object({
  * @param userId - The ID of the user to check.
  * @returns A boolean indicating if the user is authorized.
  */
-async function checkAdminAccess(userId: string): Promise<boolean> {
+async function checkQuizAccess(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { role: true },
   });
 
-  return user?.role === "ADMIN" || user?.role === "TEACHER";
+  return user ? (user.role === "ADMIN" || user.role === "TEACHER") : false;
 }
 
 /**
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 2: Check if the user has admin or teacher access
-    const isAuthorized = await checkAdminAccess(session.user.id);
+    const isAuthorized = await checkQuizAccess(session.user.id);
     if (!isAuthorized) {
       return new NextResponse("Forbidden", { status: 403 });
     }
@@ -219,7 +219,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Step 2: Check if the user has admin or teacher access
-    const isAuthorized = await checkAdminAccess(session.user.id);
+    const isAuthorized = await checkQuizAccess(session.user.id);
     if (!isAuthorized) {
       return new NextResponse("Forbidden", { status: 403 });
     }

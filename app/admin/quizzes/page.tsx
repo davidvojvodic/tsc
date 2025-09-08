@@ -5,15 +5,7 @@ import { QuizClient } from "./components/client";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-
-async function checkAdminAccess(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-
-  return user?.role === "ADMIN" || user?.role === "TEACHER";
-}
+import { getUserQuizAccess } from "@/lib/role-utils";
 
 export default async function QuizzesPage() {
   const session = await auth.api.getSession({
@@ -24,11 +16,12 @@ export default async function QuizzesPage() {
     redirect("/login");
   }
 
-  const isAuthorized = await checkAdminAccess(session.user.id);
-  if (!isAuthorized) {
+  const userAccess = await getUserQuizAccess(session.user.id);
+  if (!userAccess) {
     redirect("/");
   }
 
+  // Both admins and teachers can see all quizzes
   const quizzes = await prisma.quiz.findMany({
     include: {
       teacher: {
@@ -74,7 +67,7 @@ export default async function QuizzesPage() {
   return (
     <div className="flex-col">
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <QuizClient data={formattedQuizzes} />
+        <QuizClient data={formattedQuizzes} canCreateQuiz={true} />
       </div>
     </div>
   );

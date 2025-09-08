@@ -20,13 +20,13 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  // Verify admin access
+  // Verify admin or teacher access
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { role: true, email: true },
   });
 
-  if (!user || user.role !== "ADMIN") {
+  if (!user || (user.role !== "ADMIN" && user.role !== "TEACHER")) {
     redirect("/");
   }
 
@@ -34,7 +34,7 @@ export default async function AdminLayout({
     <div className="flex min-h-screen">
       <div className="hidden border-r bg-background/95 md:block w-64">
         <ScrollArea className="h-full">
-          <Sidebar />
+          <Sidebar userRole={user.role} />
         </ScrollArea>
       </div>
       <div className="flex-1 flex flex-col">

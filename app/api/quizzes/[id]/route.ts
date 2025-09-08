@@ -407,8 +407,36 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         throw new Error("Quiz not found");
       }
 
-      // 3.2: Delete the quiz
-      // Due to Cascade Delete, associated options and questions will be automatically deleted
+      // 3.2: First, delete all quiz submissions for this quiz
+      await tx.quizSubmission.deleteMany({
+        where: { quizId: quizId },
+      });
+
+      // 3.3: Get all questions for this quiz
+      const questions = await tx.question.findMany({
+        where: { quizId: quizId },
+        select: { id: true },
+      });
+
+      // 3.4: Clear correctOptionId from all questions to break circular references
+      await tx.question.updateMany({
+        where: { quizId: quizId },
+        data: { correctOptionId: null },
+      });
+
+      // 3.5: Delete all options for these questions
+      for (const question of questions) {
+        await tx.option.deleteMany({
+          where: { questionId: question.id },
+        });
+      }
+
+      // 3.6: Delete all questions for this quiz
+      await tx.question.deleteMany({
+        where: { quizId: quizId },
+      });
+
+      // 3.7: Finally, delete the quiz
       await tx.quiz.delete({
         where: { id: quizId },
       });

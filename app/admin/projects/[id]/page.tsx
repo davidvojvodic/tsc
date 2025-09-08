@@ -107,8 +107,12 @@ export default async function ProjectPage({ params }: PageParams) {
     ? {
         id: project.id,
         name: project.name,
+        name_sl: project.name_sl,
+        name_hr: project.name_hr,
         slug: project.slug,
         description: project.description || "",
+        description_sl: project.description_sl,
+        description_hr: project.description_hr,
         published: project.published,
         featured: project.featured,
         heroImage: project.heroImage
@@ -125,6 +129,8 @@ export default async function ProjectPage({ params }: PageParams) {
         timeline: project.timeline.map((phase) => ({
           id: phase.id,
           title: phase.title,
+          title_sl: phase.title_sl,
+          title_hr: phase.title_hr,
           startDate: phase.startDate ?? undefined, // Convert 'null' to 'undefined'
           endDate: phase.endDate ?? undefined, // Convert 'null' to 'undefined'
           completed: phase.completed,

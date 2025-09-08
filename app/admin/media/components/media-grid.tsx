@@ -50,6 +50,7 @@ export function MediaGrid({ items }: MediaGridProps) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   const onCopy = (id: string) => {
     navigator.clipboard.writeText(id);
@@ -158,7 +159,10 @@ export function MediaGrid({ items }: MediaGridProps) {
             )}
             {/* Overlay with actions */}
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-              <DropdownMenu>
+              <DropdownMenu 
+                open={dropdownOpen === item.id} 
+                onOpenChange={(open) => setDropdownOpen(open ? item.id : null)}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="secondary" 
@@ -188,7 +192,10 @@ export function MediaGrid({ items }: MediaGridProps) {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
-                    onClick={() => setDeletingId(item.id)}
+                    onClick={() => {
+                      setDropdownOpen(null); // Close dropdown first
+                      setTimeout(() => setDeletingId(item.id), 100); // Then open modal with delay
+                    }}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash className="mr-2 h-4 w-4" />

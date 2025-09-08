@@ -16,6 +16,7 @@ import {
   FolderKanban,
   MessageSquareQuote,
 } from "lucide-react";
+import { Role } from "@prisma/client";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const routes = [
@@ -25,6 +26,7 @@ export const routes = [
     href: "/admin",
     color: "text-sky-500",
     isActive: true,
+    allowedRoles: ["ADMIN", "TEACHER"] as Role[],
   },
   {
     label: "Users",
@@ -32,6 +34,7 @@ export const routes = [
     href: "/admin/users",
     color: "text-violet-500",
     isActive: true,
+    allowedRoles: ["ADMIN"] as Role[],
   },
   {
     label: "Posts",
@@ -39,6 +42,7 @@ export const routes = [
     href: "/admin/posts",
     color: "text-pink-700",
     isActive: false,
+    allowedRoles: ["ADMIN"] as Role[],
   },
   {
     label: "Projects",
@@ -46,14 +50,15 @@ export const routes = [
     href: "/admin/projects",
     color: "text-cyan-500",
     isActive: true,
+    allowedRoles: ["ADMIN"] as Role[],
   },
-
   {
     label: "Resources",
     icon: FolderTree,
     href: "/admin/materials",
     color: "text-emerald-500",
     isActive: true,
+    allowedRoles: ["ADMIN"] as Role[],
   },
   {
     label: "Testimonials",
@@ -61,6 +66,7 @@ export const routes = [
     href: "/admin/testimonials",
     color: "text-amber-500",
     isActive: true,
+    allowedRoles: ["ADMIN"] as Role[],
   },
   {
     label: "Media",
@@ -68,6 +74,7 @@ export const routes = [
     href: "/admin/media",
     color: "text-blue-500",
     isActive: true,
+    allowedRoles: ["ADMIN"] as Role[],
   },
   {
     label: "Teachers",
@@ -75,6 +82,7 @@ export const routes = [
     href: "/admin/teachers",
     color: "text-yellow-500",
     isActive: true,
+    allowedRoles: ["ADMIN"] as Role[],
   },
   {
     label: "Quizzes",
@@ -82,20 +90,25 @@ export const routes = [
     href: "/admin/quizzes",
     color: "text-purple-500",
     isActive: true,
+    allowedRoles: ["ADMIN", "TEACHER"] as Role[],
   },
-
 ];
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   items: typeof routes;
+  userRole: Role;
 }
 
-export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
+export function SidebarNav({ className, items, userRole, ...props }: SidebarNavProps) {
   const pathname = usePathname();
+
+  const filteredItems = items.filter(item => 
+    item.allowedRoles.includes(userRole)
+  );
 
   return (
     <nav className={cn("flex space-y-1 flex-col", className)} {...props}>
-      {items.map((item) => {
+      {filteredItems.map((item) => {
         const Icon = item.icon;
 
         if (item.isActive) {

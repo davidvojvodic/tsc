@@ -25,6 +25,7 @@ export const TeacherCellAction: React.FC<CellActionProps> = ({ data }) => {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const onCopy = (id: string) => {
     navigator.clipboard.writeText(id);
@@ -61,7 +62,7 @@ export const TeacherCellAction: React.FC<CellActionProps> = ({ data }) => {
         onConfirm={onDelete}
         loading={loading}
       />
-      <DropdownMenu>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
             <span className="sr-only">Open menu</span>
@@ -79,7 +80,10 @@ export const TeacherCellAction: React.FC<CellActionProps> = ({ data }) => {
             <Edit className="mr-2 h-4 w-4" /> Edit
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setDropdownOpen(false); // Close dropdown first
+              setTimeout(() => setOpen(true), 100); // Then open modal with delay
+            }}
             className="text-destructive focus:text-destructive"
           >
             <Trash className="mr-2 h-4 w-4" /> Delete

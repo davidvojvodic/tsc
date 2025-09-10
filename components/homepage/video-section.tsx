@@ -9,21 +9,6 @@ interface VideoSectionProps {
 export default function VideoSection({ locale = "en" }: VideoSectionProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const titles = {
-    en: "Water Control System Demo",
-    sl: "Predstavitev sistema vodnega nadzora",
-    hr: "Demo sustava kontrole vode",
-  };
-
-  const descriptions = {
-    en: "Watch how our app controls the water flow system to pour water on the box",
-    sl: "Oglejte si, kako naša aplikacija nadzoruje sistem pretoka vode za polievanje škatle",
-    hr: "Pogledajte kako naša aplikacija kontrolira sustav protoka vode za zalijevanje kutije",
-  };
-
-  const title = titles[locale as keyof typeof titles] || titles.en;
-  const description = descriptions[locale as keyof typeof descriptions] || descriptions.en;
-
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.volume = 0.5;

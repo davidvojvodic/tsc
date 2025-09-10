@@ -3,6 +3,7 @@ import { HeroSection } from "@/components/homepage/hero";
 import TeacherCarousel from "@/components/homepage/teacher-carousel";
 import TestimonialsSection from "@/components/homepage/testimonials";
 import SchoolsSection from "@/components/homepage/schools";
+import VideoSection from "@/components/homepage/video-section";
 import prisma from "@/lib/prisma";
 import LiveStreams from "@/components/live-streams";
 
@@ -65,6 +66,7 @@ export default async function HomePage() {
   return (
     <>
       <HeroSection />
+      <VideoSection locale="en" />
       <TeacherCarousel teachers={teachers} />
       <TestimonialsSection testimonials={testimonials} />
       <SchoolsSection />

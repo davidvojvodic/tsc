@@ -99,6 +99,6 @@ export const config = {
   matcher: [
     // Match all routes except API, static files, and Next.js internals
     // Static files in /public (including /optimized) should be served directly by Next.js
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.svg|.*\\.gif|.*\\.webp|.*\\.ico|.*\\.css|.*\\.js).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.svg|.*\\.gif|.*\\.webp|.*\\.ico|.*\\.css|.*\\.js|.*\\.mp4|.*\\.webm|.*\\.mov|.*\\.avi).*)",
   ],
 };

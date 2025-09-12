@@ -52,6 +52,9 @@ export default async function ProjectPage({ params }: PageParams) {
                     include: {
                       media: true,
                     },
+                    orderBy: {
+                      order: "asc",
+                    },
                   },
                   materials: {
                     include: {
@@ -148,8 +151,15 @@ export default async function ProjectPage({ params }: PageParams) {
               order: activity.order,
               // Extract teacher IDs for the form
               teacherIds: activity.teachers ? activity.teachers.map(t => t.teacher.id) : [],
-              // Extract image IDs for the form  
+              // Extract image IDs for the form (legacy support)
               imageIds: activity.images ? activity.images.map(i => i.media.id) : [],
+              // Create orderedImages from database data (ordered by displayOrder)
+              orderedImages: activity.images ? activity.images.map((i, index) => ({
+                id: i.media.id,
+                url: i.media.url,
+                alt: i.media.alt || '',
+                order: i.order !== null ? i.order : index
+              })) : [],
               // Extract material IDs for the form
               materialIds: activity.materials ? activity.materials.map(m => m.material.id) : [],
               // Keep raw data for reference

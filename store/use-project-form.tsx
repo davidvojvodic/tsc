@@ -14,6 +14,13 @@ export interface ProjectBasicInfo {
   heroImage: { url: string; fileKey: string; id?: string } | null;
 }
 
+export interface OrderedImage {
+  id: string;
+  url: string;
+  alt: string | null;
+  order: number;
+}
+
 export interface ProjectActivity {
   id: string;
   title: string;
@@ -24,8 +31,10 @@ export interface ProjectActivity {
   description_hr: string | null;
   order: number;
   teacherIds: string[];
-  imageIds: string[];
+  orderedImages: OrderedImage[];
   materialIds: string[];
+  // Legacy support for existing data
+  imageIds?: string[];
   images?: ProjectImage[];
   // Support for raw API data structure when loading from server
   teachers?: Array<{ teacher: { id: string; name: string } }>;
@@ -210,7 +219,7 @@ export const useProjectForm = create<ProjectFormStore>((set, get) => ({
                activity.description_sl !== originalActivity.description_sl ||
                activity.description_hr !== originalActivity.description_hr ||
                JSON.stringify(activity.teacherIds?.sort()) !== JSON.stringify(originalActivity.teacherIds?.sort()) ||
-               JSON.stringify(activity.imageIds?.sort()) !== JSON.stringify(originalActivity.imageIds?.sort()) ||
+               JSON.stringify(activity.orderedImages?.sort((a, b) => a.order - b.order)) !== JSON.stringify(originalActivity.orderedImages?.sort((a, b) => a.order - b.order)) ||
                JSON.stringify(activity.materialIds?.sort()) !== JSON.stringify(originalActivity.materialIds?.sort());
       });
     });

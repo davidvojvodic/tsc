@@ -4,6 +4,13 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+const orderedImageSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  alt: z.string().nullable(),
+  order: z.number(),
+});
+
 const activitySchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -14,7 +21,8 @@ const activitySchema = z.object({
   description_hr: z.string().nullable(),
   order: z.number(),
   teacherIds: z.array(z.string()),
-  imageIds: z.array(z.string()),
+  imageIds: z.array(z.string()).optional(), // Keep for backward compatibility
+  orderedImages: z.array(orderedImageSchema).optional(), // New ordered images format
   materialIds: z.array(z.string()),
 });
 
@@ -93,10 +101,14 @@ export async function PATCH(
       return new NextResponse("Project not found", { status: 404 });
     }
 
-    // Create mapping from frontend image IDs (fileKeys) to database media IDs
+    // Create mapping from frontend image IDs to database media IDs
     const imageIdMapping = new Map<string, string>();
     currentProject.gallery.forEach((item) => {
-      imageIdMapping.set(item.media.filename, item.media.id);
+      // Map both the media ID and filename for compatibility
+      imageIdMapping.set(item.media.id, item.media.id);
+      if (item.media.filename) {
+        imageIdMapping.set(item.media.filename, item.media.id);
+      }
     });
 
     // Update timeline in chunks to avoid timeout
@@ -160,20 +172,41 @@ export async function PATCH(
                   );
                 }
 
-                // Create image associations using the mapping
-                if (activity.imageIds && activity.imageIds.length > 0) {
-                  const validImageIds = activity.imageIds
-                    .map((frontendId) => imageIdMapping.get(frontendId))
-                    .filter(Boolean) as string[];
+                // Handle image associations with proper ordering
+                let imagesToProcess: Array<{ id: string; order: number }> = [];
+                
+                if (activity.orderedImages && activity.orderedImages.length > 0) {
+                  // Use new orderedImages format
+                  console.log(`[TIMELINE_API] Processing orderedImages for activity "${activity.title}":`, activity.orderedImages);
+                  imagesToProcess = activity.orderedImages.map(img => ({
+                    id: img.id,
+                    order: img.order
+                  }));
+                } else if (activity.imageIds && activity.imageIds.length > 0) {
+                  // Fallback to legacy imageIds format
+                  console.log(`[TIMELINE_API] Processing legacy imageIds for activity "${activity.title}":`, activity.imageIds);
+                  imagesToProcess = activity.imageIds.map((id, index) => ({
+                    id,
+                    order: index
+                  }));
+                }
 
+                if (imagesToProcess.length > 0) {
+                  console.log(`[TIMELINE_API] Image ID mapping:`, Array.from(imageIdMapping.entries()));
                   await Promise.all(
-                    validImageIds.map(async (databaseImageId) => {
-                      await tx.projectActivityToMedia.create({
-                        data: {
-                          activityId: createdActivity.id,
-                          mediaId: databaseImageId,
-                        },
-                      });
+                    imagesToProcess.map(async (imageData) => {
+                      // Map frontend image ID to database media ID
+                      const databaseImageId = imageIdMapping.get(imageData.id);
+                      console.log(`[TIMELINE_API] Mapping image ${imageData.id} -> ${databaseImageId}`);
+                      if (databaseImageId) {
+                        await tx.projectActivityToMedia.create({
+                          data: {
+                            activityId: createdActivity.id,
+                            mediaId: databaseImageId,
+                            order: imageData.order,
+                          },
+                        });
+                      }
                     })
                   );
                 }
@@ -219,6 +252,9 @@ export async function PATCH(
                 images: {
                   include: {
                     media: true,
+                  },
+                  orderBy: {
+                    order: "asc",
                   },
                 },
                 materials: {
@@ -276,5 +312,75 @@ export async function PATCH(
     }
 
     return NextResponse.json({ message: errorMessage }, { status: 500 });
+  }
+}
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // Check if project exists
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        timeline: {
+          include: {
+            activities: {
+              include: {
+                teachers: {
+                  include: {
+                    teacher: true,
+                  },
+                },
+                images: {
+                  include: {
+                    media: true,
+                  },
+                  orderBy: {
+                    order: "asc",
+                  },
+                },
+                materials: {
+                  include: {
+                    material: {
+                      select: {
+                        id: true,
+                        title: true,
+                        type: true,
+                        url: true,
+                        size: true,
+                        language: true,
+                      },
+                    },
+                  },
+                },
+              },
+              orderBy: {
+                order: "asc",
+              },
+            },
+          },
+          orderBy: {
+            order: "asc",
+          },
+        },
+      },
+    });
+
+    if (!project) {
+      return new NextResponse("Project not found", { status: 404 });
+    }
+
+    return NextResponse.json(project);
+  } catch (error) {
+    console.error("[PROJECT_TIMELINE_GET]", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

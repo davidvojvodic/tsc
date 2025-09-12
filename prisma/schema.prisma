@@ -415,9 +415,11 @@ model ProjectActivityToMedia {
   activityId String
   media      Media           @relation(fields: [mediaId], references: [id], onDelete: Cascade)
   mediaId    String
+  order      Int?            // Order for image reordering (nullable for safety)
   createdAt  DateTime        @default(now())
 
   @@unique([activityId, mediaId])
+  @@index([activityId, order])
   @@map("project_activity_to_media")
 }
 

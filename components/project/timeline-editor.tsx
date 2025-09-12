@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -51,6 +51,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { RichTextDisplay } from "@/components/rich-text-content";
+import { ReorderableImageSelector, OrderedImage } from "./reorderable-image-selector";
 import {
   ProjectPhase,
   ProjectImage,
@@ -88,6 +89,7 @@ interface TimelineEditorProps {
   galleryImages?: ProjectImage[];
   availableTeachers?: Teacher[];
   availableMaterials?: Material[];
+  projectId?: string; // Added for auto-save functionality
 }
 
 export function TimelineEditor({
@@ -97,6 +99,7 @@ export function TimelineEditor({
   galleryImages = [],
   availableTeachers = [],
   availableMaterials = [],
+  projectId,
 }: TimelineEditorProps) {
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
@@ -104,13 +107,6 @@ export function TimelineEditor({
   // Use refs to prevent re-renders of drag and drop while editing
   const phaseListRef = useRef(phases);
   phaseListRef.current = phases;
-
-  // Debug current phases
-  useEffect(() => {
-    if (phases.length > 0) {
-      console.log("Timeline loaded:", phases.length, "phases");
-    }
-  }, [phases]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -471,10 +467,14 @@ export function TimelineEditor({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Project Timeline</CardTitle>
-        <CardDescription>
-          Manage the activities and milestones of your project
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Project Timeline</CardTitle>
+            <CardDescription>
+              Manage the activities and milestones of your project
+            </CardDescription>
+          </div>
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -590,6 +590,7 @@ export function TimelineEditor({
                                       availableTeachers={availableTeachers}
                                       availableMaterials={availableMaterials}
                                       isLoading={isLoading}
+                                      projectId={projectId}
                                     />
                                   </AccordionContent>
                                 </AccordionItem>
@@ -625,6 +626,7 @@ interface ActivityManagerProps {
   availableTeachers: Teacher[];
   availableMaterials: Material[];
   isLoading?: boolean;
+  projectId?: string;
 }
 
 function ActivityManager({
@@ -634,6 +636,7 @@ function ActivityManager({
   availableTeachers,
   availableMaterials,
   isLoading = false,
+  projectId,
 }: ActivityManagerProps) {
   const [isAddingActivity, setIsAddingActivity] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(
@@ -649,7 +652,12 @@ function ActivityManager({
     description_sl: z.string().nullable(),
     description_hr: z.string().nullable(),
     teacherIds: z.array(z.string()),
-    imageIds: z.array(z.string()),
+    orderedImages: z.array(z.object({
+      id: z.string(),
+      url: z.string(),
+      alt: z.string().nullable(),
+      order: z.number(),
+    })),
     materialIds: z.array(z.string()),
   });
 
@@ -663,20 +671,16 @@ function ActivityManager({
       description_sl: null,
       description_hr: null,
       teacherIds: [],
-      imageIds: [],
+      orderedImages: [],
       materialIds: [],
     },
   });
 
   const handleAddActivity = (values: z.infer<typeof activityFormSchema>) => {
-    const selectedImages = galleryImages.filter((img) =>
-      values.imageIds.includes(img.id)
-    );
     const newActivity: ProjectActivity = {
       id: crypto.randomUUID(),
       ...values,
       order: activities.length,
-      images: selectedImages,
     };
     onActivitiesChange([...activities, newActivity]);
     setIsAddingActivity(false);
@@ -686,12 +690,9 @@ function ActivityManager({
 
   const handleUpdateActivity = (values: z.infer<typeof activityFormSchema>) => {
     if (!editingActivityId) return;
-    const selectedImages = galleryImages.filter((img) =>
-      values.imageIds.includes(img.id)
-    );
     const updatedActivities = activities.map((activity) =>
       activity.id === editingActivityId
-        ? { ...activity, ...values, images: selectedImages }
+        ? { ...activity, ...values }
         : activity
     );
     onActivitiesChange(updatedActivities);
@@ -712,7 +713,7 @@ function ActivityManager({
     setEditingActivityId(activity.id);
     setIsAddingActivity(false);
 
-    // Handle both transformed data (teacherIds/imageIds arrays) and raw API data (teachers/images objects)
+    // Handle both transformed data (teacherIds arrays) and raw API data (teachers objects)
     const teacherIds =
       activity.teacherIds ||
       (activity.teachers
@@ -721,15 +722,45 @@ function ActivityManager({
             .filter(Boolean)
         : []);
 
-    const imageIds =
-      activity.imageIds ||
-      (activity.rawImages
-        ? activity.rawImages
-            .map((i: any) => i.media?.id || i.id)
-            .filter(Boolean)
-        : activity.images
-          ? activity.images.map((i: any) => i.media?.id || i.id).filter(Boolean)
-          : []);
+    // Convert legacy imageIds or raw API data to orderedImages
+    let orderedImages: OrderedImage[] = [];
+    
+    console.log(`[TIMELINE_EDIT] Converting images for activity "${activity.title}":`, {
+      orderedImages: activity.orderedImages,
+      imageIds: activity.imageIds,
+      images: activity.images,
+      rawImages: activity.rawImages
+    });
+    
+    if (activity.orderedImages) {
+      // Use existing orderedImages if available
+      orderedImages = activity.orderedImages;
+    } else {
+      // Convert from legacy imageIds or raw API data
+      const imageIds = activity.imageIds ||
+        (activity.rawImages
+          ? activity.rawImages
+              .map((i: any) => i.media?.id || i.id)
+              .filter(Boolean)
+          : activity.images
+            ? activity.images.map((i: any) => i.media?.id || i.id).filter(Boolean)
+            : []);
+
+      console.log(`[TIMELINE_EDIT] Extracted imageIds:`, imageIds);
+      console.log(`[TIMELINE_EDIT] Available galleryImages:`, galleryImages.map(g => ({id: g.id, url: g.url})));
+
+      orderedImages = imageIds.map((imageId: string, index: number) => {
+        const galleryImage = galleryImages.find(img => img.id === imageId);
+        return {
+          id: imageId,
+          url: galleryImage?.url || '',
+          alt: galleryImage?.alt || null,
+          order: index,
+        };
+      }).filter(img => img.url); // Only include images that were found in gallery
+      
+      console.log(`[TIMELINE_EDIT] Final orderedImages:`, orderedImages);
+    }
 
     const materialIds =
       activity.materialIds ||
@@ -747,7 +778,7 @@ function ActivityManager({
       description_sl: activity.description_sl,
       description_hr: activity.description_hr,
       teacherIds: teacherIds,
-      imageIds: imageIds,
+      orderedImages: orderedImages,
       materialIds: materialIds,
     });
   };
@@ -1017,136 +1048,21 @@ function ActivityManager({
               {/* Image Selection */}
               <FormField
                 control={activityForm.control}
-                name="imageIds"
-                render={({ field }) => {
-                  const selectedImages = galleryImages.filter((image) =>
-                    (field.value || []).includes(image.id)
-                  );
-
-                  const handleImageToggle = (imageId: string) => {
-                    const currentValue = field.value || [];
-                    const isSelected = currentValue.includes(imageId);
-                    if (isSelected) {
-                      field.onChange(
-                        currentValue.filter((id) => id !== imageId)
-                      );
-                    } else {
-                      field.onChange([...currentValue, imageId]);
-                    }
-                  };
-
-                  return (
-                    <FormItem>
-                      <FormLabel>Select Images (Optional)</FormLabel>
-                      {galleryImages.length > 0 ? (
-                        <div className="space-y-4">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  role="combobox"
-                                  className="w-full justify-between"
-                                >
-                                  {selectedImages.length === 0
-                                    ? "Select images from gallery"
-                                    : `${selectedImages.length} image${selectedImages.length !== 1 ? "s" : ""} selected`}
-                                  <Check className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-full p-0"
-                              align="start"
-                            >
-                              <div className="max-h-60 overflow-y-auto p-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                  {galleryImages.map((image, index) => {
-                                    const isSelected = (
-                                      field.value || []
-                                    ).includes(image.id);
-                                    return (
-                                      <div
-                                        key={image.id}
-                                        onClick={() =>
-                                          handleImageToggle(image.id)
-                                        }
-                                        className={cn(
-                                          "relative cursor-pointer select-none items-center rounded-sm p-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                          isSelected &&
-                                            "bg-primary/10 border border-primary"
-                                        )}
-                                      >
-                                        <div className="flex items-center space-x-2">
-                                          <Checkbox
-                                            checked={isSelected}
-                                            className="mr-2"
-                                          />
-                                          <div className="relative h-16 w-16 rounded overflow-hidden">
-                                            <Image
-                                              src={image.url}
-                                              alt={
-                                                image.alt ||
-                                                `Gallery Image ${index + 1}`
-                                              }
-                                              fill
-                                              className="object-cover"
-                                            />
-                                          </div>
-                                          <span className="text-xs">
-                                            Image {index + 1}
-                                          </span>
-                                        </div>
-                                        {isSelected && (
-                                          <div className="absolute top-1 right-1">
-                                            <Check className="h-4 w-4 text-primary" />
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-
-                          {/* Image Previews */}
-                          {selectedImages.length > 0 && (
-                            <div className="grid grid-cols-3 gap-3">
-                              {selectedImages.map((image, index) => (
-                                <div
-                                  key={image.id}
-                                  className="relative h-24 w-24 rounded-lg overflow-hidden border group"
-                                >
-                                  <Image
-                                    src={image.url}
-                                    alt={image.alt || "Selected image"}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => handleImageToggle(image.id)}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          No images available. Upload images in the Gallery step
-                          first.
-                        </p>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
+                name="orderedImages"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Select Images (Optional)</FormLabel>
+                    <FormControl>
+                      <ReorderableImageSelector
+                        galleryImages={galleryImages}
+                        selectedImages={field.value || []}
+                        onChange={field.onChange}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
 
               {/* Material Selection */}
@@ -1395,10 +1311,10 @@ function ActivityManager({
                         })}
                       </>
                     )}
-                    {activity.images && activity.images.length > 0 && (
+                    {activity.orderedImages && activity.orderedImages.length > 0 && (
                       <Badge variant="outline" className="text-xs">
-                        {activity.images.length} image
-                        {activity.images.length !== 1 ? "s" : ""}
+                        {activity.orderedImages.length} image
+                        {activity.orderedImages.length !== 1 ? "s" : ""}
                       </Badge>
                     )}
                     {activity.materialIds &&

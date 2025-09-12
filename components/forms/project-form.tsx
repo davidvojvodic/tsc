@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, memo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -128,8 +129,11 @@ const ProjectFormComponent = ({
                 order: activity.order,
                 // Use the correctly populated arrays from the server
                 teacherIds: activity.teacherIds || [],
-                imageIds: activity.imageIds || [],
+                // Create orderedImages from existing data if available
+                orderedImages: (activity as any).orderedImages || [],
                 materialIds: activity.materialIds || [],
+                // Legacy support
+                imageIds: activity.imageIds || [],
                 // Keep the raw data for reference
                 teachers: activity.teachers,
                 rawImages: activity.images,
@@ -516,6 +520,7 @@ const ProjectFormComponent = ({
                 galleryImages={gallery}
                 availableTeachers={availableTeachers}
                 availableMaterials={availableMaterials}
+                projectId={initialData?.id}
               />
             )}
 

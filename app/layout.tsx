@@ -9,8 +9,14 @@ import { CookieConsent } from "@/components/cookie-consent";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TŠC",
-  description: "description",
+  title: "KA2 Waterwise",
+  description:
+    "Interactive learning platform for technical specifications and water management systems",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

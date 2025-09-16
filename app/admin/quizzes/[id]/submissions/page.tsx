@@ -180,10 +180,10 @@ export default async function QuizSubmissionsPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable 
-              columns={submissionColumns} 
-              data={formattedSubmissions} 
-              searchKey="userEmail"
+            <DataTable
+              columns={submissionColumns}
+              data={formattedSubmissions}
+              searchKey="userName"
             />
           </CardContent>
         </Card>

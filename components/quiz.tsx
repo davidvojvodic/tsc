@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 
 import { cn } from "@/lib/utils";
 
-import { AlertCircle, CheckCircle2, Trophy } from "lucide-react";
+import { AlertCircle, CheckCircle2, Trophy, Loader2 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -179,6 +179,8 @@ export default function QuizComponent({
 
   const [correctAnswers, setCorrectAnswers] = useState(0);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const t = getTranslations(language);
 
   const prefix = language === "en" ? "" : `/${language}`;
@@ -205,28 +207,52 @@ export default function QuizComponent({
     setCurrentQuestionIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
   };
 
-  const handleSubmit = () => {
-    // Calculate score
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
 
-    let score = 0;
+    try {
+      // Submit quiz answers to the API
+      const response = await fetch(`/api/quizzes/${quiz.id}/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          answers: selectedOptions,
+        }),
+      });
 
-    Object.keys(selectedOptions).forEach((questionId) => {
-      const question = quiz.questions.find((q) => q.id === questionId);
-
-      if (question) {
-        const selectedOption = question.options.find(
-          (o) => o.id === selectedOptions[questionId]
-        );
-
-        if (selectedOption?.isCorrect) {
-          score++;
-        }
+      if (!response.ok) {
+        throw new Error("Failed to submit quiz");
       }
-    });
 
-    setCorrectAnswers(score);
+      const result = await response.json();
 
-    setQuizSubmitted(true);
+      // Use the server-calculated score
+      setCorrectAnswers(result.correctAnswers);
+      setQuizSubmitted(true);
+    } catch (error) {
+      console.error("Error submitting quiz:", error);
+
+      // Fallback to local calculation if API fails
+      let score = 0;
+      Object.keys(selectedOptions).forEach((questionId) => {
+        const question = quiz.questions.find((q) => q.id === questionId);
+        if (question) {
+          const selectedOption = question.options.find(
+            (o) => o.id === selectedOptions[questionId]
+          );
+          if (selectedOption?.isCorrect) {
+            score++;
+          }
+        }
+      });
+
+      setCorrectAnswers(score);
+      setQuizSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTryAgain = () => {
@@ -427,8 +453,9 @@ export default function QuizComponent({
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={Object.keys(selectedOptions).length < totalQuestions}
+              disabled={Object.keys(selectedOptions).length < totalQuestions || isSubmitting}
             >
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t.submitQuiz}
             </Button>
           )}

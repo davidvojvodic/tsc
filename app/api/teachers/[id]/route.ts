@@ -266,6 +266,32 @@ export async function DELETE(
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("[TEACHER_DELETE]", error);
+
+    // Handle foreign key constraint violation
+    if (error.code === 'P2003') {
+      // Count associated quizzes to provide specific details
+      try {
+        const quizCount = await prisma.quiz.count({
+          where: { teacherId: id }
+        });
+
+        return NextResponse.json(
+          {
+            error: `Cannot delete teacher. Please delete or reassign the ${quizCount} quiz${quizCount === 1 ? '' : 's'} associated with this teacher first.`
+          },
+          { status: 400 }
+        );
+      } catch {
+        // Fallback if counting fails
+        return NextResponse.json(
+          {
+            error: "Cannot delete teacher. Please delete all quizzes associated with this teacher first."
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     return new NextResponse("Internal error", { status: 500 });
   }
 }

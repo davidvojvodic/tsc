@@ -9,23 +9,23 @@ datasource db {
 }
 
 model User {
-  id                    String                 @id @default(uuid())
-  email                 String                 @unique
-  name                  String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  emailVerified         Boolean                @default(false)
-  image                 String?                @db.Text
-  banExpires            DateTime?
-  banReason             String?                @db.Text
-  banned                Boolean?               @default(false)
+  id              String           @id @default(uuid())
+  email           String           @unique
+  name            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  emailVerified   Boolean          @default(false)
+  image           String?          @db.Text
+  banExpires      DateTime?
+  banReason       String?          @db.Text
+  banned          Boolean?         @default(false)
   role                  Role                   @default(USER)
   Account               Account[]
   pages                 Page[]
   quizSubmissions       QuizSubmission[]
-  contactSubmissions    ContactSubmission[]
-  passwordResetRequests PasswordResetRequest[]
   Session               Session[]
+  passwordResetRequests PasswordResetRequest[]
+  contactSubmissions    ContactSubmission[]
 
   @@map("user")
 }
@@ -104,7 +104,7 @@ model Post {
 
   @@index([slug])
   @@index([projectId])
-  @@index([coverId])
+  @@index([coverId], map: "post_coverId_fkey")
   @@map("post")
 }
 
@@ -133,9 +133,9 @@ model Page {
 
   @@index([slug])
   @@index([authorId])
-  @@index([mediaId])
-  @@index([parentId])
-  @@index([projectId])
+  @@index([mediaId], map: "page_mediaId_fkey")
+  @@index([parentId], map: "page_parentId_fkey")
+  @@index([projectId], map: "page_projectId_fkey")
   @@map("page")
 }
 
@@ -213,7 +213,7 @@ model Teacher {
   photo        Media?                     @relation(fields: [photoId], references: [id])
   projects     TeacherToProject[]
 
-  @@index([photoId])
+  @@index([photoId], map: "teacher_photoId_fkey")
   @@map("teacher")
 }
 
@@ -313,7 +313,7 @@ model Project {
   teachers       TeacherToProject[]
 
   @@index([slug])
-  @@index([heroImageId])
+  @@index([heroImageId], map: "project_heroImageId_fkey")
   @@map("project")
 }
 
@@ -352,7 +352,7 @@ model Testimonial {
   updatedAt  DateTime @updatedAt
   photo      Media?   @relation(fields: [photoId], references: [id])
 
-  @@index([photoId])
+  @@index([photoId], map: "testimonial_photoId_fkey")
   @@map("testimonial")
 }
 
@@ -386,7 +386,7 @@ model TeacherToProject {
   teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, projectId])
-  @@index([projectId])
+  @@index([projectId], map: "teacher_to_project_projectId_fkey")
   @@map("teacher_to_project")
 }
 
@@ -399,7 +399,7 @@ model ProjectToGallery {
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, mediaId])
-  @@index([mediaId])
+  @@index([mediaId], map: "project_to_gallery_mediaId_fkey")
   @@map("project_to_gallery")
 }
 
@@ -412,7 +412,7 @@ model ProjectActivityToTeacher {
   teacher    Teacher         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@unique([activityId, teacherId])
-  @@index([teacherId])
+  @@index([teacherId], map: "project_activity_to_teacher_teacherId_fkey")
   @@map("project_activity_to_teacher")
 }
 
@@ -427,7 +427,7 @@ model ProjectActivityToMedia {
 
   @@unique([activityId, mediaId])
   @@index([activityId, order])
-  @@index([mediaId])
+  @@index([mediaId], map: "project_activity_to_media_mediaId_fkey")
   @@map("project_activity_to_media")
 }
 
@@ -440,7 +440,7 @@ model ProjectActivityToMaterial {
   material   Material        @relation(fields: [materialId], references: [id], onDelete: Cascade)
 
   @@unique([activityId, materialId])
-  @@index([materialId])
+  @@index([materialId], map: "project_activity_to_material_materialId_fkey")
   @@map("project_activity_to_material")
 }
 
@@ -456,6 +456,7 @@ model PasswordResetRequest {
   expiresAt   DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
   User        User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
@@ -465,19 +466,16 @@ model PasswordResetRequest {
 }
 
 model ContactSubmission {
-  id      String  @id @default(uuid())
-  name    String? @db.VarChar(255)
-  email   String  @db.VarChar(255)
-  message String  @db.Text
-  status  String  @default("unread") @db.VarChar(50)
-
-  // User relationship (optional - for authenticated users)
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  // Timestamps
+  id        String   @id @default(uuid())
+  name      String?  @db.VarChar(255)
+  email     String   @db.VarChar(255)
+  message   String   @db.Text
+  status    String   @default("unread") @db.VarChar(50)
+  userId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([status])
   @@index([userId])

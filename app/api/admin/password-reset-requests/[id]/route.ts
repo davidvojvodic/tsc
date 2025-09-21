@@ -33,7 +33,7 @@ export async function PUT(
     const request_record = await prisma.passwordResetRequest.findUnique({
       where: { id },
       include: {
-        user: {
+        User: {
           select: { email: true, name: true },
         },
       },
@@ -76,7 +76,7 @@ export async function PUT(
         processedBy: session.user.id,
       },
       include: {
-        user: {
+        User: {
           select: { email: true, name: true },
         },
       },
@@ -124,7 +124,7 @@ export async function POST(
     const request_record = await prisma.passwordResetRequest.findUnique({
       where: { id: id },
       include: {
-        user: {
+        User: {
           select: { id: true, email: true, name: true },
         },
       },
@@ -175,7 +175,7 @@ export async function POST(
       // Find the target user's account
       const targetAccount = await prisma.account.findFirst({
         where: {
-          userId: request_record.user.id,
+          userId: request_record.User.id,
           password: { not: null }
         }
       });

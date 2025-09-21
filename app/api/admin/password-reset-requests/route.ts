@@ -32,7 +32,7 @@ type PasswordResetRequestWithUser = {
   processedAt: Date | null;
   adminNotes: string | null;
   expiresAt: Date;
-  user: {
+  User: {
     id: string;
     email: string;
     name: string | null;
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     const requests = await prisma.passwordResetRequest.findMany({
       where,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             email: true,

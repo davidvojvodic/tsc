@@ -15,6 +15,7 @@ import {
   BrainCircuit,
   FolderKanban,
   MessageSquareQuote,
+  Mail,
 } from "lucide-react";
 import { Role } from "@prisma/client";
 
@@ -65,6 +66,14 @@ export const routes = [
     icon: MessageSquareQuote,
     href: "/admin/testimonials",
     color: "text-amber-500",
+    isActive: true,
+    allowedRoles: ["ADMIN"] as Role[],
+  },
+  {
+    label: "Contact",
+    icon: Mail,
+    href: "/admin/contact",
+    color: "text-green-500",
     isActive: true,
     allowedRoles: ["ADMIN"] as Role[],
   },

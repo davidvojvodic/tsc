@@ -15,7 +15,7 @@ type PasswordResetRequestWithUser = {
   processedAt: Date | null;
   adminNotes: string | null;
   expiresAt: Date;
-  user: {
+  User: {
     id: string;
     email: string;
     name: string | null;
@@ -61,7 +61,7 @@ export default async function AdminPasswordResetRequestsPage() {
   // Fetch password reset requests with user data (only valid ones remain)
   const requests = await prisma.passwordResetRequest.findMany({
     include: {
-      user: {
+      User: {
         select: {
           id: true,
           email: true,
@@ -89,8 +89,8 @@ export default async function AdminPasswordResetRequestsPage() {
   const formattedRequests = requests.map((request: PasswordResetRequestWithUser) => ({
     id: request.id,
     userId: request.userId,
-    userEmail: request.user.email,
-    userName: request.user.name || "Unknown User",
+    userEmail: request.User.email,
+    userName: request.User.name || "Unknown User",
     status: expiredIds.includes(request.id) ? "EXPIRED" : request.status,
     reason: request.reason,
     requestedAt: format(request.requestedAt, "MMM do, yyyy 'at' h:mm a"),

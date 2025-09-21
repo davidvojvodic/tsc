@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { SectionDivider } from "@/components/ui/section-divider";
 import { useLanguage } from "@/store/language-context";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -93,53 +94,60 @@ export default function SchoolsSection() {
   }, [language]);
 
   return (
-    <Container>
-      <div className="py-24 space-y-24">
-        {schools.map((school, index) => (
-          <div
-            key={school.id}
-            className={`grid gap-16 items-center ${
-              index % 2 === 0
-                ? "md:grid-cols-[1fr_1fr]"
-                : "md:grid-cols-[1fr_1fr]"
-            }`}
-          >
-            {/* Image */}
-            <div className={index % 2 === 1 ? "md:order-2" : ""}>
-              <div className="aspect-[4/3] relative overflow-hidden rounded-xl bg-muted">
-                <Image
-                  src={school.imageUrl}
-                  alt={school.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  placeholder={school.imageBlur ? "blur" : undefined}
-                  blurDataURL={school.imageBlur}
-                  loading="lazy"
-                />
+    <>
+      <section className="w-full bg-muted/20">
+        <Container>
+          <div className="py-24 space-y-24">
+          {schools.map((school, index) => (
+            <div
+              key={school.id}
+              className={`grid gap-16 items-center ${
+                index % 2 === 0
+                  ? "md:grid-cols-[1fr_1fr]"
+                  : "md:grid-cols-[1fr_1fr]"
+              }`}
+            >
+              {/* Image */}
+              <div className={index % 2 === 1 ? "md:order-2" : ""}>
+                <div className="aspect-[4/3] relative overflow-hidden rounded-xl bg-muted">
+                  <Image
+                    src={school.imageUrl}
+                    alt={school.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    placeholder={school.imageBlur ? "blur" : undefined}
+                    blurDataURL={school.imageBlur}
+                    loading="lazy"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Content */}
-            <div className={`space-y-6 ${index % 2 === 1 ? "md:order-1" : ""}`}>
-              <h2 className="text-3xl font-bold tracking-tight">
-                {school.title}
-              </h2>
-              <div className="text-muted-foreground text-lg leading-relaxed text-justify">
-                {school.description}
-              </div>
-              <div>
-                <Link href={`/${language}/schools/${school.id}`}>
-                  <Button>
-                    {school.buttonText}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+              {/* Content */}
+              <div className={`space-y-6 ${index % 2 === 1 ? "md:order-1" : ""}`}>
+                <h2 className="text-3xl font-bold tracking-tight !leading-[1.6] bg-gradient-to-r from-primary to-chart-2 bg-clip-text text-transparent">
+                  {school.title}
+                </h2>
+                <div className="text-muted-foreground text-lg leading-relaxed text-justify">
+                  {school.description}
+                </div>
+                <div>
+                  <Link href={`/${language}/schools/${school.id}`}>
+                    <Button>
+                      {school.buttonText}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
+          ))}
           </div>
-        ))}
-      </div>
-    </Container>
+        </Container>
+      </section>
+
+      {/* Section Divider */}
+      <SectionDivider />
+    </>
   );
 }

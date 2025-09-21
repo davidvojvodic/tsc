@@ -10,6 +10,28 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Section Divider Utilities */
+  .clip-wave {
+    clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+  }
+
+  /* Divider animation */
+  @keyframes divider-reveal {
+    from {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    to {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
+
+  .divider-animate {
+    animation: divider-reveal 0.8s ease-out;
+    transform-origin: center;
+  }
 }
 
 @layer base {

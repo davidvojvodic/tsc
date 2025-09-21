@@ -5,6 +5,7 @@ import { Container } from "@/components/container";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Quote } from "lucide-react";
+import { SectionDivider } from "@/components/ui/section-divider";
 import { useLanguage } from "@/store/language-context";
 
 interface Testimonial {
@@ -70,55 +71,60 @@ export default function TestimonialsSection({
   const currentContent = sectionContent[language] || sectionContent.en;
 
   return (
-    <section className="py-16 md:py-24 bg-muted/50">
-      <Container>
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            {currentContent.title}
-          </h2>
-        </div>
+    <>
+      <section className="py-8 md:py-12 bg-muted/50">
+        <Container>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl !leading-[1.6] bg-gradient-to-bl from-primary to-chart-2 bg-clip-text text-transparent">
+              {currentContent.title}
+            </h2>
+          </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <Card
-              key={testimonial.id}
-              className="relative p-8 overflow-hidden bg-background"
-            >
-              {/* Quote Icon */}
-              <Quote className="absolute top-4 right-4 h-12 w-12 text-muted-foreground/10" />
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {testimonials.map((testimonial) => (
+              <Card
+                key={testimonial.id}
+                className="relative p-8 overflow-hidden bg-background"
+              >
+                {/* Quote Icon */}
+                <Quote className="absolute top-4 right-4 h-12 w-12 text-muted-foreground/10" />
 
-              {/* Testimonial Content */}
-              <div className="relative">
-                <blockquote className="text-lg mb-6">
-                  {getLocalizedContent(testimonial, "content")}
-                </blockquote>
+                {/* Testimonial Content */}
+                <div className="relative">
+                  <blockquote className="text-lg mb-6">
+                    {getLocalizedContent(testimonial, "content")}
+                  </blockquote>
 
-                {/* Author */}
-                <footer className="flex items-center gap-4">
-                  <div className="relative h-12 w-12">
-                    {testimonial.photo ? (
-                      <Image
-                        src={testimonial.photo.url}
-                        alt={testimonial.name}
-                        fill
-                        className="object-cover rounded-full"
-                      />
-                    ) : (
-                      <div className="h-full w-full rounded-full bg-secondary" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="font-semibold">{testimonial.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {getLocalizedContent(testimonial, "role")}
+                  {/* Author */}
+                  <footer className="flex items-center gap-4">
+                    <div className="relative h-12 w-12">
+                      {testimonial.photo ? (
+                        <Image
+                          src={testimonial.photo.url}
+                          alt={testimonial.name}
+                          fill
+                          className="object-cover rounded-full"
+                        />
+                      ) : (
+                        <div className="h-full w-full rounded-full bg-secondary" />
+                      )}
                     </div>
-                  </div>
-                </footer>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </Container>
-    </section>
+                    <div>
+                      <div className="font-semibold">{testimonial.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {getLocalizedContent(testimonial, "role")}
+                      </div>
+                    </div>
+                  </footer>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* Section Divider */}
+      <SectionDivider />
+    </>
   );
 }

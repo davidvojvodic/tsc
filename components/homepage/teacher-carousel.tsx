@@ -18,6 +18,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Container } from "@/components/container";
 import Image from "next/image";
 import { TeacherDialog } from "../teacher-dialog";
+import { SectionDivider } from "@/components/ui/section-divider";
 import { useLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { Teacher } from "@/lib/types";
@@ -192,7 +193,7 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
       <div className="w-full py-16 bg-muted/50">
         <Container>
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl !leading-[1.6] bg-gradient-to-br from-primary to-chart-2 bg-clip-text text-transparent">
               {language === "en" && "Meet Our Teachers"}
               {language === "sl" && "Spoznajte naše učitelje"}
               {language === "hr" && "Upoznajte naše učitelje"}
@@ -206,6 +207,10 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
           {renderTeacherCarousel(ptsTeachers, true)}
         </Container>
       </div>
+
+      {/* Section Divider */}
+      <SectionDivider />
+
       <TeacherDialog
         teacher={selectedTeacher as Teacher}
         open={open}

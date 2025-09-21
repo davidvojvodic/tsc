@@ -231,8 +231,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   try {
-    const { id } = await params;
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -268,7 +269,7 @@ export async function DELETE(
     console.error("[TEACHER_DELETE]", error);
 
     // Handle foreign key constraint violation
-    if (error.code === 'P2003') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
       // Count associated quizzes to provide specific details
       try {
         const quizCount = await prisma.quiz.count({

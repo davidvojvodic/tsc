@@ -40,13 +40,16 @@ export default async function QuizPage({
   // Transform the data to match the expected interface
   const transformedQuiz = {
     ...quiz,
-    questions: quiz.questions.map(question => ({
-      ...question,
-      options: question.options.map(option => ({
-        ...option,
-        isCorrect: option.correct // Map 'correct' to 'isCorrect'
+    questions: quiz.questions
+      .filter(question => question.questionType === "SINGLE_CHOICE" || question.questionType === "MULTIPLE_CHOICE")
+      .map(question => ({
+        ...question,
+        questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE",
+        options: question.options.map(option => ({
+          ...option,
+          isCorrect: option.correct // Map 'correct' to 'isCorrect'
+        }))
       }))
-    }))
   };
 
   return <QuizDetailPage quiz={transformedQuiz} language="hr" />;

@@ -11,6 +11,7 @@ interface Question {
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | null;
   options: {
     id: string;
     text: string;
@@ -18,6 +19,16 @@ interface Question {
     text_hr?: string | null;
     isCorrect: boolean;
   }[];
+  multipleChoiceData?: {
+    scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
+    minSelections: number;
+    maxSelections?: number;
+    partialCreditRules?: {
+      correctSelectionPoints: number;
+      incorrectSelectionPenalty: number;
+      minScore: number;
+    };
+  };
 }
 
 interface Quiz {
@@ -58,7 +69,9 @@ export function QuizDetailPage({ quiz, language }: QuizDetailPageProps) {
     return {
       id: question.id,
       text: questionText || question.text,
-      options: localizedOptions
+      questionType: question.questionType || "SINGLE_CHOICE",
+      options: localizedOptions,
+      multipleChoiceData: question.multipleChoiceData ?? undefined
     };
   });
 

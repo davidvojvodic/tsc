@@ -1,8 +1,9 @@
 import prisma from "@/lib/prisma";
-import { QuizForm } from "@/components/forms/quiz-form";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { MultipleChoiceDataType } from "@/lib/schemas/quiz";
+import QuizPageClient from "./quiz-page-client";
 
 export default async function QuizPage({
   params,
@@ -67,25 +68,37 @@ export default async function QuizPage({
     ? {
         id: quiz.id,
         title: quiz.title,
-        description: quiz.description,
+        title_sl: quiz.title_sl ?? undefined,
+        title_hr: quiz.title_hr ?? undefined,
+        description: quiz.description ?? "",
+        description_sl: quiz.description_sl ?? undefined,
+        description_hr: quiz.description_hr ?? undefined,
         teacherId: quiz.teacherId,
-        questions: quiz.questions.map((question) => ({
-          id: question.id,
-          text: question.text,
-          options: question.options.map((option) => ({
-            id: option.id,
-            text: option.text,
-            correct: option.correct,
+        questions: quiz.questions
+          .filter(question => question.questionType === "SINGLE_CHOICE" || question.questionType === "MULTIPLE_CHOICE")
+          .map((question) => ({
+            id: question.id,
+            text: question.text,
+            text_sl: question.text_sl ?? undefined,
+            text_hr: question.text_hr ?? undefined,
+            questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE",
+            options: question.options.map((option) => ({
+              id: option.id,
+              text: option.text,
+              text_sl: option.text_sl ?? undefined,
+              text_hr: option.text_hr ?? undefined,
+              isCorrect: option.correct,
+            })),
+            multipleChoiceData: question.answersData ? (question.answersData as MultipleChoiceDataType) : undefined,
           })),
-        })),
       }
     : undefined;
 
   return (
-    <div className="flex-col">
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <QuizForm teachers={teachers} initialData={formattedQuiz} />
-      </div>
-    </div>
+    <QuizPageClient
+      teachers={teachers}
+      initialData={formattedQuiz}
+      quizId={id}
+    />
   );
 }

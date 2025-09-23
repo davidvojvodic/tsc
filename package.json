@@ -7,7 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "migration:validate": "node scripts/migration-validator.js",
+    "migration:test": "node scripts/migration-test-suite.js",
+    "migration:run": "node scripts/migration-runner.js",
+    "migration:monitor": "node scripts/migration-monitor.js",
+    "migration:dry-run": "node scripts/migration-runner.js --dry-run",
+    "migration:full-test": "npm run migration:validate pre && npm run migration:test && npm run migration:validate post"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",
@@ -66,6 +72,7 @@
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.5",
     "react-hook-form": "^7.53.1",
+    "react-resizable-panels": "^3.0.6",
     "resend": "^4.0.1",
     "sanity": "^3.61.0",
     "sonner": "^1.7.0",

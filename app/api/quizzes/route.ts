@@ -13,17 +13,36 @@ import { Prisma } from "@prisma/client"; // Import Prisma types
 
 interface OptionInput {
   text: string;
-  correct: boolean;
+  text_sl?: string;
+  text_hr?: string;
+  isCorrect: boolean; // Changed from 'correct' to match form data
 }
 
 interface QuestionInput {
   text: string;
+  text_sl?: string;
+  text_hr?: string;
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING" | "DRAG_DROP_IMAGE";
   options: OptionInput[];
+  multipleChoiceData?: {
+    scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
+    minSelections: number;
+    maxSelections?: number;
+    partialCreditRules?: {
+      correctSelectionPoints: number;
+      incorrectSelectionPenalty: number;
+      minScore: number;
+    };
+  };
 }
 
 interface QuizInput {
   title: string;
+  title_sl?: string;
+  title_hr?: string;
   description?: string;
+  description_sl?: string;
+  description_hr?: string;
   teacherId: string;
   questions: QuestionInput[];
 }
@@ -34,17 +53,63 @@ interface QuizInput {
 
 const optionSchema = z.object({
   text: z.string().min(1, "Option text is required"),
-  correct: z.boolean(),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+  isCorrect: z.boolean().optional().default(false), // Make optional with default value
+});
+
+const multipleChoiceDataSchema = z.object({
+  scoringMethod: z.enum(["ALL_OR_NOTHING", "PARTIAL_CREDIT"]).default("ALL_OR_NOTHING"),
+  minSelections: z.number().min(1).default(1),
+  maxSelections: z.number().min(1).optional(),
+  partialCreditRules: z.object({
+    correctSelectionPoints: z.number().default(1),
+    incorrectSelectionPenalty: z.number().default(0),
+    minScore: z.number().default(0),
+  }).optional(),
 });
 
 const questionSchema = z.object({
   text: z.string().min(1, "Question text is required"),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+  questionType: z.enum([
+    "SINGLE_CHOICE",
+    "MULTIPLE_CHOICE",
+    "TEXT_INPUT",
+    "DROPDOWN",
+    "ORDERING",
+    "MATCHING",
+    "DRAG_DROP_IMAGE"
+  ]).default("SINGLE_CHOICE"),
   options: z.array(optionSchema).min(2, "At least 2 options are required"),
-});
+  multipleChoiceData: multipleChoiceDataSchema.optional(),
+}).refine(
+  (data) => {
+    // For SINGLE_CHOICE, exactly one option must be correct
+    if (data.questionType === "SINGLE_CHOICE") {
+      const correctCount = data.options.filter(opt => opt.isCorrect).length;
+      return correctCount === 1;
+    }
+    // For MULTIPLE_CHOICE, at least one option must be correct
+    if (data.questionType === "MULTIPLE_CHOICE") {
+      const correctCount = data.options.filter(opt => opt.isCorrect).length;
+      return correctCount >= 1;
+    }
+    return true;
+  },
+  {
+    message: "Invalid number of correct options for the question type",
+  }
+);
 
 const quizSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters long"),
+  title_sl: z.string().optional(),
+  title_hr: z.string().optional(),
   description: z.string().optional(),
+  description_sl: z.string().optional(),
+  description_hr: z.string().optional(),
   teacherId: z.string().min(1, "Please select a teacher"),
   questions: z.array(questionSchema).min(1, "At least 1 question is required"),
 });
@@ -79,12 +144,22 @@ async function createQuestion(
   quizId: string,
   questionData: QuestionInput
 ) {
+  // Prepare answersData for MULTIPLE_CHOICE questions
+  let answersData = null;
+  if (questionData.questionType === "MULTIPLE_CHOICE" && questionData.multipleChoiceData) {
+    answersData = questionData.multipleChoiceData;
+  }
+
   // Step 1: Create the question without setting correctOptionId
   const question = await tx.question.create({
     data: {
       text: questionData.text,
+      text_sl: questionData.text_sl,
+      text_hr: questionData.text_hr,
+      questionType: questionData.questionType,
+      answersData: answersData,
       quizId: quizId,
-      // correctOptionId is optional and will be set later
+      // correctOptionId is optional and will be set later for SINGLE_CHOICE
     },
   });
 
@@ -94,24 +169,28 @@ async function createQuestion(
       tx.option.create({
         data: {
           text: opt.text,
-          correct: opt.correct,
+          text_sl: opt.text_sl,
+          text_hr: opt.text_hr,
+          correct: opt.isCorrect, // Map isCorrect to correct field in database
           questionId: question.id, // Associate with the created question
         },
       })
     )
   );
 
-  // Step 3: Identify the correct option
-  const correctOption = options.find((opt) => opt.correct);
-  if (!correctOption) {
-    throw new Error("No correct option specified for a question.");
-  }
+  // Step 3: For SINGLE_CHOICE questions, identify and set the correct option
+  if (questionData.questionType === "SINGLE_CHOICE") {
+    const correctOption = options.find((opt) => opt.correct);
+    if (!correctOption) {
+      throw new Error("No correct option specified for a single choice question.");
+    }
 
-  // Step 4: Update the question with the correctOptionId
-  await tx.question.update({
-    where: { id: question.id },
-    data: { correctOptionId: correctOption.id },
-  });
+    // Step 4: Update the question with the correctOptionId
+    await tx.question.update({
+      where: { id: question.id },
+      data: { correctOptionId: correctOption.id },
+    });
+  }
 
   // Step 5: Retrieve and return the complete question with relations
   return await tx.question.findUnique({
@@ -154,7 +233,11 @@ export async function POST(req: NextRequest) {
       const createdQuiz = await tx.quiz.create({
         data: {
           title: validatedData.title,
+          title_sl: validatedData.title_sl,
+          title_hr: validatedData.title_hr,
           description: validatedData.description,
+          description_sl: validatedData.description_sl,
+          description_hr: validatedData.description_hr,
           teacherId: validatedData.teacherId,
         },
       });

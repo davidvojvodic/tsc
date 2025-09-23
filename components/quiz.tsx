@@ -15,9 +15,6 @@ import { Button } from "@/components/ui/button";
 
 import { Progress } from "@/components/ui/progress";
 
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
-import { Label } from "@/components/ui/label";
 
 import { cn } from "@/lib/utils";
 
@@ -31,29 +28,47 @@ import Link from "next/link";
 
 import { SupportedLanguage } from "@/store/language-context";
 
+import { QuestionRenderer } from "@/components/quiz/question-renderer";
+
+import { getLocalizedContent } from "@/lib/language-utils";
+
 interface Option {
   id: string;
-
   text: string;
-
+  text_sl?: string | null;
+  text_hr?: string | null;
   isCorrect: boolean;
+}
+
+interface MultipleChoiceData {
+  scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
+  minSelections: number;
+  maxSelections?: number;
+  partialCreditRules?: {
+    correctSelectionPoints: number;
+    incorrectSelectionPenalty: number;
+    minScore: number;
+  };
 }
 
 interface Question {
   id: string;
-
   text: string;
-
+  text_sl?: string | null;
+  text_hr?: string | null;
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
   options: Option[];
+  multipleChoiceData?: MultipleChoiceData;
 }
 
 interface Quiz {
   id: string;
-
   title: string;
-
+  title_sl?: string | null;
+  title_hr?: string | null;
   description: string | null;
-
+  description_sl?: string | null;
+  description_hr?: string | null;
   questions: Question[];
 }
 
@@ -172,7 +187,7 @@ export default function QuizComponent({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   const [selectedOptions, setSelectedOptions] = useState<
-    Record<string, string>
+    Record<string, string | string[]>
   >({});
 
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -191,12 +206,33 @@ export default function QuizComponent({
 
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
 
-  const handleOptionChange = (questionId: string, optionId: string) => {
+  const handleAnswerChange = (questionId: string, answer: string | string[]) => {
     setSelectedOptions((prev) => ({
       ...prev,
-
-      [questionId]: optionId,
+      [questionId]: answer,
     }));
+  };
+
+  const isCurrentQuestionAnswered = () => {
+    const answer = selectedOptions[currentQuestion.id];
+    if (currentQuestion.questionType === "MULTIPLE_CHOICE") {
+      const selectedIds = Array.isArray(answer) ? answer : [];
+      const minSelections = currentQuestion.multipleChoiceData?.minSelections || 1;
+      return selectedIds.length >= minSelections;
+    }
+    return !!answer;
+  };
+
+  const areAllQuestionsAnswered = () => {
+    return quiz.questions.every((question) => {
+      const answer = selectedOptions[question.id];
+      if (question.questionType === "MULTIPLE_CHOICE") {
+        const selectedIds = Array.isArray(answer) ? answer : [];
+        const minSelections = question.multipleChoiceData?.minSelections || 1;
+        return selectedIds.length >= minSelections;
+      }
+      return !!answer;
+    });
   };
 
   const handlePrevious = () => {
@@ -239,11 +275,29 @@ export default function QuizComponent({
       Object.keys(selectedOptions).forEach((questionId) => {
         const question = quiz.questions.find((q) => q.id === questionId);
         if (question) {
-          const selectedOption = question.options.find(
-            (o) => o.id === selectedOptions[questionId]
-          );
-          if (selectedOption?.isCorrect) {
-            score++;
+          const selectedAnswer = selectedOptions[questionId];
+
+          if (question.questionType === "MULTIPLE_CHOICE") {
+            // Multiple choice scoring (simplified)
+            const selectedIds = Array.isArray(selectedAnswer) ? selectedAnswer : [];
+            const correctOptions = question.options.filter(o => o.isCorrect);
+            const selectedCorrectCount = selectedIds.filter(id =>
+              correctOptions.some(o => o.id === id)
+            ).length;
+            const selectedIncorrectCount = selectedIds.length - selectedCorrectCount;
+
+            // Simple all-or-nothing scoring for fallback
+            if (selectedCorrectCount === correctOptions.length && selectedIncorrectCount === 0) {
+              score++;
+            }
+          } else {
+            // Single choice scoring
+            const selectedOption = question.options.find(
+              (o) => o.id === selectedAnswer
+            );
+            if (selectedOption?.isCorrect) {
+              score++;
+            }
           }
         }
       });
@@ -327,18 +381,34 @@ export default function QuizComponent({
 
           <div className="space-y-6">
             {quiz.questions.map((question) => {
-              const selectedOptionId = selectedOptions[question.id];
+              const selectedAnswer = selectedOptions[question.id];
+              let isCorrect = false;
 
-              const isCorrect = !!question.options.find(
-                (o) => o.id === selectedOptionId && o.isCorrect
-              );
+              // Determine correctness based on question type
+              if (question.questionType === "MULTIPLE_CHOICE") {
+                const selectedIds = Array.isArray(selectedAnswer) ? selectedAnswer : [];
+                const correctOptions = question.options.filter(o => o.isCorrect);
+                const selectedCorrectCount = selectedIds.filter(id =>
+                  correctOptions.some(o => o.id === id)
+                ).length;
+                const selectedIncorrectCount = selectedIds.length - selectedCorrectCount;
+
+                // Simple all-or-nothing check for display
+                isCorrect = selectedCorrectCount === correctOptions.length && selectedIncorrectCount === 0;
+              } else {
+                isCorrect = !!question.options.find(
+                  (o) => o.id === selectedAnswer && o.isCorrect
+                );
+              }
 
               return (
                 <div key={question.id} className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-medium">{question.text}</h3>
+                    <h3 className="font-medium">
+                      {getLocalizedContent(question, "text", language)}
+                    </h3>
 
-                    {selectedOptionId && (
+                    {selectedAnswer && (
                       <Badge variant={isCorrect ? "default" : "destructive"}>
                         {isCorrect ? t.correct : t.incorrect}
                       </Badge>
@@ -347,7 +417,9 @@ export default function QuizComponent({
 
                   <div className="ml-6 space-y-2">
                     {question.options.map((option) => {
-                      const isSelected = selectedOptionId === option.id;
+                      const isSelected = question.questionType === "MULTIPLE_CHOICE"
+                        ? Array.isArray(selectedAnswer) && selectedAnswer.includes(option.id)
+                        : selectedAnswer === option.id;
 
                       return (
                         <div
@@ -370,7 +442,10 @@ export default function QuizComponent({
                             !isSelected && !option.isCorrect && "bg-muted"
                           )}
                         >
-                          {option.text}
+                          {getLocalizedContent(option, "text", language)}
+                          {question.questionType === "MULTIPLE_CHOICE" && isSelected && (
+                            <span className="ml-2 text-xs text-muted-foreground">✓</span>
+                          )}
                         </div>
                       );
                     })}
@@ -396,7 +471,9 @@ export default function QuizComponent({
     <Card className="max-w-3xl mx-auto">
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-2">
-          <CardTitle className="text-2xl">{quiz.title}</CardTitle>
+          <CardTitle className="text-2xl">
+            {getLocalizedContent(quiz, "title", language)}
+          </CardTitle>
 
           <div className="text-sm text-muted-foreground">
             {t.question} {currentQuestionIndex + 1} {t.of} {totalQuestions}
@@ -408,28 +485,12 @@ export default function QuizComponent({
 
       <CardContent>
         <div className="mb-6">
-          <h3 className="text-xl font-medium mb-4">{currentQuestion.text}</h3>
-
-          <RadioGroup
-            value={selectedOptions[currentQuestion.id] || ""}
-            onValueChange={(value) =>
-              handleOptionChange(currentQuestion.id, value)
-            }
-            className="space-y-3"
-          >
-            {currentQuestion.options.map((option) => (
-              <div
-                key={option.id}
-                className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-muted/50"
-              >
-                <RadioGroupItem value={option.id} id={option.id} />
-
-                <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                  {option.text}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
+          <QuestionRenderer
+            question={currentQuestion}
+            selectedAnswer={selectedOptions[currentQuestion.id] || (currentQuestion.questionType === "MULTIPLE_CHOICE" ? [] : "")}
+            onAnswerChange={handleAnswerChange}
+            language={language}
+          />
         </div>
       </CardContent>
 
@@ -446,14 +507,14 @@ export default function QuizComponent({
           {currentQuestionIndex < totalQuestions - 1 ? (
             <Button
               onClick={handleNext}
-              disabled={!selectedOptions[currentQuestion.id]}
+              disabled={!isCurrentQuestionAnswered()}
             >
               {t.next}
             </Button>
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={Object.keys(selectedOptions).length < totalQuestions || isSubmitting}
+              disabled={!areAllQuestionsAnswered() || isSubmitting}
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t.submitQuiz}

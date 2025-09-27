@@ -48,7 +48,20 @@ export default async function QuizPage({
         options: question.options.map(option => ({
           ...option,
           isCorrect: option.correct // Map 'correct' to 'isCorrect'
-        }))
+        })),
+        // Transform answersData to multipleChoiceData for multiple choice questions
+        multipleChoiceData: question.questionType === "MULTIPLE_CHOICE" && question.answersData
+          ? question.answersData as {
+              scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
+              minSelections: number;
+              maxSelections?: number;
+              partialCreditRules?: {
+                correctSelectionPoints: number;
+                incorrectSelectionPenalty: number;
+                minScore: number;
+              };
+            }
+          : undefined
       }))
   };
 

@@ -145,7 +145,7 @@ async function createQuestion(
   questionData: QuestionInput
 ) {
   // Prepare answersData for MULTIPLE_CHOICE questions
-  let answersData = null;
+  let answersData = undefined;
   if (questionData.questionType === "MULTIPLE_CHOICE" && questionData.multipleChoiceData) {
     answersData = questionData.multipleChoiceData;
   }
@@ -225,6 +225,20 @@ export async function POST(req: NextRequest) {
 
     // Step 3: Parse and validate the request body
     const body: QuizInput = await req.json();
+
+    // Debug logging
+    console.log("[QUIZZES_POST] Received data:", JSON.stringify(body, null, 2));
+    if (body.questions) {
+      body.questions.forEach((q, i) => {
+        console.log(`[QUIZZES_POST] Question ${i}:`, {
+          questionType: q.questionType,
+          optionsCount: q.options?.length,
+          correctOptions: q.options?.filter(o => o.isCorrect).length,
+          options: q.options?.map(o => ({ text: o.text, isCorrect: o.isCorrect }))
+        });
+      });
+    }
+
     const validatedData = quizSchema.parse(body);
 
     // Step 4: Create the quiz and its related questions within a transaction

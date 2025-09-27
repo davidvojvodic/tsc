@@ -151,7 +151,7 @@ async function createQuestion(
   questionData: QuestionInput
 ) {
   // Prepare answersData for MULTIPLE_CHOICE questions
-  let answersData = null;
+  let answersData = undefined;
   if (questionData.questionType === "MULTIPLE_CHOICE" && questionData.multipleChoiceData) {
     answersData = questionData.multipleChoiceData;
   }
@@ -221,7 +221,7 @@ async function updateQuestion(
   questionData: QuestionInput
 ) {
   // Prepare answersData for MULTIPLE_CHOICE questions
-  let answersData = null;
+  let answersData = undefined;
   if (questionData.questionType === "MULTIPLE_CHOICE" && questionData.multipleChoiceData) {
     answersData = questionData.multipleChoiceData;
   }

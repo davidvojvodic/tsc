@@ -149,7 +149,7 @@ function scoreMultipleChoiceQuestion(
   if (multipleChoiceData.scoringMethod === "PARTIAL_CREDIT") {
     const partialCreditRules = multipleChoiceData.partialCreditRules || {
       correctSelectionPoints: 1,
-      incorrectSelectionPenalty: -0.5,
+      incorrectSelectionPenalty: 0,
       minScore: 0
     };
 

@@ -270,7 +270,7 @@ export default function QuizComponent({
     } catch (error) {
       console.error("Error submitting quiz:", error);
 
-      // Fallback to local calculation if API fails
+      // Fallback to local calculation if API fails (with no penalties)
       let score = 0;
       Object.keys(selectedOptions).forEach((questionId) => {
         const question = quiz.questions.find((q) => q.id === questionId);
@@ -278,17 +278,27 @@ export default function QuizComponent({
           const selectedAnswer = selectedOptions[questionId];
 
           if (question.questionType === "MULTIPLE_CHOICE") {
-            // Multiple choice scoring (simplified)
             const selectedIds = Array.isArray(selectedAnswer) ? selectedAnswer : [];
             const correctOptions = question.options.filter(o => o.isCorrect);
             const selectedCorrectCount = selectedIds.filter(id =>
               correctOptions.some(o => o.id === id)
             ).length;
-            const selectedIncorrectCount = selectedIds.length - selectedCorrectCount;
 
-            // Simple all-or-nothing scoring for fallback
-            if (selectedCorrectCount === correctOptions.length && selectedIncorrectCount === 0) {
-              score++;
+            // Check scoring method from multipleChoiceData
+            const scoringMethod = question.multipleChoiceData?.scoringMethod || "ALL_OR_NOTHING";
+
+            if (scoringMethod === "PARTIAL_CREDIT") {
+              // Partial credit: give proportional score based on correct selections (no penalties)
+              if (correctOptions.length > 0) {
+                const partialScore = selectedCorrectCount / correctOptions.length;
+                score += partialScore;
+              }
+            } else {
+              // All or nothing: only score if all correct and no incorrect
+              const selectedIncorrectCount = selectedIds.length - selectedCorrectCount;
+              if (selectedCorrectCount === correctOptions.length && selectedIncorrectCount === 0) {
+                score++;
+              }
             }
           } else {
             // Single choice scoring
@@ -379,80 +389,17 @@ export default function QuizComponent({
         <CardContent>
           {renderResultMessage()}
 
-          <div className="space-y-6">
-            {quiz.questions.map((question) => {
-              const selectedAnswer = selectedOptions[question.id];
-              let isCorrect = false;
-
-              // Determine correctness based on question type
-              if (question.questionType === "MULTIPLE_CHOICE") {
-                const selectedIds = Array.isArray(selectedAnswer) ? selectedAnswer : [];
-                const correctOptions = question.options.filter(o => o.isCorrect);
-                const selectedCorrectCount = selectedIds.filter(id =>
-                  correctOptions.some(o => o.id === id)
-                ).length;
-                const selectedIncorrectCount = selectedIds.length - selectedCorrectCount;
-
-                // Simple all-or-nothing check for display
-                isCorrect = selectedCorrectCount === correctOptions.length && selectedIncorrectCount === 0;
-              } else {
-                isCorrect = !!question.options.find(
-                  (o) => o.id === selectedAnswer && o.isCorrect
-                );
-              }
-
-              return (
-                <div key={question.id} className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium">
-                      {getLocalizedContent(question, "text", language)}
-                    </h3>
-
-                    {selectedAnswer && (
-                      <Badge variant={isCorrect ? "default" : "destructive"}>
-                        {isCorrect ? t.correct : t.incorrect}
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="ml-6 space-y-2">
-                    {question.options.map((option) => {
-                      const isSelected = question.questionType === "MULTIPLE_CHOICE"
-                        ? Array.isArray(selectedAnswer) && selectedAnswer.includes(option.id)
-                        : selectedAnswer === option.id;
-
-                      return (
-                        <div
-                          key={option.id}
-                          className={cn(
-                            "p-3 rounded-md border text-sm",
-
-                            isSelected &&
-                              option.isCorrect &&
-                              "bg-green-50 border-green-200",
-
-                            isSelected &&
-                              !option.isCorrect &&
-                              "bg-red-50 border-red-200",
-
-                            !isSelected &&
-                              option.isCorrect &&
-                              "bg-blue-50 border-blue-200",
-
-                            !isSelected && !option.isCorrect && "bg-muted"
-                          )}
-                        >
-                          {getLocalizedContent(option, "text", language)}
-                          {question.questionType === "MULTIPLE_CHOICE" && isSelected && (
-                            <span className="ml-2 text-xs text-muted-foreground">✓</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">
+              {language === "en" && "Your quiz has been submitted successfully!"}
+              {language === "sl" && "Vaš kviz je bil uspešno oddan!"}
+              {language === "hr" && "Vaš kviz je uspješno predan!"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {language === "en" && "Your teacher will review your answers and provide feedback."}
+              {language === "sl" && "Vaš učitelj bo pregledal vaše odgovore in vam dal povratne informacije."}
+              {language === "hr" && "Vaš učitelj će pregledati vaše odgovore i dati vam povratne informacije."}
+            </p>
           </div>
         </CardContent>
 

@@ -114,7 +114,7 @@ export function GalleryView({
                     </p>
                   </div>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl">
+                <DialogContent className="max-w-[90vw] w-[90vw]">
                   <DialogVisuallyHidden>
                     <DialogTitle>Image Gallery - View More Images</DialogTitle>
                   </DialogVisuallyHidden>
@@ -200,7 +200,7 @@ function GalleryImageThumbnail({
           </div>
         </div>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-[90vw] w-[90vw]">
         <DialogVisuallyHidden>
           <DialogTitle>Image Gallery - Full Size View</DialogTitle>
         </DialogVisuallyHidden>
@@ -244,11 +244,11 @@ function ImageGallery({
 
   return (
     <div className="space-y-3">
-      <Carousel setApi={setApi} className="w-full">
-        <CarouselContent>
+      <Carousel setApi={setApi} className="w-full mx-auto">
+        <CarouselContent className="-ml-0">
           {images.map((img, index) => (
-            <CarouselItem key={img.id}>
-              <div className="relative h-[60vh] max-h-[600px] w-full">
+            <CarouselItem key={img.id} className="pl-0">
+              <div className="relative w-full h-[70vh] flex items-center justify-center">
                 {/* Only load the current image and adjacent ones to improve performance */}
                 {Math.abs(currentImageIndex - index) < 3 && (
                   <Image
@@ -355,7 +355,7 @@ export function PhaseGalleryThumbnail({
             </div>
           </div>
         </DialogTrigger>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-[90vw] w-[90vw]">
           <DialogVisuallyHidden>
             <DialogTitle>Phase Gallery - Timeline Images</DialogTitle>
           </DialogVisuallyHidden>
@@ -387,7 +387,7 @@ export function PhaseGalleryThumbnail({
           </div>
         </div>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-[90vw] w-[90vw]">
         <DialogVisuallyHidden>
           <DialogTitle>Project Gallery - All Images</DialogTitle>
         </DialogVisuallyHidden>

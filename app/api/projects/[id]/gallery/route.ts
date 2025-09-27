@@ -6,12 +6,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const galleryImageSchema = z.object({
-  id: z.string(),
-  url: z.string(),
-  ufsUrl: z.string().optional(),
-  fileKey: z.string(),
+  id: z.string().uuid(), // Add UUID format validation
+  url: z.string().url(),
+  ufsUrl: z.string().url().optional(),
+  fileKey: z.string().min(1), // Ensure non-empty
   alt: z.string().nullable(),
-  size: z.number().optional(),
+  size: z.number().min(0).optional(), // Non-negative
   mimeType: z.string().optional(),
 });
 
@@ -50,11 +50,34 @@ export async function PATCH(
     const body = await req.json();
     const validatedData = gallerySchema.parse(body);
 
-    // Get current project gallery
+    // Add duplicate ID checking
+    const imageIds = validatedData.gallery.map(img => img.id);
+    const uniqueIds = new Set(imageIds);
+    if (imageIds.length !== uniqueIds.size) {
+      return NextResponse.json(
+        { error: "Duplicate image IDs detected" },
+        { status: 400 }
+      );
+    }
+
+    // Get current project gallery with full media details
     const currentProject = await prisma.project.findUnique({
       where: { id },
       select: {
-        gallery: { select: { id: true } },
+        gallery: {
+          include: {
+            media: {
+              select: {
+                id: true,
+                filename: true,
+                url: true,
+                mimeType: true,
+                size: true,
+                alt: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -62,45 +85,136 @@ export async function PATCH(
       return new NextResponse("Project not found", { status: 404 });
     }
 
-    // Update gallery
+    // Smart gallery update algorithm with concurrency protection
     const project = await prisma.$transaction(
       async (tx) => {
-        // Delete old gallery relations
-        await tx.projectToGallery.deleteMany({
-          where: { projectId: id },
-        });
-
-        // Delete old gallery media if they exist
-        if (currentProject.gallery.length > 0) {
-          await tx.media.deleteMany({
-            where: {
-              id: { in: currentProject.gallery.map((img) => img.id) },
-            },
-          });
-        }
-
-        // Create new gallery images
-        const newGalleryImages = await Promise.all(
-          validatedData.gallery.map((img) =>
-            tx.media.create({
-              data: {
-                filename: img.fileKey,
-                url: img.ufsUrl || img.url,
-                type: MediaType.IMAGE,
-                mimeType: img.mimeType || "image/jpeg",
-                size: img.size || 0,
-                alt: img.alt,
-              },
-            })
-          )
+        // CRITICAL: Lock project row to prevent concurrent modifications
+        await tx.$executeRaw`SELECT id FROM project WHERE id = ${id} FOR UPDATE`;
+        const incomingImages = validatedData.gallery;
+        const existingGallery = currentProject.gallery;
+        const existingMediaMap = new Map(
+          existingGallery.map((g) => [g.media.id, g.media])
         );
 
-        // Create new gallery relations
+        // Track operations for logging
+        const operations = {
+          preserved: [] as string[],
+          updated: [] as string[],
+          created: [] as string[],
+          removed: [] as string[],
+        };
+
+        // Step 1: Process incoming images
+        const processedMediaIds: string[] = [];
+
+        for (const incomingImg of incomingImages) {
+          const existingMedia = existingMediaMap.get(incomingImg.id);
+
+          if (existingMedia) {
+            // Check if any properties have changed
+            const hasChanges =
+              existingMedia.filename !== incomingImg.fileKey ||
+              existingMedia.url !== (incomingImg.ufsUrl || incomingImg.url) ||
+              existingMedia.mimeType !== (incomingImg.mimeType || "image/jpeg") ||
+              existingMedia.size !== (incomingImg.size || 0) ||
+              existingMedia.alt !== incomingImg.alt;
+
+            if (hasChanges) {
+              // Update existing media in-place to preserve ID and references
+              await tx.media.update({
+                where: { id: incomingImg.id },
+                data: {
+                  filename: incomingImg.fileKey,
+                  url: incomingImg.ufsUrl || incomingImg.url,
+                  mimeType: incomingImg.mimeType || "image/jpeg",
+                  size: incomingImg.size || 0,
+                  alt: incomingImg.alt,
+                },
+              });
+              operations.updated.push(incomingImg.id);
+            } else {
+              // No changes - preserve existing record
+              operations.preserved.push(incomingImg.id);
+            }
+
+            processedMediaIds.push(incomingImg.id);
+          } else {
+            // Create new media record
+            const newMedia = await tx.media.create({
+              data: {
+                filename: incomingImg.fileKey,
+                url: incomingImg.ufsUrl || incomingImg.url,
+                type: MediaType.IMAGE,
+                mimeType: incomingImg.mimeType || "image/jpeg",
+                size: incomingImg.size || 0,
+                alt: incomingImg.alt,
+              },
+            });
+
+            operations.created.push(newMedia.id);
+            processedMediaIds.push(newMedia.id);
+          }
+        }
+
+        // Step 2: Identify media to remove (exist in DB but not in incoming data)
+        const mediaToRemove = existingGallery
+          .map((g) => g.media.id)
+          .filter((mediaId) => !processedMediaIds.includes(mediaId));
+
+        // Step 3: Clean up removed media
+        if (mediaToRemove.length > 0) {
+          // Remove gallery relations first
+          await tx.projectToGallery.deleteMany({
+            where: {
+              projectId: id,
+              mediaId: { in: mediaToRemove },
+            },
+          });
+
+          // Use atomic operation with EXISTS subquery to prevent race conditions
+          const deletedMedia = await tx.media.deleteMany({
+            where: {
+              id: { in: mediaToRemove },
+              NOT: {
+                activities: { some: {} }
+              }
+            }
+          });
+          operations.removed.push(...mediaToRemove.slice(0, deletedMedia.count));
+
+          if (deletedMedia.count < mediaToRemove.length) {
+            console.info(
+              `[GALLERY_UPDATE] Preserved ${mediaToRemove.length - deletedMedia.count} media records from deletion due to activity references`
+            );
+          }
+        }
+
+        // Step 4: Rebuild gallery relations safely (create first, then remove)
+        // Create new relations first (with duplicate protection)
         await tx.projectToGallery.createMany({
-          data: newGalleryImages.map((img) => ({
+          data: processedMediaIds.map((mediaId) => ({
             projectId: id,
-            mediaId: img.id,
+            mediaId: mediaId,
           })),
+          skipDuplicates: true // Prevents duplicate key errors
+        });
+
+        // Then remove only the relations that are no longer needed
+        await tx.projectToGallery.deleteMany({
+          where: {
+            projectId: id,
+            mediaId: { notIn: processedMediaIds }
+          }
+        });
+
+        // Log operations summary
+        console.info(`[GALLERY_UPDATE] Operations summary:`, {
+          projectId: id,
+          preserved: operations.preserved.length,
+          updated: operations.updated.length,
+          created: operations.created.length,
+          removed: operations.removed.length,
+          totalProcessed: processedMediaIds.length,
         });
 
         // Return updated project
@@ -115,6 +229,9 @@ export async function PATCH(
                     id: true,
                     url: true,
                     filename: true,
+                    alt: true,
+                    mimeType: true,
+                    size: true,
                   },
                 },
               },

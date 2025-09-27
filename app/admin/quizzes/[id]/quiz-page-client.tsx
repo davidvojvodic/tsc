@@ -25,21 +25,51 @@ export default function QuizPageClient({
       try {
         setIsSaving(true);
 
+        // Helper function to check if ID is a real UUID vs generated ID
+        const isRealUUID = (id: string | undefined): id is string => {
+          return !!id && !!id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+        };
+
         // Transform data to match the API format
         const saveData = {
           title: data.title,
+          title_sl: data.title_sl,
+          title_hr: data.title_hr,
           description: data.description || "",
+          description_sl: data.description_sl,
+          description_hr: data.description_hr,
           teacherId: data.teacherId,
           questions: data.questions.map((question) => ({
-            ...(quizId !== "new" && { id: question.id }), // Include ID only for existing quizzes
+            // Only include ID if it's a real database UUID, not a generated ID
+            ...(quizId !== "new" && isRealUUID(question.id) && { id: question.id }),
             text: question.text,
+            text_sl: question.text_sl,
+            text_hr: question.text_hr,
+            questionType: question.questionType || "SINGLE_CHOICE", // Add questionType
             options: question.options.map((option) => ({
-              ...(quizId !== "new" && { id: option.id }), // Include ID only for existing options
+              // Only include ID if it's a real database UUID, not a generated ID
+              ...(quizId !== "new" && isRealUUID(option.id) && { id: option.id }),
               text: option.text,
-              correct: option.isCorrect,
+              text_sl: option.text_sl,
+              text_hr: option.text_hr,
+              isCorrect: option.isCorrect,
             })),
+            ...(question.questionType === "MULTIPLE_CHOICE" && question.multipleChoiceData && {
+              multipleChoiceData: question.multipleChoiceData
+            }),
           })),
         };
+
+        // Debug logging
+        console.log("[CLIENT] Sending data:", JSON.stringify(saveData, null, 2));
+        saveData.questions.forEach((q, i) => {
+          console.log(`[CLIENT] Question ${i}:`, {
+            questionType: q.questionType || 'undefined',
+            optionsCount: q.options?.length,
+            correctOptions: q.options?.filter(o => o.isCorrect).length,
+            options: q.options?.map(o => ({ text: o.text, isCorrect: o.isCorrect }))
+          });
+        });
 
         let response;
         if (quizId === "new") {
@@ -95,7 +125,7 @@ export default function QuizPageClient({
   }, [router]);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-[calc(100vh-4rem)] flex flex-col -mx-8 -my-8 -mb-8">
       <QuizEditorV2
         teachers={teachers}
         initialData={initialData}

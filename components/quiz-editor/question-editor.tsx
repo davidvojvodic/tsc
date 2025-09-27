@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizEditor } from "./quiz-editor-provider";
 import { LanguageTabs } from "./language-tabs";
 import { QuestionContent } from "./question-content";
 import { OptionsEditor } from "./options-editor";
-import { CollapsibleSection } from "./collapsible-section";
 import { QuestionActions } from "./question-actions";
 import { EmptyState } from "./empty-state";
 import { AutoSaveIndicator } from "./autosave-indicator";
+import { ScoringMethodSelector } from "./scoring-method-selector";
 import { Teacher, Option } from "./quiz-editor-layout";
 
 interface QuestionEditorProps {
@@ -32,7 +31,6 @@ export function QuestionEditor({
     deleteQuestion
   } = useQuizEditor();
 
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const question = questions[questionIndex];
 
@@ -59,7 +57,7 @@ export function QuestionEditor({
   return (
     <div className="flex flex-col h-full">
       {/* Header with Language Tabs */}
-      <div className="border-b border-gray-200 bg-white px-6 py-4 flex-shrink-0">
+      <div className="border-b border-gray-200 bg-white px-4 md:px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold text-gray-900">
             Question {questionIndex + 1}
@@ -90,7 +88,7 @@ export function QuestionEditor({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6">
         <div className="max-w-4xl mx-auto space-y-6">
           <QuestionContent
             question={question}
@@ -104,25 +102,32 @@ export function QuestionEditor({
             onChange={handleQuestionUpdate}
           />
 
-          <CollapsibleSection
-            title="Advanced Settings"
-            isExpanded={showAdvanced}
-            onToggle={setShowAdvanced}
-          >
-            {question.questionType === "MULTIPLE_CHOICE" && (
-              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  Advanced multiple choice settings will be available here.
-                </p>
-                {/* TODO: Implement MultipleChoiceSettings component */}
-              </div>
-            )}
-          </CollapsibleSection>
+          {question.questionType === "MULTIPLE_CHOICE" && (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <ScoringMethodSelector
+                value={question.multipleChoiceData?.scoringMethod || "ALL_OR_NOTHING"}
+                onChange={(method) => {
+                  const multipleChoiceData = {
+                    ...question.multipleChoiceData,
+                    scoringMethod: method,
+                    minSelections: 1,
+                    maxSelections: question.options.length,
+                    partialCreditRules: {
+                      correctSelectionPoints: 1,
+                      incorrectSelectionPenalty: 0,
+                      minScore: 0
+                    }
+                  };
+                  updateQuestion(questionIndex, { multipleChoiceData });
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Navigation Footer */}
-      <div className="border-t border-gray-200 bg-white px-6 py-4 flex-shrink-0">
+      <div className="border-t border-gray-200 bg-white px-4 md:px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <Button
             variant="outline"

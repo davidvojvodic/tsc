@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizEditor } from "./quiz-editor-provider";
 import { QuestionListItem } from "./question-list-item";
 import { ProgressIndicator } from "./progress-indicator";
-import { cn } from "@/lib/utils";
 
 interface QuestionSidebarProps {
   currentIndex: number;
@@ -32,7 +30,7 @@ export function QuestionSidebar({
   return (
     <div className="flex flex-col h-full" data-sidebar>
       {/* Header */}
-      <div className="p-6 border-b border-gray-200 flex-shrink-0">
+      <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Questions</h2>
           <Button
@@ -48,7 +46,7 @@ export function QuestionSidebar({
       </div>
 
       {/* Question List */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto px-4 py-6">
         <div className="space-y-3">
           {questions.map((question, index) => (
             <QuestionListItem

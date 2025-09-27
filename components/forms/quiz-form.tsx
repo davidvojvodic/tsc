@@ -89,10 +89,12 @@ function SingleChoiceEditor({
   questionIndex,
   control,
   isLoading,
+  form,
 }: {
   questionIndex: number;
   control: Control<FormValues>;
   isLoading: boolean;
+  form: ReturnType<typeof useForm<FormValues>>;
 }) {
   const { fields, append, remove } = useFieldArray({
     control,
@@ -609,6 +611,7 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
                           questionIndex={questionIndex}
                           control={form.control}
                           isLoading={isLoading}
+                          form={form}
                         />
                       )}
                     </CardContent>

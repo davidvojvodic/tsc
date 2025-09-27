@@ -27,7 +27,7 @@ interface QuizEditorHeaderProps {
 }
 
 export function QuizEditorHeader({ teachers, onSave, onCancel }: QuizEditorHeaderProps) {
-  const { quiz, updateQuiz, currentLanguage, setCurrentLanguage, hasUnsavedChanges, isAutoSaving, saveQuiz } = useQuizEditor();
+  const { quiz, updateQuiz, currentLanguage, setCurrentLanguage, hasUnsavedChanges, saveQuiz } = useQuizEditor();
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 

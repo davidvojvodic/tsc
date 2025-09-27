@@ -13,7 +13,7 @@ const optionSchema = z.object({
 // Partial credit rules for multiple choice scoring
 const partialCreditRulesSchema = z.object({
   correctSelectionPoints: z.number().min(0).default(1),
-  incorrectSelectionPenalty: z.number().max(0).default(-0.5),
+  incorrectSelectionPenalty: z.number().max(0).default(0),
   minScore: z.number().min(0).default(0),
 });
 

@@ -1,16 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { QuestionSidebar } from "./question-sidebar";
-import { QuestionEditor } from "./question-editor";
 import { QuizEditorProvider } from "./quiz-editor-provider";
 import { QuizEditorErrorBoundary } from "./quiz-editor-error-boundary";
-import { QuizEditorHeader } from "./quiz-editor-header";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { QuizEditorWizard } from "./quiz-editor-wizard";
 
 export interface Teacher {
   id: string;
@@ -75,60 +67,18 @@ export function QuizEditorLayout({
   onCancel,
   teachers
 }: QuizEditorLayoutProps) {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-
-  const handleQuestionSelect = useCallback((index: number) => {
-    setCurrentQuestionIndex(index);
-  }, []);
 
   return (
     <QuizEditorErrorBoundary>
       <QuizEditorProvider
         initialData={quiz}
         onSave={onSave}
-        onAutoSave={onAutoSave}
       >
-        <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
-          {/* Header */}
-          <QuizEditorHeader
-            teachers={teachers}
-            onCancel={onCancel}
-          />
-
-          {/* Main Editor Area */}
-          <div className="flex-1 overflow-hidden">
-            <ResizablePanelGroup direction="horizontal" className="h-full">
-              {/* Sidebar Panel */}
-              <ResizablePanel
-                defaultSize={25}
-                minSize={20}
-                maxSize={40}
-                className="border-r border-gray-200 bg-white"
-              >
-                <QuestionSidebar
-                  currentIndex={currentQuestionIndex}
-                  onQuestionSelect={handleQuestionSelect}
-                />
-              </ResizablePanel>
-
-              {/* Resize Handle */}
-              <ResizableHandle withHandle />
-
-              {/* Main Content Panel */}
-              <ResizablePanel
-                defaultSize={75}
-                minSize={60}
-                className="bg-white"
-              >
-                <QuestionEditor
-                  questionIndex={currentQuestionIndex}
-                  teachers={teachers}
-                  onQuestionChange={handleQuestionSelect}
-                />
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </div>
-        </div>
+        <QuizEditorWizard
+          teachers={teachers}
+          onSave={onSave}
+          onCancel={onCancel}
+        />
       </QuizEditorProvider>
     </QuizEditorErrorBoundary>
   );

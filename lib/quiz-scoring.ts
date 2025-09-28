@@ -1,6 +1,6 @@
 // lib/quiz-scoring.ts
 import { QuestionType } from "@prisma/client";
-import { MultipleChoiceDataType, PartialCreditRulesType } from "@/lib/schemas/quiz";
+import { MultipleChoiceDataType, PartialCreditRulesType, TextInputDataType } from "@/lib/schemas/quiz";
 
 // Types for scoring
 export interface QuestionData {
@@ -164,6 +164,65 @@ function scoreMultipleChoiceQuestion(
 }
 
 /**
+ * Calculate score for a text input question
+ */
+function scoreTextInputQuestion(
+  question: QuestionData,
+  answer: string
+): ScoreResult {
+  const textInputData = question.answersData as TextInputDataType | undefined;
+
+  if (!textInputData) {
+    throw new Error(`Text input question ${question.id} missing configuration data`);
+  }
+
+  const { acceptableAnswers, caseSensitive } = textInputData;
+  const userAnswer = answer.trim();
+
+  if (!userAnswer) {
+    return {
+      questionId: question.id,
+      selectedAnswers: answer,
+      correctAnswers: acceptableAnswers,
+      isCorrect: false,
+      score: 0,
+      maxScore: 1,
+      explanation: "No answer provided"
+    };
+  }
+
+  let isCorrect = false;
+
+  // Check each acceptable answer with text comparison only
+  for (const acceptableAnswer of acceptableAnswers) {
+    const trimmedAcceptableAnswer = acceptableAnswer.trim();
+
+    // Text comparison
+    if (caseSensitive) {
+      if (userAnswer === trimmedAcceptableAnswer) {
+        isCorrect = true;
+        break;
+      }
+    } else {
+      if (userAnswer.toLowerCase() === trimmedAcceptableAnswer.toLowerCase()) {
+        isCorrect = true;
+        break;
+      }
+    }
+  }
+
+  return {
+    questionId: question.id,
+    selectedAnswers: answer,
+    correctAnswers: acceptableAnswers,
+    isCorrect,
+    score: isCorrect ? 1 : 0,
+    maxScore: 1,
+    explanation: isCorrect ? "Answer matches acceptable response" : "Answer does not match any acceptable response"
+  };
+}
+
+/**
  * Score a single question based on its type
  */
 export function scoreQuestion(
@@ -182,6 +241,13 @@ export function scoreQuestion(
       throw new Error(`Multiple choice question ${question.id} received non-array answer`);
     }
     return scoreMultipleChoiceQuestion(question, answer);
+  }
+
+  if (question.questionType === "TEXT_INPUT") {
+    if (Array.isArray(answer)) {
+      throw new Error(`Text input question ${question.id} received array answer`);
+    }
+    return scoreTextInputQuestion(question, answer);
   }
 
   throw new Error(`Unsupported question type: ${question.questionType}`);
@@ -209,7 +275,11 @@ export function scoreQuiz(
         selectedAnswers: Array.isArray(answer) ? [] : "",
         correctAnswers: question.questionType === "SINGLE_CHOICE"
           ? (question.correctOptionId || "")
-          : question.options.filter(opt => opt.correct).map(opt => opt.id),
+          : question.questionType === "MULTIPLE_CHOICE"
+          ? question.options.filter(opt => opt.correct).map(opt => opt.id)
+          : question.questionType === "TEXT_INPUT"
+          ? (question.answersData as TextInputDataType)?.acceptableAnswers || []
+          : [],
         isCorrect: false,
         score: 0,
         maxScore: 1,
@@ -303,6 +373,38 @@ export function validateMultipleChoiceConfig(
       }
     }
   }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Validate text input question configuration
+ */
+export function validateTextInputConfig(
+  textInputData?: TextInputDataType
+): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!textInputData) {
+    errors.push("Text input configuration is required");
+    return { isValid: false, errors };
+  }
+
+  // Check acceptable answers
+  if (!textInputData.acceptableAnswers || textInputData.acceptableAnswers.length === 0) {
+    errors.push("At least one acceptable answer is required");
+  } else {
+    // Check for empty answers
+    const emptyAnswers = textInputData.acceptableAnswers.filter(answer => !answer.trim());
+    if (emptyAnswers.length > 0) {
+      errors.push("Acceptable answers cannot be empty");
+    }
+  }
+
+  // No additional validation needed for text-only input type
 
   return {
     isValid: errors.length === 0,

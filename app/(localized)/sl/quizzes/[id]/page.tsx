@@ -41,14 +41,13 @@ export default async function QuizPage({
   const transformedQuiz = {
     ...quiz,
     questions: quiz.questions
-      .filter(question => question.questionType === "SINGLE_CHOICE" || question.questionType === "MULTIPLE_CHOICE")
       .map(question => ({
         ...question,
-        questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE",
-        options: question.options.map(option => ({
+        questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT",
+        options: question.options?.map(option => ({
           ...option,
           isCorrect: option.correct // Map 'correct' to 'isCorrect'
-        })),
+        })) || [],
         // Transform answersData to multipleChoiceData for multiple choice questions
         multipleChoiceData: question.questionType === "MULTIPLE_CHOICE" && question.answersData
           ? question.answersData as {
@@ -60,6 +59,16 @@ export default async function QuizPage({
                 incorrectSelectionPenalty: number;
                 minScore: number;
               };
+            }
+          : undefined,
+        // Transform answersData to textInputData for text input questions
+        textInputData: question.questionType === "TEXT_INPUT" && question.answersData
+          ? question.answersData as {
+              acceptableAnswers: string[];
+              caseSensitive: boolean;
+              placeholder?: string;
+              placeholder_sl?: string;
+              placeholder_hr?: string;
             }
           : undefined
       }))

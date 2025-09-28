@@ -4,13 +4,13 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Question } from "./quiz-editor-layout";
+import { Question, Option, TextInputConfiguration } from "./quiz-editor-layout";
 import { Language } from "./quiz-editor-provider";
 
 interface QuestionContentProps {
   question: Question;
   language: Language;
-  onChange: (field: string, value: string) => void;
+  onChange: (field: string, value: string | Option[] | TextInputConfiguration) => void;
 }
 
 export function QuestionContent({
@@ -46,7 +46,23 @@ export function QuestionContent({
         </label>
         <Select
           value={question.questionType}
-          onValueChange={(value) => onChange("questionType", value)}
+          onValueChange={(value) => {
+
+            onChange("questionType", value);
+            // Clear options for TEXT_INPUT questions and set default textInputData
+            if (value === "TEXT_INPUT") {
+              const defaultTextInputData = {
+                acceptableAnswers: [""],
+                caseSensitive: false,
+                placeholder: "",
+                placeholder_sl: "",
+                placeholder_hr: ""
+              };
+
+              onChange("options", []);
+              onChange("textInputData", defaultTextInputData);
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select question type" />
@@ -54,6 +70,7 @@ export function QuestionContent({
           <SelectContent>
             <SelectItem value="SINGLE_CHOICE">Single Choice (Radio Buttons)</SelectItem>
             <SelectItem value="MULTIPLE_CHOICE">Multiple Choice (Checkboxes)</SelectItem>
+            <SelectItem value="TEXT_INPUT">Text Input</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -65,7 +82,12 @@ export function QuestionContent({
         </label>
         <Textarea
           value={currentText}
-          onChange={(e) => onChange(getTextFieldName("text"), e.target.value)}
+          onChange={(e) => {
+            const fieldName = getTextFieldName("text");
+            const newValue = e.target.value;
+
+            onChange(fieldName, newValue);
+          }}
           placeholder={getPlaceholder(language)}
           className="min-h-[100px] resize-none"
         />

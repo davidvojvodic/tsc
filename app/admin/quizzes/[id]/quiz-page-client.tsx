@@ -57,19 +57,12 @@ export default function QuizPageClient({
             ...(question.questionType === "MULTIPLE_CHOICE" && question.multipleChoiceData && {
               multipleChoiceData: question.multipleChoiceData
             }),
+            ...(question.questionType === "TEXT_INPUT" && question.textInputData && {
+              textInputData: question.textInputData
+            }),
           })),
         };
 
-        // Debug logging
-        console.log("[CLIENT] Sending data:", JSON.stringify(saveData, null, 2));
-        saveData.questions.forEach((q, i) => {
-          console.log(`[CLIENT] Question ${i}:`, {
-            questionType: q.questionType || 'undefined',
-            optionsCount: q.options?.length,
-            correctOptions: q.options?.filter(o => o.isCorrect).length,
-            options: q.options?.map(o => ({ text: o.text, isCorrect: o.isCorrect }))
-          });
-        });
 
         let response;
         if (quizId === "new") {

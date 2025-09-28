@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { MultipleChoiceDataType } from "@/lib/schemas/quiz";
+import { MultipleChoiceDataType, TextInputDataType } from "@/lib/schemas/quiz";
 import QuizPageClient from "./quiz-page-client";
 
 export default async function QuizPage({
@@ -75,21 +75,25 @@ export default async function QuizPage({
         description_hr: quiz.description_hr ?? undefined,
         teacherId: quiz.teacherId,
         questions: quiz.questions
-          .filter(question => question.questionType === "SINGLE_CHOICE" || question.questionType === "MULTIPLE_CHOICE")
           .map((question) => ({
             id: question.id,
             text: question.text,
             text_sl: question.text_sl ?? undefined,
             text_hr: question.text_hr ?? undefined,
-            questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE",
-            options: question.options.map((option) => ({
+            questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT",
+            options: question.questionType === "TEXT_INPUT" ? [] : question.options.map((option) => ({
               id: option.id,
               text: option.text,
               text_sl: option.text_sl ?? undefined,
               text_hr: option.text_hr ?? undefined,
               isCorrect: option.correct,
             })),
-            multipleChoiceData: question.answersData ? (question.answersData as MultipleChoiceDataType) : undefined,
+            multipleChoiceData: question.questionType === "MULTIPLE_CHOICE" && question.answersData
+              ? (question.answersData as MultipleChoiceDataType)
+              : undefined,
+            textInputData: question.questionType === "TEXT_INPUT" && question.answersData
+              ? (question.answersData as TextInputDataType)
+              : undefined,
           })),
       }
     : undefined;

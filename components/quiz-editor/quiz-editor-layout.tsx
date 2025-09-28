@@ -26,9 +26,10 @@ export interface Question {
   text: string;
   text_sl?: string;
   text_hr?: string;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT";
   options: Option[];
   multipleChoiceData?: MultipleChoiceConfiguration;
+  textInputData?: TextInputConfiguration;
   order?: number;
 }
 
@@ -50,6 +51,14 @@ export interface MultipleChoiceConfiguration {
     incorrectSelectionPenalty: number;
     minScore: number;
   };
+}
+
+export interface TextInputConfiguration {
+  acceptableAnswers: string[];
+  caseSensitive: boolean;
+  placeholder?: string;
+  placeholder_sl?: string;
+  placeholder_hr?: string;
 }
 
 interface QuizEditorLayoutProps {
@@ -79,6 +88,7 @@ export function QuizEditorLayout({
           onSave={onSave}
           onCancel={onCancel}
         />
+
       </QuizEditorProvider>
     </QuizEditorErrorBoundary>
   );

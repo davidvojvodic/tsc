@@ -9,13 +9,28 @@ export function ProgressIndicator() {
   const { completedQuestions, totalQuestions, progressPercentage } = useMemo(() => {
     const total = questions.length;
     const completed = questions.filter(question => {
-      // A question is complete if it has text, at least 2 options, and no validation errors
+      // Check for validation errors
       const hasErrors = validationErrors[question.id]?.length > 0;
-      const hasText = question.text.trim().length > 0;
-      const hasEnoughOptions = question.options.length >= 2;
-      const allOptionsHaveText = question.options.every(opt => opt.text.trim().length > 0);
+      if (hasErrors) return false;
 
-      return !hasErrors && hasText && hasEnoughOptions && allOptionsHaveText;
+      // Check for question text
+      const hasText = question.text.trim().length > 0;
+      if (!hasText) return false;
+
+      // Question type specific completion logic
+      if (question.questionType === "TEXT_INPUT") {
+        // For TEXT_INPUT: need textInputData with acceptable answers
+        const hasTextInputData = question.textInputData &&
+          question.textInputData.acceptableAnswers &&
+          question.textInputData.acceptableAnswers.length > 0 &&
+          question.textInputData.acceptableAnswers.every(answer => answer.trim().length > 0);
+        return hasTextInputData;
+      } else {
+        // For choice questions: need at least 2 options with text
+        const hasEnoughOptions = question.options.length >= 2;
+        const allOptionsHaveText = question.options.every(opt => opt.text.trim().length > 0);
+        return hasEnoughOptions && allOptionsHaveText;
+      }
     }).length;
 
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;

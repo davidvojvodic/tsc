@@ -33,7 +33,6 @@ export function QuizEditorV2({
         setIsSaving(false);
       }
     } else {
-      console.log("Quiz data to save:", data);
       toast.success("Quiz would be saved (demo mode)");
     }
   }, [onSave]);

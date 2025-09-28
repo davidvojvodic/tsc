@@ -11,8 +11,8 @@ interface Question {
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | null;
-  options: {
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | null;
+  options?: {
     id: string;
     text: string;
     text_sl?: string | null;
@@ -28,6 +28,13 @@ interface Question {
       incorrectSelectionPenalty: number;
       minScore: number;
     };
+  };
+  textInputData?: {
+    acceptableAnswers: string[];
+    caseSensitive: boolean;
+    placeholder?: string;
+    placeholder_sl?: string;
+    placeholder_hr?: string;
   };
 }
 
@@ -59,19 +66,20 @@ export function QuizDetailPage({ quiz, language }: QuizDetailPageProps) {
   // Localize questions and options
   const localizedQuestions = quiz.questions.map(question => {
     const questionText = getLocalizedContent(question, "text", language);
-    
-    const localizedOptions = question.options.map(option => ({
+
+    const localizedOptions = question.options?.map(option => ({
       id: option.id,
       text: getLocalizedContent(option, "text", language) || option.text,
       isCorrect: option.isCorrect
-    }));
+    })) || [];
 
     return {
       id: question.id,
       text: questionText || question.text,
       questionType: question.questionType || "SINGLE_CHOICE",
       options: localizedOptions,
-      multipleChoiceData: question.multipleChoiceData ?? undefined
+      multipleChoiceData: question.multipleChoiceData ?? undefined,
+      textInputData: question.textInputData ?? undefined
     };
   });
 

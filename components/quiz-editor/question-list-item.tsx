@@ -32,10 +32,26 @@ export const QuestionListItem = memo(function QuestionListItem({
 
   const completionStatus = useMemo((): QuestionCompletionStatus => {
     if (hasErrors) return "error";
-    if (!question.text || question.options.length < 2) return "incomplete";
-    if (question.options.every(o => o.text)) return "complete";
-    return "partial";
-  }, [question.text, question.options, hasErrors]);
+    if (!question.text) return "incomplete";
+
+    if (question.questionType === "TEXT_INPUT") {
+      // For TEXT_INPUT questions: check textInputData
+      if (!question.textInputData ||
+          !question.textInputData.acceptableAnswers ||
+          question.textInputData.acceptableAnswers.length === 0) {
+        return "incomplete";
+      }
+      if (question.textInputData.acceptableAnswers.every(answer => answer.trim())) {
+        return "complete";
+      }
+      return "partial";
+    } else {
+      // For choice questions: check options
+      if (question.options.length < 2) return "incomplete";
+      if (question.options.every(o => o.text)) return "complete";
+      return "partial";
+    }
+  }, [question.text, question.questionType, question.options, question.textInputData, hasErrors]);
 
   return (
     <div
@@ -64,10 +80,18 @@ export const QuestionListItem = memo(function QuestionListItem({
             <Badge variant="outline" className="text-xs">
               {question.questionType.replace("_", " ")}
             </Badge>
-            {question.options.length > 0 && (
-              <span className="text-xs text-gray-500">
-                {question.options.length} options
-              </span>
+            {question.questionType === "TEXT_INPUT" ? (
+              question.textInputData?.acceptableAnswers && question.textInputData.acceptableAnswers.length > 0 && (
+                <span className="text-xs text-gray-500">
+                  {question.textInputData.acceptableAnswers.length} answer{question.textInputData.acceptableAnswers.length !== 1 ? 's' : ''}
+                </span>
+              )
+            ) : (
+              question.options.length > 0 && (
+                <span className="text-xs text-gray-500">
+                  {question.options.length} options
+                </span>
+              )
             )}
           </div>
         </div>
@@ -85,6 +109,8 @@ export const QuestionListItem = memo(function QuestionListItem({
     prevProps.question.text === nextProps.question.text &&
     prevProps.question.questionType === nextProps.question.questionType &&
     prevProps.question.options.length === nextProps.question.options.length &&
+    (prevProps.question.textInputData?.acceptableAnswers?.length || 0) ===
+    (nextProps.question.textInputData?.acceptableAnswers?.length || 0) &&
     prevProps.isActive === nextProps.isActive &&
     prevProps.isDragging === nextProps.isDragging &&
     prevProps.hasErrors === nextProps.hasErrors &&

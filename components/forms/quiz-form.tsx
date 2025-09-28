@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { MultipleChoiceEditor } from "@/components/admin/quiz/multiple-choice-editor";
+import { TextInputEditor } from "@/components/admin/quiz/text-input-editor";
 
 import { quizSchema } from "@/lib/schemas/quiz";
 
@@ -63,8 +64,8 @@ interface QuizFormProps {
       text: string;
       text_sl?: string;
       text_hr?: string;
-      questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
-      options: Array<{
+      questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT";
+      options?: Array<{
         id: string;
         text: string;
         text_sl?: string;
@@ -80,6 +81,15 @@ interface QuizFormProps {
           incorrectSelectionPenalty: number;
           minScore: number;
         };
+      };
+      textInputData?: {
+        inputType: "text" | "number" | "email" | "url";
+        acceptableAnswers: string[];
+        caseSensitive: boolean;
+        numericTolerance?: number;
+        placeholder?: string;
+        placeholder_sl?: string;
+        placeholder_hr?: string;
       };
     }>;
   };
@@ -251,13 +261,15 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
           text: q.text,
           text_sl: q.text_sl || "",
           text_hr: q.text_hr || "",
-          questionType: (q.questionType || "SINGLE_CHOICE") as "SINGLE_CHOICE" | "MULTIPLE_CHOICE",
-          options: q.options.map((o) => ({
-            text: o.text,
-            text_sl: o.text_sl || "",
-            text_hr: o.text_hr || "",
-            isCorrect: o.correct ?? false, // Use nullish coalescing to default to false
-          })),
+          questionType: (q.questionType || "SINGLE_CHOICE") as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT",
+          ...(q.questionType !== "TEXT_INPUT" && {
+            options: q.options?.map((o) => ({
+              text: o.text,
+              text_sl: o.text_sl || "",
+              text_hr: o.text_hr || "",
+              isCorrect: o.correct ?? false, // Use nullish coalescing to default to false
+            })) || [],
+          }),
           ...(q.questionType === "MULTIPLE_CHOICE" && {
             multipleChoiceData: q.multipleChoiceData || {
               scoringMethod: "ALL_OR_NOTHING" as const,
@@ -265,9 +277,20 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
               maxSelections: undefined,
               partialCreditRules: {
                 correctSelectionPoints: 1,
-                incorrectSelectionPenalty: -0.5,
+                incorrectSelectionPenalty: 0,
                 minScore: 0,
               },
+            },
+          }),
+          ...(q.questionType === "TEXT_INPUT" && {
+            textInputData: q.textInputData || {
+              inputType: "text" as const,
+              acceptableAnswers: [""],
+              caseSensitive: false,
+              numericTolerance: undefined,
+              placeholder: "",
+              placeholder_sl: "",
+              placeholder_hr: "",
             },
           }),
         })),
@@ -316,14 +339,19 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
           text_sl: q.text_sl,
           text_hr: q.text_hr,
           questionType: q.questionType,
-          options: q.options.map((o) => ({
-            text: o.text,
-            text_sl: o.text_sl,
-            text_hr: o.text_hr,
-            isCorrect: o.isCorrect,
-          })),
+          ...(q.questionType !== "TEXT_INPUT" && {
+            options: q.options?.map((o) => ({
+              text: o.text,
+              text_sl: o.text_sl,
+              text_hr: o.text_hr,
+              isCorrect: o.isCorrect,
+            })) || [],
+          }),
           ...(q.questionType === "MULTIPLE_CHOICE" && {
             multipleChoiceData: q.multipleChoiceData,
+          }),
+          ...(q.questionType === "TEXT_INPUT" && {
+            textInputData: q.textInputData,
           }),
         })),
       };
@@ -590,6 +618,7 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
                               <SelectContent>
                                 <SelectItem value="SINGLE_CHOICE">Single Choice (Radio Buttons)</SelectItem>
                                 <SelectItem value="MULTIPLE_CHOICE">Multiple Choice (Checkboxes)</SelectItem>
+                                <SelectItem value="TEXT_INPUT">Text Input</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -602,6 +631,12 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
                       {/* Conditional Question Editor */}
                       {questionType === "MULTIPLE_CHOICE" ? (
                         <MultipleChoiceEditor
+                          questionIndex={questionIndex}
+                          control={form.control}
+                          isLoading={isLoading}
+                        />
+                      ) : questionType === "TEXT_INPUT" ? (
+                        <TextInputEditor
                           questionIndex={questionIndex}
                           control={form.control}
                           isLoading={isLoading}

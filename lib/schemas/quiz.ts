@@ -4,10 +4,18 @@ import * as z from "zod";
 // Base option schema for multilingual support
 const optionSchema = z.object({
   id: z.string().optional(), // For existing options during updates
-  text: z.string().min(1, "Option text is required"),
+  text: z.string(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
   isCorrect: z.boolean().default(false),
+}).refine((data) => {
+  // At least one of the text fields must have content
+  const hasText = (data.text && data.text.trim().length > 0) ||
+                 (data.text_sl && data.text_sl.trim().length > 0) ||
+                 (data.text_hr && data.text_hr.trim().length > 0);
+  return hasText;
+}, {
+  message: "Option must have text in at least one language",
 });
 
 // Partial credit rules for multiple choice scoring
@@ -25,24 +33,48 @@ const multipleChoiceDataSchema = z.object({
   partialCreditRules: partialCreditRulesSchema.optional(),
 });
 
+// Text input specific data schema - simplified to text only
+const textInputDataSchema = z.object({
+  acceptableAnswers: z.array(z.string().min(1)).min(1, "At least one acceptable answer is required"),
+  caseSensitive: z.boolean().default(false),
+  placeholder: z.string().optional(),
+  placeholder_sl: z.string().optional(),
+  placeholder_hr: z.string().optional(),
+});
+
 // Question schema with support for both single and multiple choice
 const questionSchema = z.object({
   id: z.string().optional(), // For existing questions during updates
-  text: z.string().min(1, "Question text is required"),
+  text: z.string(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
-  questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE"]).default("SINGLE_CHOICE"),
-  options: z.array(optionSchema).min(2, "At least 2 options are required"),
+  questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT"]).default("SINGLE_CHOICE"),
+  options: z.array(optionSchema).optional(),
   multipleChoiceData: multipleChoiceDataSchema.optional(),
+  textInputData: textInputDataSchema.optional(),
 }).refine((data) => {
+  // Question must have text in at least one language
+  const hasQuestionText = (data.text && data.text.trim().length > 0) ||
+                         (data.text_sl && data.text_sl.trim().length > 0) ||
+                         (data.text_hr && data.text_hr.trim().length > 0);
+  if (!hasQuestionText) {
+    return false;
+  }
+
   // Validation for single choice questions
   if (data.questionType === "SINGLE_CHOICE") {
+    if (!data.options || data.options.length < 2) {
+      return false;
+    }
     const correctOptions = data.options.filter(opt => opt.isCorrect);
     return correctOptions.length === 1;
   }
 
   // Validation for multiple choice questions
   if (data.questionType === "MULTIPLE_CHOICE") {
+    if (!data.options || data.options.length < 2) {
+      return false;
+    }
     const correctOptions = data.options.filter(opt => opt.isCorrect);
 
     // At least one option must be correct
@@ -65,6 +97,22 @@ const questionSchema = z.object({
     return true;
   }
 
+  // Validation for text input questions
+  if (data.questionType === "TEXT_INPUT") {
+    // Text input questions don't need options
+    if (!data.textInputData) {
+      return false;
+    }
+
+    // Must have at least one acceptable answer
+    if (!data.textInputData.acceptableAnswers ||
+        data.textInputData.acceptableAnswers.length === 0) {
+      return false;
+    }
+
+    return true;
+  }
+
   return true;
 }, {
   message: "Invalid question configuration",
@@ -81,12 +129,12 @@ export const quizSchema = z.object({
   questions: z.array(questionSchema).min(1, "At least 1 question is required"),
 });
 
-// Schema for quiz submissions - supports both single and multiple choice answers
+// Schema for quiz submissions - supports single choice, multiple choice, and text input answers
 export const quizSubmissionSchema = z.object({
   answers: z.record(
     z.string(), // questionId
     z.union([
-      z.string(), // Single choice: optionId
+      z.string(), // Single choice: optionId OR Text input: answer text
       z.array(z.string()) // Multiple choice: array of optionIds
     ])
   ),
@@ -97,5 +145,6 @@ export type QuizSchemaType = z.infer<typeof quizSchema>;
 export type QuestionSchemaType = z.infer<typeof questionSchema>;
 export type OptionSchemaType = z.infer<typeof optionSchema>;
 export type MultipleChoiceDataType = z.infer<typeof multipleChoiceDataSchema>;
+export type TextInputDataType = z.infer<typeof textInputDataSchema>;
 export type PartialCreditRulesType = z.infer<typeof partialCreditRulesSchema>;
 export type QuizSubmissionType = z.infer<typeof quizSubmissionSchema>;

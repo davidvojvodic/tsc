@@ -6,11 +6,12 @@ import { useQuizEditor } from "./quiz-editor-provider";
 import { LanguageTabs } from "./language-tabs";
 import { QuestionContent } from "./question-content";
 import { OptionsEditor } from "./options-editor";
+import { TextInputConfigurationEditor } from "./text-input-configuration-editor";
 import { QuestionActions } from "./question-actions";
 import { EmptyState } from "./empty-state";
 import { AutoSaveIndicator } from "./autosave-indicator";
 import { ScoringMethodSelector } from "./scoring-method-selector";
-import { Teacher, Option } from "./quiz-editor-layout";
+import { Teacher, Option, TextInputConfiguration } from "./quiz-editor-layout";
 
 interface QuestionEditorProps {
   questionIndex: number;
@@ -50,7 +51,7 @@ export function QuestionEditor({
     }
   };
 
-  const handleQuestionUpdate = (field: string, value: string | Option[]) => {
+  const handleQuestionUpdate = (field: string, value: string | Option[] | TextInputConfiguration) => {
     updateQuestion(questionIndex, { [field]: value });
   };
 
@@ -96,11 +97,20 @@ export function QuestionEditor({
             onChange={handleQuestionUpdate}
           />
 
-          <OptionsEditor
-            question={question}
-            language={currentLanguage}
-            onChange={handleQuestionUpdate}
-          />
+          {/* Question Type Specific Editors */}
+          {question.questionType === "TEXT_INPUT" ? (
+            <TextInputConfigurationEditor
+              question={question}
+              language={currentLanguage}
+              onChange={handleQuestionUpdate}
+            />
+          ) : (
+            <OptionsEditor
+              question={question}
+              language={currentLanguage}
+              onChange={handleQuestionUpdate}
+            />
+          )}
 
           {question.questionType === "MULTIPLE_CHOICE" && (
             <div className="p-4 bg-gray-50 rounded-lg">

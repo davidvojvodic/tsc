@@ -4,6 +4,7 @@ import React from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { MultipleChoiceQuestion } from "./question-types/multiple-choice-question";
+import { TextInputQuestion } from "./question-types/text-input-question";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { cn } from "@/lib/utils";
@@ -27,14 +28,23 @@ interface MultipleChoiceData {
   };
 }
 
+interface TextInputData {
+  acceptableAnswers: string[];
+  caseSensitive: boolean;
+  placeholder?: string;
+  placeholder_sl?: string;
+  placeholder_hr?: string;
+}
+
 interface Question {
   id: string;
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
-  options: Option[];
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT";
+  options?: Option[];
   multipleChoiceData?: MultipleChoiceData;
+  textInputData?: TextInputData;
 }
 
 interface QuestionRendererProps {
@@ -64,6 +74,10 @@ export function QuestionRenderer({
     onAnswerChange(questionId, selectedOptions);
   };
 
+  const handleTextInputChange = (questionId: string, answer: string) => {
+    onAnswerChange(questionId, answer);
+  };
+
   if (question.questionType === "MULTIPLE_CHOICE") {
     // Ensure we have the required multiple choice data
     if (!question.multipleChoiceData) {
@@ -77,10 +91,34 @@ export function QuestionRenderer({
         text={question.text}
         text_sl={question.text_sl}
         text_hr={question.text_hr}
-        options={question.options}
+        options={question.options || []}
         multipleChoiceData={question.multipleChoiceData}
         selectedOptions={Array.isArray(selectedAnswer) ? selectedAnswer : []}
         onSelectionChange={handleMultipleChoiceChange}
+        disabled={disabled}
+        showValidation={showValidation}
+        language={language}
+        className={className}
+      />
+    );
+  }
+
+  if (question.questionType === "TEXT_INPUT") {
+    // Ensure we have the required text input data
+    if (!question.textInputData) {
+      console.warn(`Text input question ${question.id} is missing textInputData`);
+      return null;
+    }
+
+    return (
+      <TextInputQuestion
+        questionId={question.id}
+        text={question.text}
+        text_sl={question.text_sl}
+        text_hr={question.text_hr}
+        textInputData={question.textInputData}
+        answer={typeof selectedAnswer === "string" ? selectedAnswer : ""}
+        onAnswerChange={handleTextInputChange}
         disabled={disabled}
         showValidation={showValidation}
         language={language}
@@ -102,7 +140,7 @@ export function QuestionRenderer({
         disabled={disabled}
         className="space-y-3"
       >
-        {question.options.map((option) => (
+        {question.options?.map((option) => (
           <div
             key={option.id}
             className={cn(

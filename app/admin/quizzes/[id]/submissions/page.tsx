@@ -34,6 +34,24 @@ async function getQuizWithSubmissions(quizId: string) {
       questions: {
         select: {
           id: true,
+          text: true,
+          text_sl: true,
+          text_hr: true,
+          questionType: true,
+          answersData: true,
+          createdAt: true,
+          options: {
+            select: {
+              id: true,
+              text: true,
+              text_sl: true,
+              text_hr: true,
+              correct: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'asc',
         },
       },
       submissions: {
@@ -79,6 +97,21 @@ export default async function QuizSubmissionsPage({
     redirect("/admin/quizzes");
   }
 
+  // Create lookup maps for questions and options
+  const questionsMap = new Map();
+  const optionsMap = new Map();
+
+  quiz.questions.forEach((question, index) => {
+    questionsMap.set(question.id, {
+      ...question,
+      displayOrder: index + 1, // For proper ordering in display
+    });
+
+    question.options.forEach((option) => {
+      optionsMap.set(option.id, option);
+    });
+  });
+
   // Calculate statistics
   const totalSubmissions = quiz.submissions.length;
   const averageScore = totalSubmissions > 0
@@ -92,20 +125,100 @@ export default async function QuizSubmissionsPage({
     : 0;
 
   // Format submissions for the data table
-  const formattedSubmissions = quiz.submissions.map((submission) => ({
-    id: submission.id,
-    userName: submission.user.name || "Unknown",
-    userEmail: submission.user.email,
-    score: submission.score,
-    submittedAt: format(submission.createdAt, "PPpp"),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    answers: (submission.answers as any[]).map((answer) => ({
-      questionId: answer.questionId,
-      selectedOptionId: answer.selectedOptionId,
-      correctOptionId: answer.correctOptionId,
-      isCorrect: answer.isCorrect,
-    })) as QuizAnswer[],
-  }));
+  const formattedSubmissions = quiz.submissions.map((submission) => {
+    // Handle the answers structure - it's stored as JSON object, not array
+    const submissionData = submission.answers as any;
+    let answersArray: QuizAnswer[] = [];
+
+    if (submissionData) {
+      if (submissionData.version === "2.0" && submissionData.scoreDetails?.questionResults) {
+        // New format with detailed scoring
+        answersArray = submissionData.scoreDetails.questionResults.map((result: any) => {
+          const question = questionsMap.get(result.questionId);
+          const selectedAnswerIds = Array.isArray(result.selectedAnswers) ? result.selectedAnswers : [result.selectedAnswers];
+          const correctAnswerIds = Array.isArray(result.correctAnswers) ? result.correctAnswers : [result.correctAnswers];
+
+          // Handle different question types differently
+          let selectedAnswersText: string[];
+          let correctAnswersText: string[];
+
+          if (question?.questionType === "TEXT_INPUT") {
+            // For TEXT_INPUT questions, the answers are direct text values, not option IDs
+            selectedAnswersText = selectedAnswerIds.filter(Boolean);
+            correctAnswersText = correctAnswerIds.filter(Boolean);
+          } else {
+            // For choice questions, look up option text by ID
+            selectedAnswersText = selectedAnswerIds.map((id: string) => {
+              const option = optionsMap.get(id);
+              return option?.text || id;
+            });
+            correctAnswersText = correctAnswerIds.map((id: string) => {
+              const option = optionsMap.get(id);
+              return option?.text || id;
+            });
+          }
+
+          return {
+            questionId: result.questionId,
+            questionText: question?.text || `Question ${question?.displayOrder || '?'}`,
+            questionOrder: question?.displayOrder || 0,
+            questionType: question?.questionType || 'UNKNOWN',
+            selectedOptionId: Array.isArray(result.selectedAnswers) ? null : result.selectedAnswers,
+            selectedAnswers: selectedAnswerIds,
+            selectedAnswersText,
+            correctAnswers: correctAnswerIds,
+            correctAnswersText,
+            isCorrect: result.isCorrect,
+            score: result.score,
+            maxScore: result.maxScore,
+          };
+        });
+      } else if (Array.isArray(submissionData)) {
+        // Legacy format (array)
+        answersArray = submissionData.map((answer: any) => {
+          const question = questionsMap.get(answer.questionId);
+
+          // Handle different question types differently for legacy format
+          let selectedAnswersText: string[];
+          let correctAnswersText: string[];
+
+          if (question?.questionType === "TEXT_INPUT") {
+            // For TEXT_INPUT questions, use the answer values directly
+            selectedAnswersText = [answer.selectedOptionId || ''];
+            correctAnswersText = [answer.correctOptionId || ''];
+          } else {
+            // For choice questions, look up option text by ID
+            const selectedOption = optionsMap.get(answer.selectedOptionId);
+            const correctOption = optionsMap.get(answer.correctOptionId);
+            selectedAnswersText = [selectedOption?.text || answer.selectedOptionId];
+            correctAnswersText = [correctOption?.text || answer.correctOptionId];
+          }
+
+          return {
+            questionId: answer.questionId,
+            questionText: question?.text || `Question ${question?.displayOrder || '?'}`,
+            questionOrder: question?.displayOrder || 0,
+            questionType: question?.questionType || 'UNKNOWN',
+            selectedOptionId: answer.selectedOptionId,
+            selectedAnswers: [answer.selectedOptionId],
+            selectedAnswersText,
+            correctAnswers: [answer.correctOptionId],
+            correctAnswersText,
+            isCorrect: answer.isCorrect,
+          };
+        });
+      }
+    }
+
+    return {
+      id: submission.id,
+      userName: submission.user.name || "Unknown",
+      userEmail: submission.user.email,
+      score: submission.score,
+      submittedAt: format(submission.createdAt, "PPpp"),
+      answers: answersArray,
+    };
+  });
 
   return (
     <div className="flex-col">

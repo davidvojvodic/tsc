@@ -102,25 +102,53 @@ function validateQuestion(question: Question): ValidationError[] {
     });
   }
 
-  // Options validation
-  if (question.options.length < 2) {
-    errors.push({
-      field: "options",
-      message: "At least 2 options are required"
+  // Question type specific validation
+  if (question.questionType === "TEXT_INPUT") {
+    // Text input validation
+    if (!question.textInputData) {
+      errors.push({
+        field: "textInputData",
+        message: "Text input configuration is required"
+      });
+    } else {
+      const { acceptableAnswers } = question.textInputData;
+
+      if (!acceptableAnswers || acceptableAnswers.length === 0) {
+        errors.push({
+          field: "textInputData.acceptableAnswers",
+          message: "At least one acceptable answer is required"
+        });
+      } else {
+        // Check for empty answers
+        const emptyAnswers = acceptableAnswers.filter(answer => !answer.trim());
+        if (emptyAnswers.length > 0) {
+          errors.push({
+            field: "textInputData.acceptableAnswers",
+            message: "Acceptable answers cannot be empty"
+          });
+        }
+      }
+    }
+  } else {
+    // Options validation for choice questions
+    if (question.options.length < 2) {
+      errors.push({
+        field: "options",
+        message: "At least 2 options are required"
+      });
+    }
+
+    // Check for empty options
+    question.options.forEach((option, index) => {
+      if (!option.text.trim()) {
+        errors.push({
+          field: `options.${index}.text`,
+          message: `Option ${index + 1} text is required`
+        });
+      }
     });
   }
 
-  // Check for empty options
-  question.options.forEach((option, index) => {
-    if (!option.text.trim()) {
-      errors.push({
-        field: `options.${index}.text`,
-        message: `Option ${index + 1} text is required`
-      });
-    }
-  });
-
-  // Question type specific validation
   if (question.questionType === "SINGLE_CHOICE") {
     const correctOptions = question.options.filter(o => o.isCorrect);
     if (correctOptions.length !== 1) {

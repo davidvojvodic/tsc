@@ -93,3 +93,4 @@ mcp-servers/sequential-thinking/README.md
 .gitignore
 mcp-servers/sequential-thinking/package-lock.json
 mcp-servers/sequential-thinking/package.json
+.env.prod

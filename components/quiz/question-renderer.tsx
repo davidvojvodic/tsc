@@ -5,6 +5,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { MultipleChoiceQuestion } from "./question-types/multiple-choice-question";
 import { TextInputQuestion } from "./question-types/text-input-question";
+import { DropdownQuestion } from "./question-types/dropdown-question";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { cn } from "@/lib/utils";
@@ -36,21 +37,50 @@ interface TextInputData {
   placeholder_hr?: string;
 }
 
+interface DropdownOption {
+  id: string;
+  text: string;
+  text_sl?: string;
+  text_hr?: string;
+  isCorrect: boolean;
+}
+
+interface DropdownField {
+  id: string;
+  label: string;
+  label_sl?: string;
+  label_hr?: string;
+  options: DropdownOption[];
+}
+
+interface DropdownConfiguration {
+  template: string;
+  template_sl?: string;
+  template_hr?: string;
+  dropdowns: DropdownField[];
+  scoring?: {
+    pointsPerDropdown: number;
+    requireAllCorrect: boolean;
+    penalizeIncorrect: boolean;
+  };
+}
+
 interface Question {
   id: string;
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN";
   options?: Option[];
   multipleChoiceData?: MultipleChoiceData;
   textInputData?: TextInputData;
+  dropdownData?: DropdownConfiguration;
 }
 
 interface QuestionRendererProps {
   question: Question;
-  selectedAnswer: string | string[];
-  onAnswerChange: (questionId: string, answer: string | string[]) => void;
+  selectedAnswer: string | string[] | Record<string, string>;
+  onAnswerChange: (questionId: string, answer: string | string[] | Record<string, string>) => void;
   disabled?: boolean;
   showValidation?: boolean;
   language?: SupportedLanguage;
@@ -76,6 +106,10 @@ export function QuestionRenderer({
 
   const handleTextInputChange = (questionId: string, answer: string) => {
     onAnswerChange(questionId, answer);
+  };
+
+  const handleDropdownChange = (questionId: string, answers: Record<string, string>) => {
+    onAnswerChange(questionId, answers);
   };
 
   if (question.questionType === "MULTIPLE_CHOICE") {
@@ -121,6 +155,29 @@ export function QuestionRenderer({
         onAnswerChange={handleTextInputChange}
         disabled={disabled}
         showValidation={showValidation}
+        language={language}
+        className={className}
+      />
+    );
+  }
+
+  if (question.questionType === "DROPDOWN") {
+    // Ensure we have the required dropdown data
+    if (!question.dropdownData) {
+      console.warn(`Dropdown question ${question.id} is missing dropdownData`);
+      return null;
+    }
+
+    return (
+      <DropdownQuestion
+        questionId={question.id}
+        text={question.text}
+        text_sl={question.text_sl}
+        text_hr={question.text_hr}
+        dropdownData={question.dropdownData}
+        selectedAnswers={typeof selectedAnswer === "object" && !Array.isArray(selectedAnswer) ? selectedAnswer : {}}
+        onAnswerChange={handleDropdownChange}
+        disabled={disabled}
         language={language}
         className={className}
       />

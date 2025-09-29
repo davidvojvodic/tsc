@@ -26,7 +26,7 @@ interface QuestionInput {
   text_sl?: string;
   text_hr?: string;
   questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING" | "DRAG_DROP_IMAGE";
-  options?: OptionInput[]; // Made optional for TEXT_INPUT questions
+  options?: OptionInput[]; // Made optional for TEXT_INPUT and DROPDOWN questions
   multipleChoiceData?: {
     scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
     minSelections: number;
@@ -45,6 +45,29 @@ interface QuestionInput {
     placeholder?: string;
     placeholder_sl?: string;
     placeholder_hr?: string;
+  };
+  dropdownData?: {
+    template: string;
+    template_sl?: string;
+    template_hr?: string;
+    dropdowns: Array<{
+      id: string;
+      label: string;
+      label_sl?: string;
+      label_hr?: string;
+      options: Array<{
+        id: string;
+        text: string;
+        text_sl?: string;
+        text_hr?: string;
+        isCorrect: boolean;
+      }>;
+    }>;
+    scoring?: {
+      pointsPerDropdown: number;
+      requireAllCorrect: boolean;
+      penalizeIncorrect: boolean;
+    };
   };
 }
 
@@ -91,12 +114,14 @@ async function createQuestion(
   quizId: string,
   questionData: QuestionInput
 ) {
-  // Prepare answersData for MULTIPLE_CHOICE and TEXT_INPUT questions
+  // Prepare answersData for different question types
   let answersData = undefined;
   if (questionData.questionType === "MULTIPLE_CHOICE" && questionData.multipleChoiceData) {
     answersData = questionData.multipleChoiceData;
   } else if (questionData.questionType === "TEXT_INPUT" && questionData.textInputData) {
     answersData = questionData.textInputData;
+  } else if (questionData.questionType === "DROPDOWN" && questionData.dropdownData) {
+    answersData = questionData.dropdownData;
   }
 
   // Step 1: Create the question without setting correctOptionId
@@ -163,12 +188,14 @@ async function updateQuestion(
   questionId: string,
   questionData: QuestionInput
 ) {
-  // Prepare answersData for MULTIPLE_CHOICE and TEXT_INPUT questions
+  // Prepare answersData for different question types
   let answersData = undefined;
   if (questionData.questionType === "MULTIPLE_CHOICE" && questionData.multipleChoiceData) {
     answersData = questionData.multipleChoiceData;
   } else if (questionData.questionType === "TEXT_INPUT" && questionData.textInputData) {
     answersData = questionData.textInputData;
+  } else if (questionData.questionType === "DROPDOWN" && questionData.dropdownData) {
+    answersData = questionData.dropdownData;
   }
 
   // Step 1: Update the question's text and type
@@ -304,16 +331,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body: QuizInput = await req.json();
 
     // Debug logging to see what's being sent
-    console.log("PATCH Quiz Data Debug:", JSON.stringify({
-      questionsCount: body.questions?.length,
-      questions: body.questions?.map((q, i) => ({
-        index: i,
-        questionType: q.questionType,
-        optionsCount: q.options?.length,
-        correctOptions: q.options?.filter(o => o.isCorrect)?.length,
-        options: q.options?.map(o => ({ text: o.text, isCorrect: o.isCorrect }))
-      }))
-    }, null, 2));
+    if (process.env.NODE_ENV === 'development') {
+      console.log("PATCH Quiz Data Debug:", JSON.stringify({
+        questionsCount: body.questions?.length,
+        questions: body.questions?.map((q, i) => ({
+          index: i,
+          questionType: q.questionType,
+          optionsCount: q.options?.length,
+          correctOptions: q.options?.filter(o => o.isCorrect)?.length,
+          options: q.options?.map(o => ({ text: o.text, isCorrect: o.isCorrect }))
+        }))
+      }, null, 2));
+    }
 
     const validatedData = quizSchema.parse(body);
 
@@ -579,8 +608,59 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return new NextResponse("Quiz not found", { status: 404 });
     }
 
-    // Step 4: Respond with the retrieved quiz data
-    return NextResponse.json(quiz);
+    // Step 4: Transform database data to frontend format
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[QUIZZES_GET] Raw quiz data from database:", JSON.stringify(quiz, null, 2));
+      console.log("[QUIZZES_GET] Questions answersData:", quiz.questions.map(q => ({
+        id: q.id,
+        questionType: q.questionType,
+        answersData: q.answersData
+      })));
+    }
+
+    const transformedQuiz = {
+      ...quiz,
+      questions: quiz.questions.map(question => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[QUIZZES_GET] Transforming question ${question.id} (${question.questionType}):`, {
+            hasAnswersData: !!question.answersData,
+            answersData: question.answersData
+          });
+        }
+
+        return {
+        id: question.id,
+        text: question.text,
+        text_sl: question.text_sl,
+        text_hr: question.text_hr,
+        questionType: question.questionType,
+        options: question.options.map(option => ({
+          id: option.id,
+          text: option.text,
+          text_sl: option.text_sl,
+          text_hr: option.text_hr,
+          isCorrect: option.correct, // Map 'correct' to 'isCorrect'
+        })),
+        // Transform answersData back to appropriate typed data based on questionType
+        ...(question.questionType === "MULTIPLE_CHOICE" && question.answersData && {
+          multipleChoiceData: question.answersData
+        }),
+        ...(question.questionType === "TEXT_INPUT" && question.answersData && {
+          textInputData: question.answersData
+        }),
+        ...(question.questionType === "DROPDOWN" && question.answersData && {
+          dropdownData: question.answersData
+        }),
+        };
+      })
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[QUIZZES_GET] Transformed quiz data:", JSON.stringify(transformedQuiz, null, 2));
+    }
+
+    // Step 5: Respond with the transformed quiz data
+    return NextResponse.json(transformedQuiz);
   } catch (error) {
     console.error("[QUIZZES_GET_BY_ID]", error);
     return new NextResponse("Internal error", { status: 500 });

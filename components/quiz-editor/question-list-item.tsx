@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusIndicator } from "./status-indicator";
 import { Question } from "./quiz-editor-layout";
 import { cn } from "@/lib/utils";
+import { getQuestionCompletionStatus, getQuestionValidationSummary, ValidationError } from "@/lib/quiz-validation";
 
 export type QuestionCompletionStatus = "incomplete" | "partial" | "complete" | "error";
 
@@ -31,27 +32,14 @@ export const QuestionListItem = memo(function QuestionListItem({
   }, [question.text]);
 
   const completionStatus = useMemo((): QuestionCompletionStatus => {
-    if (hasErrors) return "error";
-    if (!question.text) return "incomplete";
+    // Use the centralized validation function to determine status
+    const validationErrors: ValidationError[] = hasErrors ? [{field: "unknown", message: "Has errors"}] : [];
+    return getQuestionCompletionStatus(question, validationErrors);
+  }, [question, hasErrors]);
 
-    if (question.questionType === "TEXT_INPUT") {
-      // For TEXT_INPUT questions: check textInputData
-      if (!question.textInputData ||
-          !question.textInputData.acceptableAnswers ||
-          question.textInputData.acceptableAnswers.length === 0) {
-        return "incomplete";
-      }
-      if (question.textInputData.acceptableAnswers.every(answer => answer.trim())) {
-        return "complete";
-      }
-      return "partial";
-    } else {
-      // For choice questions: check options
-      if (question.options.length < 2) return "incomplete";
-      if (question.options.every(o => o.text)) return "complete";
-      return "partial";
-    }
-  }, [question.text, question.questionType, question.options, question.textInputData, hasErrors]);
+  const validationSummary = useMemo(() => {
+    return getQuestionValidationSummary(question);
+  }, [question]);
 
   return (
     <div
@@ -86,6 +74,12 @@ export const QuestionListItem = memo(function QuestionListItem({
                   {question.textInputData.acceptableAnswers.length} answer{question.textInputData.acceptableAnswers.length !== 1 ? 's' : ''}
                 </span>
               )
+            ) : question.questionType === "DROPDOWN" ? (
+              question.dropdownData?.dropdowns && question.dropdownData.dropdowns.length > 0 && (
+                <span className="text-xs text-gray-500">
+                  {question.dropdownData.dropdowns.length} dropdown{question.dropdownData.dropdowns.length !== 1 ? 's' : ''}
+                </span>
+              )
             ) : (
               question.options.length > 0 && (
                 <span className="text-xs text-gray-500">
@@ -97,7 +91,11 @@ export const QuestionListItem = memo(function QuestionListItem({
         </div>
 
         <div className="flex-shrink-0">
-          <StatusIndicator status={completionStatus} />
+          <StatusIndicator
+            status={completionStatus}
+            tooltip={validationSummary}
+            showIcon={completionStatus === "error"}
+          />
         </div>
       </div>
     </div>
@@ -111,6 +109,8 @@ export const QuestionListItem = memo(function QuestionListItem({
     prevProps.question.options.length === nextProps.question.options.length &&
     (prevProps.question.textInputData?.acceptableAnswers?.length || 0) ===
     (nextProps.question.textInputData?.acceptableAnswers?.length || 0) &&
+    (prevProps.question.dropdownData?.dropdowns?.length || 0) ===
+    (nextProps.question.dropdownData?.dropdowns?.length || 0) &&
     prevProps.isActive === nextProps.isActive &&
     prevProps.isDragging === nextProps.isDragging &&
     prevProps.hasErrors === nextProps.hasErrors &&

@@ -24,7 +24,7 @@ interface QuestionInput {
   text_sl?: string;
   text_hr?: string;
   questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING" | "DRAG_DROP_IMAGE";
-  options?: OptionInput[]; // Made optional for TEXT_INPUT questions
+  options?: OptionInput[]; // Made optional for TEXT_INPUT and DROPDOWN questions
   multipleChoiceData?: {
     scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
     minSelections: number;
@@ -43,6 +43,29 @@ interface QuestionInput {
     placeholder?: string;
     placeholder_sl?: string;
     placeholder_hr?: string;
+  };
+  dropdownData?: {
+    template: string;
+    template_sl?: string;
+    template_hr?: string;
+    dropdowns: Array<{
+      id: string;
+      label: string;
+      label_sl?: string;
+      label_hr?: string;
+      options: Array<{
+        id: string;
+        text: string;
+        text_sl?: string;
+        text_hr?: string;
+        isCorrect: boolean;
+      }>;
+    }>;
+    scoring?: {
+      pointsPerDropdown: number;
+      requireAllCorrect: boolean;
+      penalizeIncorrect: boolean;
+    };
   };
 }
 
@@ -89,7 +112,7 @@ async function createQuestion(
   quizId: string,
   questionData: QuestionInput
 ) {
-  // Prepare answersData for MULTIPLE_CHOICE questions
+  // Prepare answersData for different question types
   let answersData = undefined;
   if (questionData.questionType === "MULTIPLE_CHOICE" && questionData.multipleChoiceData) {
     answersData = questionData.multipleChoiceData;
@@ -98,6 +121,11 @@ async function createQuestion(
   // For TEXT_INPUT questions, store textInputData in answersData field
   if (questionData.questionType === "TEXT_INPUT" && questionData.textInputData) {
     answersData = questionData.textInputData;
+  }
+
+  // For DROPDOWN questions, store dropdownData in answersData field
+  if (questionData.questionType === "DROPDOWN" && questionData.dropdownData) {
+    answersData = questionData.dropdownData;
   }
 
   // Step 1: Create the question without setting correctOptionId
@@ -177,6 +205,11 @@ export async function POST(req: NextRequest) {
 
     // Step 3: Parse and validate the request body
     const body: QuizInput = await req.json();
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[QUIZZES_POST] Received quiz data:", JSON.stringify(body, null, 2));
+      console.log("[QUIZZES_POST] Questions data specifically:", JSON.stringify(body.questions, null, 2));
+    }
 
     const validatedData = quizSchema.parse(body);
 

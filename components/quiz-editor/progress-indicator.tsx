@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useQuizEditor } from "./quiz-editor-provider";
+import { isQuestionComplete } from "@/lib/quiz-validation";
 
 export function ProgressIndicator() {
   const { questions, validationErrors } = useQuizEditor();
@@ -9,28 +10,12 @@ export function ProgressIndicator() {
   const { completedQuestions, totalQuestions, progressPercentage } = useMemo(() => {
     const total = questions.length;
     const completed = questions.filter(question => {
-      // Check for validation errors
+      // Check for validation errors first
       const hasErrors = validationErrors[question.id]?.length > 0;
       if (hasErrors) return false;
 
-      // Check for question text
-      const hasText = question.text.trim().length > 0;
-      if (!hasText) return false;
-
-      // Question type specific completion logic
-      if (question.questionType === "TEXT_INPUT") {
-        // For TEXT_INPUT: need textInputData with acceptable answers
-        const hasTextInputData = question.textInputData &&
-          question.textInputData.acceptableAnswers &&
-          question.textInputData.acceptableAnswers.length > 0 &&
-          question.textInputData.acceptableAnswers.every(answer => answer.trim().length > 0);
-        return hasTextInputData;
-      } else {
-        // For choice questions: need at least 2 options with text
-        const hasEnoughOptions = question.options.length >= 2;
-        const allOptionsHaveText = question.options.every(opt => opt.text.trim().length > 0);
-        return hasEnoughOptions && allOptionsHaveText;
-      }
+      // Use the centralized validation function
+      return isQuestionComplete(question);
     }).length;
 
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;

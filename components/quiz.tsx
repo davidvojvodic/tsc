@@ -22,7 +22,6 @@ import { AlertCircle, CheckCircle2, Trophy, Loader2 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-import { Badge } from "@/components/ui/badge";
 
 import Link from "next/link";
 
@@ -59,15 +58,44 @@ interface TextInputData {
   placeholder_hr?: string;
 }
 
+interface DropdownConfiguration {
+  template: string;
+  template_sl?: string;
+  template_hr?: string;
+  dropdowns: DropdownField[];
+  scoring?: {
+    pointsPerDropdown: number;
+    requireAllCorrect: boolean;
+    penalizeIncorrect: boolean;
+  };
+}
+
+interface DropdownField {
+  id: string;
+  label: string;
+  label_sl?: string;
+  label_hr?: string;
+  options: DropdownOption[];
+}
+
+interface DropdownOption {
+  id: string;
+  text: string;
+  text_sl?: string;
+  text_hr?: string;
+  isCorrect: boolean;
+}
+
 interface Question {
   id: string;
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN";
   options?: Option[];
   multipleChoiceData?: MultipleChoiceData;
   textInputData?: TextInputData;
+  dropdownData?: DropdownConfiguration;
 }
 
 interface Quiz {
@@ -196,7 +224,7 @@ export default function QuizComponent({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   const [selectedOptions, setSelectedOptions] = useState<
-    Record<string, string | string[]>
+    Record<string, string | string[] | Record<string, string>>
   >({});
 
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -215,7 +243,7 @@ export default function QuizComponent({
 
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
 
-  const handleAnswerChange = (questionId: string, answer: string | string[]) => {
+  const handleAnswerChange = (questionId: string, answer: string | string[] | Record<string, string>) => {
     setSelectedOptions((prev) => ({
       ...prev,
       [questionId]: answer,
@@ -232,6 +260,12 @@ export default function QuizComponent({
     if (currentQuestion.questionType === "TEXT_INPUT") {
       return typeof answer === "string" && answer.trim().length > 0;
     }
+    if (currentQuestion.questionType === "DROPDOWN") {
+      const dropdownAnswers = answer as Record<string, string>;
+      if (!dropdownAnswers || typeof dropdownAnswers !== "object") return false;
+      const dropdowns = currentQuestion.dropdownData?.dropdowns || [];
+      return dropdowns.every(dropdown => dropdownAnswers[dropdown.id] && dropdownAnswers[dropdown.id].trim().length > 0);
+    }
     return !!answer;
   };
 
@@ -245,6 +279,12 @@ export default function QuizComponent({
       }
       if (question.questionType === "TEXT_INPUT") {
         return typeof answer === "string" && answer.trim().length > 0;
+      }
+      if (question.questionType === "DROPDOWN") {
+        const dropdownAnswers = answer as Record<string, string>;
+        if (!dropdownAnswers || typeof dropdownAnswers !== "object") return false;
+        const dropdowns = question.dropdownData?.dropdowns || [];
+        return dropdowns.every(dropdown => dropdownAnswers[dropdown.id] && dropdownAnswers[dropdown.id].trim().length > 0);
       }
       return !!answer;
     });
@@ -457,7 +497,7 @@ export default function QuizComponent({
         <div className="mb-6">
           <QuestionRenderer
             question={currentQuestion}
-            selectedAnswer={selectedOptions[currentQuestion.id] || (currentQuestion.questionType === "MULTIPLE_CHOICE" ? [] : "")}
+            selectedAnswer={selectedOptions[currentQuestion.id] || (currentQuestion.questionType === "MULTIPLE_CHOICE" ? [] : currentQuestion.questionType === "DROPDOWN" ? {} : "")}
             onAnswerChange={handleAnswerChange}
             language={language}
           />

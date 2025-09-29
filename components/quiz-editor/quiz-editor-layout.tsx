@@ -26,10 +26,11 @@ export interface Question {
   text: string;
   text_sl?: string;
   text_hr?: string;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN";
   options: Option[];
   multipleChoiceData?: MultipleChoiceConfiguration;
   textInputData?: TextInputConfiguration;
+  dropdownData?: DropdownConfiguration;
   order?: number;
 }
 
@@ -59,6 +60,34 @@ export interface TextInputConfiguration {
   placeholder?: string;
   placeholder_sl?: string;
   placeholder_hr?: string;
+}
+
+export interface DropdownConfiguration {
+  template: string;
+  template_sl?: string;
+  template_hr?: string;
+  dropdowns: DropdownField[];
+  scoring?: {
+    pointsPerDropdown: number;
+    requireAllCorrect: boolean;
+    penalizeIncorrect: boolean;
+  };
+}
+
+export interface DropdownField {
+  id: string;
+  label: string;
+  label_sl?: string;
+  label_hr?: string;
+  options: DropdownOption[];
+}
+
+export interface DropdownOption {
+  id: string;
+  text: string;
+  text_sl?: string;
+  text_hr?: string;
+  isCorrect: boolean;
 }
 
 interface QuizEditorLayoutProps {

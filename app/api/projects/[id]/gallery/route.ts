@@ -241,7 +241,7 @@ export async function PATCH(
       },
       {
         maxWait: 30000, // 30 seconds wait time
-        timeout: 35000, // 35 seconds execution time
+        timeout: 120000, // 2 minutes execution time
       }
     );
 

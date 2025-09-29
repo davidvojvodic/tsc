@@ -1,16 +1,14 @@
 "use client";
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Question, Option, TextInputConfiguration } from "./quiz-editor-layout";
+import { Question, Option, TextInputConfiguration, DropdownConfiguration } from "./quiz-editor-layout";
 import { Language } from "./quiz-editor-provider";
 
 interface QuestionContentProps {
   question: Question;
   language: Language;
-  onChange: (field: string, value: string | Option[] | TextInputConfiguration) => void;
+  onChange: (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration) => void;
 }
 
 export function QuestionContent({
@@ -62,6 +60,24 @@ export function QuestionContent({
               onChange("options", []);
               onChange("textInputData", defaultTextInputData);
             }
+
+            // Clear options for DROPDOWN questions and set default dropdownData
+            if (value === "DROPDOWN") {
+              const defaultDropdownData = {
+                template: "",
+                template_sl: "",
+                template_hr: "",
+                dropdowns: [],
+                scoring: {
+                  pointsPerDropdown: 1,
+                  requireAllCorrect: true,
+                  penalizeIncorrect: false
+                }
+              };
+
+              onChange("options", []);
+              onChange("dropdownData", defaultDropdownData);
+            }
           }}
         >
           <SelectTrigger>
@@ -71,6 +87,7 @@ export function QuestionContent({
             <SelectItem value="SINGLE_CHOICE">Single Choice (Radio Buttons)</SelectItem>
             <SelectItem value="MULTIPLE_CHOICE">Multiple Choice (Checkboxes)</SelectItem>
             <SelectItem value="TEXT_INPUT">Text Input</SelectItem>
+            <SelectItem value="DROPDOWN">Dropdown Selection</SelectItem>
           </SelectContent>
         </Select>
       </div>

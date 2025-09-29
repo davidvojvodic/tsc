@@ -10,13 +10,9 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { QuizData, Question, Option } from "./quiz-editor-layout";
+import { validateQuestion as validateQuestionUtil, ValidationError } from "@/lib/quiz-validation";
 
 export type Language = "en" | "sl" | "hr";
-
-export interface ValidationError {
-  field: string;
-  message: string;
-}
 
 export interface QuizEditorContextType {
   // Quiz data
@@ -90,110 +86,10 @@ function getDefaultQuiz(): QuizData {
 
 // Auto-save functionality has been removed
 
-// Validation functions
+// Use the centralized validation function
 function validateQuestion(question: Question): ValidationError[] {
-  const errors: ValidationError[] = [];
-
-  // Required fields validation
-  if (!question.text.trim()) {
-    errors.push({
-      field: "text",
-      message: "Question text is required"
-    });
-  }
-
-  // Question type specific validation
-  if (question.questionType === "TEXT_INPUT") {
-    // Text input validation
-    if (!question.textInputData) {
-      errors.push({
-        field: "textInputData",
-        message: "Text input configuration is required"
-      });
-    } else {
-      const { acceptableAnswers } = question.textInputData;
-
-      if (!acceptableAnswers || acceptableAnswers.length === 0) {
-        errors.push({
-          field: "textInputData.acceptableAnswers",
-          message: "At least one acceptable answer is required"
-        });
-      } else {
-        // Check for empty answers
-        const emptyAnswers = acceptableAnswers.filter(answer => !answer.trim());
-        if (emptyAnswers.length > 0) {
-          errors.push({
-            field: "textInputData.acceptableAnswers",
-            message: "Acceptable answers cannot be empty"
-          });
-        }
-      }
-    }
-  } else {
-    // Options validation for choice questions
-    if (question.options.length < 2) {
-      errors.push({
-        field: "options",
-        message: "At least 2 options are required"
-      });
-    }
-
-    // Check for empty options
-    question.options.forEach((option, index) => {
-      if (!option.text.trim()) {
-        errors.push({
-          field: `options.${index}.text`,
-          message: `Option ${index + 1} text is required`
-        });
-      }
-    });
-  }
-
-  if (question.questionType === "SINGLE_CHOICE") {
-    const correctOptions = question.options.filter(o => o.isCorrect);
-    if (correctOptions.length !== 1) {
-      errors.push({
-        field: "options",
-        message: "Exactly one option must be marked as correct for single choice questions"
-      });
-    }
-  } else if (question.questionType === "MULTIPLE_CHOICE") {
-    const correctOptions = question.options.filter(o => o.isCorrect);
-    if (correctOptions.length === 0) {
-      errors.push({
-        field: "options",
-        message: "At least one option must be marked as correct for multiple choice questions"
-      });
-    }
-
-    // Multiple choice configuration validation
-    if (question.multipleChoiceData) {
-      const { minSelections, maxSelections } = question.multipleChoiceData;
-
-      if (minSelections < 1) {
-        errors.push({
-          field: "multipleChoiceData.minSelections",
-          message: "Minimum selections must be at least 1"
-        });
-      }
-
-      if (maxSelections && maxSelections > question.options.length) {
-        errors.push({
-          field: "multipleChoiceData.maxSelections",
-          message: "Maximum selections cannot exceed number of options"
-        });
-      }
-
-      if (maxSelections && minSelections > maxSelections) {
-        errors.push({
-          field: "multipleChoiceData.minSelections",
-          message: "Minimum selections cannot exceed maximum selections"
-        });
-      }
-    }
-  }
-
-  return errors;
+  const validationResult = validateQuestionUtil(question);
+  return validationResult.errors;
 }
 
 interface QuizEditorProviderProps {
@@ -306,8 +202,14 @@ export function QuizEditorProvider({
       setCurrentQuestionIndex(index + 1);
       setHasUnsavedChanges(true);
     },
-    validateQuestion: (index) => validateQuestion(quiz.questions[index]),
-    validateQuiz: () => quiz.questions.every(q => validateQuestion(q).length === 0),
+    validateQuestion: (index) => {
+      const validationResult = validateQuestionUtil(quiz.questions[index]);
+      return validationResult.errors;
+    },
+    validateQuiz: () => quiz.questions.every(q => {
+      const validationResult = validateQuestionUtil(q);
+      return validationResult.errors.length === 0;
+    }),
     saveQuiz: async () => {
       await onSave(quiz);
       setHasUnsavedChanges(false);

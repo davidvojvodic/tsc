@@ -1,6 +1,6 @@
 // lib/quiz-scoring.ts
 import { QuestionType } from "@prisma/client";
-import { MultipleChoiceDataType, PartialCreditRulesType, TextInputDataType } from "@/lib/schemas/quiz";
+import { MultipleChoiceDataType, PartialCreditRulesType, TextInputDataType, DropdownDataType } from "@/lib/schemas/quiz";
 
 // Types for scoring
 export interface QuestionData {
@@ -16,12 +16,18 @@ export interface QuestionData {
 
 export interface ScoreResult {
   questionId: string;
-  selectedAnswers: string | string[];
-  correctAnswers: string | string[];
+  selectedAnswers: string | string[] | Record<string, string>;
+  correctAnswers: string | string[] | Record<string, string[]>;
   isCorrect: boolean;
   score: number;
   maxScore: number;
   explanation?: string;
+  details?: Array<{
+    dropdownId: string;
+    isCorrect: boolean;
+    selectedOption: string;
+    correctOptions: string[];
+  }>;
 }
 
 export interface QuizScoreResult {
@@ -223,15 +229,124 @@ function scoreTextInputQuestion(
 }
 
 /**
+ * Calculate score for a dropdown question
+ */
+function scoreDropdownQuestion(
+  question: QuestionData,
+  answer: Record<string, string>
+): ScoreResult {
+  const dropdownData = question.answersData as DropdownDataType | undefined;
+
+  if (!dropdownData) {
+    throw new Error(`Dropdown question ${question.id} missing configuration data`);
+  }
+
+  const { dropdowns, scoring } = dropdownData;
+  const pointsPerDropdown = scoring?.pointsPerDropdown ?? 1;
+  const requireAllCorrect = scoring?.requireAllCorrect ?? true;
+  const penalizeIncorrect = scoring?.penalizeIncorrect ?? false;
+
+  let correctCount = 0;
+  const totalDropdowns = dropdowns.length;
+  const maxScore = totalDropdowns * pointsPerDropdown;
+
+  const results: Array<{
+    dropdownId: string;
+    isCorrect: boolean;
+    selectedOption: string;
+    correctOptions: string[];
+  }> = [];
+
+  // Check each dropdown
+  for (const dropdown of dropdowns) {
+    const selectedOptionId = answer[dropdown.id];
+    const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId);
+    const correctOptions = dropdown.options.filter(opt => opt.isCorrect);
+
+    const isCorrect = selectedOption?.isCorrect === true;
+
+    if (isCorrect) {
+      correctCount++;
+    }
+
+    results.push({
+      dropdownId: dropdown.id,
+      isCorrect,
+      selectedOption: selectedOption?.text || "No selection",
+      correctOptions: correctOptions.map(opt => opt.text)
+    });
+  }
+
+  // Calculate score based on scoring rules
+  let score = 0;
+
+  if (requireAllCorrect) {
+    // All dropdowns must be correct to get any points
+    score = correctCount === totalDropdowns ? maxScore : 0;
+  } else {
+    // Partial credit allowed
+    score = correctCount * pointsPerDropdown;
+
+    if (penalizeIncorrect) {
+      const incorrectCount = totalDropdowns - correctCount;
+      score = Math.max(0, score - (incorrectCount * pointsPerDropdown * 0.5));
+    }
+  }
+
+  // Generate feedback
+  const feedback = generateDropdownFeedback(results, correctCount, totalDropdowns);
+
+  // Create correct answers mapping for result
+  const correctAnswers: Record<string, string[]> = {};
+  for (const dropdown of dropdowns) {
+    correctAnswers[dropdown.id] = dropdown.options
+      .filter(opt => opt.isCorrect)
+      .map(opt => opt.text);
+  }
+
+  return {
+    questionId: question.id,
+    selectedAnswers: answer,
+    correctAnswers,
+    isCorrect: score === maxScore,
+    score,
+    maxScore,
+    explanation: feedback,
+    details: results
+  };
+}
+
+function generateDropdownFeedback(
+  results: Array<{dropdownId: string; isCorrect: boolean; selectedOption: string; correctOptions: string[]}>,
+  correctCount: number,
+  totalDropdowns: number
+): string {
+  if (correctCount === totalDropdowns) {
+    return "Perfect! All selections are correct.";
+  }
+
+  if (correctCount === 0) {
+    return "None of the selections are correct. Please review the content and try again.";
+  }
+
+  const incorrect = results.filter(r => !r.isCorrect);
+  const incorrectDetails = incorrect.map(r =>
+    `Expected: ${r.correctOptions.join(" or ")} (you selected: ${r.selectedOption})`
+  ).join("; ");
+
+  return `${correctCount}/${totalDropdowns} correct. Incorrect: ${incorrectDetails}`;
+}
+
+/**
  * Score a single question based on its type
  */
 export function scoreQuestion(
   question: QuestionData,
-  answer: string | string[]
+  answer: string | string[] | Record<string, string>
 ): ScoreResult {
   if (question.questionType === "SINGLE_CHOICE") {
-    if (Array.isArray(answer)) {
-      throw new Error(`Single choice question ${question.id} received array answer`);
+    if (Array.isArray(answer) || typeof answer === "object") {
+      throw new Error(`Single choice question ${question.id} received non-string answer`);
     }
     return scoreSingleChoiceQuestion(question, answer);
   }
@@ -244,10 +359,17 @@ export function scoreQuestion(
   }
 
   if (question.questionType === "TEXT_INPUT") {
-    if (Array.isArray(answer)) {
-      throw new Error(`Text input question ${question.id} received array answer`);
+    if (Array.isArray(answer) || typeof answer === "object") {
+      throw new Error(`Text input question ${question.id} received non-string answer`);
     }
     return scoreTextInputQuestion(question, answer);
+  }
+
+  if (question.questionType === "DROPDOWN") {
+    if (typeof answer !== "object" || Array.isArray(answer)) {
+      throw new Error(`Dropdown question ${question.id} received non-object answer`);
+    }
+    return scoreDropdownQuestion(question, answer);
   }
 
   throw new Error(`Unsupported question type: ${question.questionType}`);
@@ -258,7 +380,7 @@ export function scoreQuestion(
  */
 export function scoreQuiz(
   questions: QuestionData[],
-  answers: Record<string, string | string[]>
+  answers: Record<string, string | string[] | Record<string, string>>
 ): QuizScoreResult {
   const questionResults: ScoreResult[] = [];
   let totalScore = 0;
@@ -303,7 +425,11 @@ export function scoreQuiz(
       // Default to 0 score for errored questions
       questionResults.push({
         questionId: question.id,
-        selectedAnswers: Array.isArray(answer) ? answer : [answer],
+        selectedAnswers: Array.isArray(answer)
+          ? answer
+          : typeof answer === 'object' && answer !== null
+            ? [JSON.stringify(answer)]
+            : [String(answer)],
         correctAnswers: [],
         isCorrect: false,
         score: 0,
@@ -405,6 +531,101 @@ export function validateTextInputConfig(
   }
 
   // No additional validation needed for text-only input type
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Validate dropdown question configuration
+ */
+export function validateDropdownConfig(
+  dropdownData?: DropdownDataType
+): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!dropdownData) {
+    errors.push("Dropdown configuration is required");
+    return { isValid: false, errors };
+  }
+
+  // Check template
+  if (!dropdownData.template || !dropdownData.template.trim()) {
+    errors.push("Template text is required");
+  }
+
+  // Check dropdowns
+  if (!dropdownData.dropdowns || dropdownData.dropdowns.length === 0) {
+    errors.push("At least one dropdown is required");
+  } else {
+    // Validate each dropdown
+    for (const dropdown of dropdownData.dropdowns) {
+      if (!dropdown.id || !dropdown.id.trim()) {
+        errors.push("Dropdown ID is required");
+      }
+
+      if (!dropdown.label || !dropdown.label.trim()) {
+        errors.push(`Dropdown ${dropdown.id} must have a label`);
+      }
+
+      // Check options
+      if (!dropdown.options || dropdown.options.length < 2) {
+        errors.push(`Dropdown ${dropdown.id} must have at least 2 options`);
+      } else {
+        const correctOptions = dropdown.options.filter(opt => opt.isCorrect);
+        if (correctOptions.length === 0) {
+          errors.push(`Dropdown ${dropdown.id} must have at least one correct option`);
+        }
+
+        // Check each option
+        for (const option of dropdown.options) {
+          if (!option.id || !option.id.trim()) {
+            errors.push(`All options in dropdown ${dropdown.id} must have an ID`);
+          }
+          if (!option.text || !option.text.trim()) {
+            errors.push(`All options in dropdown ${dropdown.id} must have text`);
+          }
+        }
+      }
+    }
+
+    // Validate template contains all dropdown placeholders
+    const { template, dropdowns } = dropdownData;
+    for (const dropdown of dropdowns) {
+      const placeholder = `{${dropdown.id}}`;
+      if (!template.includes(placeholder)) {
+        errors.push(`Template missing placeholder: ${placeholder}`);
+      }
+    }
+
+    // Check for orphaned placeholders
+    const placeholderRegex = /\{([^}]+)\}/g;
+    const templatePlaceholders = [...template.matchAll(placeholderRegex)].map(match => match[1]);
+    const dropdownIds = dropdowns.map(d => d.id);
+    const orphanedPlaceholders = templatePlaceholders.filter(p => !dropdownIds.includes(p));
+    if (orphanedPlaceholders.length > 0) {
+      errors.push(`Orphaned placeholders: ${orphanedPlaceholders.join(', ')}`);
+    }
+  }
+
+  // Validate scoring configuration
+  if (dropdownData.scoring) {
+    const { pointsPerDropdown, requireAllCorrect, penalizeIncorrect } = dropdownData.scoring;
+
+    if (pointsPerDropdown !== undefined && pointsPerDropdown <= 0) {
+      errors.push("Points per dropdown must be positive");
+    }
+
+    if (typeof requireAllCorrect !== "boolean") {
+      errors.push("Require all correct must be a boolean");
+    }
+
+    if (typeof penalizeIncorrect !== "boolean") {
+      errors.push("Penalize incorrect must be a boolean");
+    }
+  }
 
   return {
     isValid: errors.length === 0,

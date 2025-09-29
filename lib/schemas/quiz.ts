@@ -42,16 +42,51 @@ const textInputDataSchema = z.object({
   placeholder_hr: z.string().optional(),
 });
 
+// Dropdown option schema for dropdown questions
+const dropdownOptionSchema = z.object({
+  id: z.string().min(1, "Option ID required"),
+  text: z.string().min(1, "Option text required"),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+  isCorrect: z.boolean(),
+});
+
+// Individual dropdown field schema
+const dropdownFieldSchema = z.object({
+  id: z.string().min(1, "Dropdown ID required"),
+  label: z.string().min(1, "Label required"),
+  label_sl: z.string().optional(),
+  label_hr: z.string().optional(),
+  options: z.array(dropdownOptionSchema).min(2, "At least 2 options required"),
+});
+
+// Dropdown scoring configuration
+const dropdownScoringSchema = z.object({
+  pointsPerDropdown: z.number().positive().default(1),
+  requireAllCorrect: z.boolean().default(true),
+  penalizeIncorrect: z.boolean().default(false),
+});
+
+// Dropdown specific data schema
+const dropdownDataSchema = z.object({
+  template: z.string().min(1, "Template text required"),
+  template_sl: z.string().optional(),
+  template_hr: z.string().optional(),
+  dropdowns: z.array(dropdownFieldSchema).min(1, "At least 1 dropdown required").max(10, "Maximum 10 dropdowns allowed"),
+  scoring: dropdownScoringSchema.optional(),
+});
+
 // Question schema with support for both single and multiple choice
 const questionSchema = z.object({
   id: z.string().optional(), // For existing questions during updates
   text: z.string(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
-  questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT"]).default("SINGLE_CHOICE"),
+  questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT", "DROPDOWN"]).default("SINGLE_CHOICE"),
   options: z.array(optionSchema).optional(),
   multipleChoiceData: multipleChoiceDataSchema.optional(),
   textInputData: textInputDataSchema.optional(),
+  dropdownData: dropdownDataSchema.optional(),
 }).refine((data) => {
   // Question must have text in at least one language
   const hasQuestionText = (data.text && data.text.trim().length > 0) ||
@@ -113,6 +148,43 @@ const questionSchema = z.object({
     return true;
   }
 
+  // Validation for dropdown questions
+  if (data.questionType === "DROPDOWN") {
+    if (!data.dropdownData) {
+      return false;
+    }
+
+    // Each dropdown must have at least one correct option
+    for (const dropdown of data.dropdownData.dropdowns) {
+      const correctOptions = dropdown.options.filter(opt => opt.isCorrect);
+      if (correctOptions.length === 0) {
+        return false;
+      }
+    }
+
+    // Validate template contains all dropdown placeholders
+    const { template, dropdowns } = data.dropdownData;
+
+    for (const dropdown of dropdowns) {
+      const placeholder = `{${dropdown.id}}`;
+      if (!template.includes(placeholder)) {
+        return false;
+      }
+    }
+
+    // Check for orphaned placeholders
+    const placeholderRegex = /\{([^}]+)\}/g;
+    const templatePlaceholders = [...template.matchAll(placeholderRegex)].map(match => match[1]);
+    const dropdownIds = dropdowns.map(d => d.id);
+
+    const orphanedPlaceholders = templatePlaceholders.filter(p => !dropdownIds.includes(p));
+    if (orphanedPlaceholders.length > 0) {
+      return false;
+    }
+
+    return true;
+  }
+
   return true;
 }, {
   message: "Invalid question configuration",
@@ -129,13 +201,14 @@ export const quizSchema = z.object({
   questions: z.array(questionSchema).min(1, "At least 1 question is required"),
 });
 
-// Schema for quiz submissions - supports single choice, multiple choice, and text input answers
+// Schema for quiz submissions - supports single choice, multiple choice, text input, and dropdown answers
 export const quizSubmissionSchema = z.object({
   answers: z.record(
     z.string(), // questionId
     z.union([
       z.string(), // Single choice: optionId OR Text input: answer text
-      z.array(z.string()) // Multiple choice: array of optionIds
+      z.array(z.string()), // Multiple choice: array of optionIds
+      z.record(z.string(), z.string()) // Dropdown: dropdownId -> selectedOptionId
     ])
   ),
 });
@@ -146,5 +219,9 @@ export type QuestionSchemaType = z.infer<typeof questionSchema>;
 export type OptionSchemaType = z.infer<typeof optionSchema>;
 export type MultipleChoiceDataType = z.infer<typeof multipleChoiceDataSchema>;
 export type TextInputDataType = z.infer<typeof textInputDataSchema>;
+export type DropdownDataType = z.infer<typeof dropdownDataSchema>;
+export type DropdownFieldType = z.infer<typeof dropdownFieldSchema>;
+export type DropdownOptionType = z.infer<typeof dropdownOptionSchema>;
+export type DropdownScoringType = z.infer<typeof dropdownScoringSchema>;
 export type PartialCreditRulesType = z.infer<typeof partialCreditRulesSchema>;
 export type QuizSubmissionType = z.infer<typeof quizSubmissionSchema>;

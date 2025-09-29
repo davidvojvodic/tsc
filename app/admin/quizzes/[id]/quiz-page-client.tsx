@@ -31,6 +31,15 @@ export default function QuizPageClient({
         };
 
         // Transform data to match the API format
+        if (process.env.NODE_ENV === 'development') {
+          console.log("[QUIZ_SAVE] Original quiz data:", JSON.stringify(data, null, 2));
+          console.log("[QUIZ_SAVE] Questions with dropdownData:", data.questions.map(q => ({
+            questionType: q.questionType,
+            hasDropdownData: !!q.dropdownData,
+            dropdownData: q.dropdownData
+          })));
+        }
+
         const saveData = {
           title: data.title,
           title_sl: data.title_sl,
@@ -39,28 +48,42 @@ export default function QuizPageClient({
           description_sl: data.description_sl,
           description_hr: data.description_hr,
           teacherId: data.teacherId,
-          questions: data.questions.map((question) => ({
+          questions: data.questions.map((question) => {
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[QUIZ_SAVE] Processing question ${question.questionType}:`, {
+                hasDropdownData: !!question.dropdownData,
+                dropdownData: question.dropdownData
+              });
+            }
+            return {
             // Only include ID if it's a real database UUID, not a generated ID
             ...(quizId !== "new" && isRealUUID(question.id) && { id: question.id }),
             text: question.text,
             text_sl: question.text_sl,
             text_hr: question.text_hr,
             questionType: question.questionType || "SINGLE_CHOICE", // Add questionType
-            options: question.options.map((option) => ({
-              // Only include ID if it's a real database UUID, not a generated ID
-              ...(quizId !== "new" && isRealUUID(option.id) && { id: option.id }),
-              text: option.text,
-              text_sl: option.text_sl,
-              text_hr: option.text_hr,
-              isCorrect: option.isCorrect,
-            })),
+            // Only include options for choice-based questions, not for TEXT_INPUT or DROPDOWN
+            ...(question.questionType !== "TEXT_INPUT" && question.questionType !== "DROPDOWN" && {
+              options: question.options.map((option) => ({
+                // Only include ID if it's a real database UUID, not a generated ID
+                ...(quizId !== "new" && isRealUUID(option.id) && { id: option.id }),
+                text: option.text,
+                text_sl: option.text_sl,
+                text_hr: option.text_hr,
+                isCorrect: option.isCorrect,
+              }))
+            }),
             ...(question.questionType === "MULTIPLE_CHOICE" && question.multipleChoiceData && {
               multipleChoiceData: question.multipleChoiceData
             }),
             ...(question.questionType === "TEXT_INPUT" && question.textInputData && {
               textInputData: question.textInputData
             }),
-          })),
+            ...(question.questionType === "DROPDOWN" && question.dropdownData && {
+              dropdownData: question.dropdownData
+            }),
+            };
+          }),
         };
 
 

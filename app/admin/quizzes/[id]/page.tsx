@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { MultipleChoiceDataType, TextInputDataType } from "@/lib/schemas/quiz";
+import { MultipleChoiceDataType, TextInputDataType, DropdownDataType } from "@/lib/schemas/quiz";
 import QuizPageClient from "./quiz-page-client";
 
 export default async function QuizPage({
@@ -80,8 +80,8 @@ export default async function QuizPage({
             text: question.text,
             text_sl: question.text_sl ?? undefined,
             text_hr: question.text_hr ?? undefined,
-            questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT",
-            options: question.questionType === "TEXT_INPUT" ? [] : question.options.map((option) => ({
+            questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN",
+            options: (question.questionType === "TEXT_INPUT" || question.questionType === "DROPDOWN") ? [] : question.options.map((option) => ({
               id: option.id,
               text: option.text,
               text_sl: option.text_sl ?? undefined,
@@ -93,6 +93,9 @@ export default async function QuizPage({
               : undefined,
             textInputData: question.questionType === "TEXT_INPUT" && question.answersData
               ? (question.answersData as TextInputDataType)
+              : undefined,
+            dropdownData: question.questionType === "DROPDOWN" && question.answersData
+              ? (question.answersData as DropdownDataType)
               : undefined,
           })),
       }

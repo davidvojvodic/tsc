@@ -11,7 +11,7 @@ interface Question {
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | null;
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | null;
   options?: {
     id: string;
     text: string;
@@ -35,6 +35,29 @@ interface Question {
     placeholder?: string;
     placeholder_sl?: string;
     placeholder_hr?: string;
+  };
+  dropdownData?: {
+    template: string;
+    template_sl?: string;
+    template_hr?: string;
+    dropdowns: Array<{
+      id: string;
+      label: string;
+      label_sl?: string;
+      label_hr?: string;
+      options: Array<{
+        id: string;
+        text: string;
+        text_sl?: string;
+        text_hr?: string;
+        isCorrect: boolean;
+      }>;
+    }>;
+    scoring?: {
+      pointsPerDropdown: number;
+      requireAllCorrect: boolean;
+      penalizeIncorrect: boolean;
+    };
   };
 }
 
@@ -79,7 +102,8 @@ export function QuizDetailPage({ quiz, language }: QuizDetailPageProps) {
       questionType: question.questionType || "SINGLE_CHOICE",
       options: localizedOptions,
       multipleChoiceData: question.multipleChoiceData ?? undefined,
-      textInputData: question.textInputData ?? undefined
+      textInputData: question.textInputData ?? undefined,
+      dropdownData: question.dropdownData ?? undefined
     };
   });
 

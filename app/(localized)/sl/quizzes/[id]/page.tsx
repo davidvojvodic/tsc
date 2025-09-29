@@ -43,7 +43,7 @@ export default async function QuizPage({
     questions: quiz.questions
       .map(question => ({
         ...question,
-        questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT",
+        questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN",
         options: question.options?.map(option => ({
           ...option,
           isCorrect: option.correct // Map 'correct' to 'isCorrect'
@@ -69,6 +69,32 @@ export default async function QuizPage({
               placeholder?: string;
               placeholder_sl?: string;
               placeholder_hr?: string;
+            }
+          : undefined,
+        // Transform answersData to dropdownData for dropdown questions
+        dropdownData: question.questionType === "DROPDOWN" && question.answersData
+          ? question.answersData as {
+              template: string;
+              template_sl?: string;
+              template_hr?: string;
+              dropdowns: Array<{
+                id: string;
+                label: string;
+                label_sl?: string;
+                label_hr?: string;
+                options: Array<{
+                  id: string;
+                  text: string;
+                  text_sl?: string;
+                  text_hr?: string;
+                  isCorrect: boolean;
+                }>;
+              }>;
+              scoring?: {
+                pointsPerDropdown: number;
+                requireAllCorrect: boolean;
+                penalizeIncorrect: boolean;
+              };
             }
           : undefined
       }))

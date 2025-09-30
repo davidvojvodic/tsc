@@ -254,13 +254,14 @@ export function OrderingConfigurationEditor({
             <Checkbox
               checked={orderingData.exactOrderRequired ?? true}
               onCheckedChange={(checked) => updateConfiguration({
-                exactOrderRequired: !!checked
+                exactOrderRequired: !!checked,
+                allowPartialCredit: checked ? false : orderingData.allowPartialCredit
               })}
             />
             <div className="space-y-1 leading-none">
               <Label>Exact Order Required</Label>
               <p className="text-sm text-muted-foreground">
-                All items must be in exact correct positions to earn full points
+                All items must be in exact correct positions to earn full points (no partial credit)
               </p>
             </div>
           </div>
@@ -268,14 +269,19 @@ export function OrderingConfigurationEditor({
           <div className="flex items-center space-x-2">
             <Checkbox
               checked={orderingData.allowPartialCredit ?? false}
+              disabled={orderingData.exactOrderRequired ?? true}
               onCheckedChange={(checked) => updateConfiguration({
-                allowPartialCredit: !!checked
+                allowPartialCredit: !!checked,
+                exactOrderRequired: checked ? false : orderingData.exactOrderRequired
               })}
             />
             <div className="space-y-1 leading-none">
-              <Label>Allow Partial Credit</Label>
+              <Label className={orderingData.exactOrderRequired ? "text-muted-foreground" : ""}>
+                Allow Partial Credit
+              </Label>
               <p className="text-sm text-muted-foreground">
                 Award points for items in correct positions even if not all are correct
+                {orderingData.exactOrderRequired && " (disabled when exact order is required)"}
               </p>
             </div>
           </div>

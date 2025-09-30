@@ -3,11 +3,11 @@ import http from "http";
 import crypto from "crypto";
 import { checkCameraSecurity } from "@/lib/simple-camera-security";
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-const CAMERA_HOST = process.env.CAMERA_HOST || (isDevelopment ? "194.249.165.38" : undefined);
-const CAMERA_PORT = parseInt(process.env.CAMERA_PORT || (isDevelopment ? "4560" : "")) || 4560;
-const CAMERA_USERNAME = process.env.CAMERA_USERNAME || (isDevelopment ? "tsc" : undefined);
-const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD || (isDevelopment ? "tscmb2025" : undefined);
+// Camera configuration - MUST be set via environment variables
+const CAMERA_HOST = process.env.CAMERA_HOST;
+const CAMERA_PORT = parseInt(process.env.CAMERA_PORT || "4560");
+const CAMERA_USERNAME = process.env.CAMERA_USERNAME;
+const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD;
 
 // Force this route to be dynamic
 export const dynamic = 'force-dynamic';

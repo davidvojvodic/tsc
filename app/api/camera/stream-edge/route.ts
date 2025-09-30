@@ -4,11 +4,11 @@ import { checkCameraSecurity } from "@/lib/simple-camera-security";
 // Use Edge Runtime for streaming support
 export const runtime = "edge";
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-const CAMERA_HOST = process.env.CAMERA_HOST || (isDevelopment ? "194.249.165.38" : undefined);
-const CAMERA_PORT = parseInt(process.env.CAMERA_PORT || (isDevelopment ? "4560" : "")) || 4560;
-const CAMERA_USERNAME = process.env.CAMERA_USERNAME || (isDevelopment ? "tsc" : undefined);
-const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD || (isDevelopment ? "tscmb2025" : undefined);
+// Camera configuration - MUST be set via environment variables
+const CAMERA_HOST = process.env.CAMERA_HOST;
+const CAMERA_PORT = parseInt(process.env.CAMERA_PORT || "4560");
+const CAMERA_USERNAME = process.env.CAMERA_USERNAME;
+const CAMERA_PASSWORD = process.env.CAMERA_PASSWORD;
 const STREAM_ENDPOINT = "/cgi-bin/mjpg/video.cgi?channel=1&subtype=1";
 
 export async function GET(request: NextRequest) {

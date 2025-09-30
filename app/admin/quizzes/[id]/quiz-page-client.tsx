@@ -33,10 +33,12 @@ export default function QuizPageClient({
         // Transform data to match the API format
         if (process.env.NODE_ENV === 'development') {
           console.log("[QUIZ_SAVE] Original quiz data:", JSON.stringify(data, null, 2));
-          console.log("[QUIZ_SAVE] Questions with dropdownData:", data.questions.map(q => ({
+          console.log("[QUIZ_SAVE] Questions with special data:", data.questions.map(q => ({
             questionType: q.questionType,
             hasDropdownData: !!q.dropdownData,
-            dropdownData: q.dropdownData
+            hasOrderingData: !!q.orderingData,
+            dropdownData: q.dropdownData,
+            orderingData: q.orderingData
           })));
         }
 
@@ -52,7 +54,9 @@ export default function QuizPageClient({
             if (process.env.NODE_ENV === 'development') {
               console.log(`[QUIZ_SAVE] Processing question ${question.questionType}:`, {
                 hasDropdownData: !!question.dropdownData,
-                dropdownData: question.dropdownData
+                hasOrderingData: !!question.orderingData,
+                dropdownData: question.dropdownData,
+                orderingData: question.orderingData
               });
             }
             return {
@@ -62,8 +66,8 @@ export default function QuizPageClient({
             text_sl: question.text_sl,
             text_hr: question.text_hr,
             questionType: question.questionType || "SINGLE_CHOICE", // Add questionType
-            // Only include options for choice-based questions, not for TEXT_INPUT or DROPDOWN
-            ...(question.questionType !== "TEXT_INPUT" && question.questionType !== "DROPDOWN" && {
+            // Only include options for choice-based questions, not for TEXT_INPUT, DROPDOWN, or ORDERING
+            ...(question.questionType !== "TEXT_INPUT" && question.questionType !== "DROPDOWN" && question.questionType !== "ORDERING" && {
               options: question.options.map((option) => ({
                 // Only include ID if it's a real database UUID, not a generated ID
                 ...(quizId !== "new" && isRealUUID(option.id) && { id: option.id }),
@@ -81,6 +85,9 @@ export default function QuizPageClient({
             }),
             ...(question.questionType === "DROPDOWN" && question.dropdownData && {
               dropdownData: question.dropdownData
+            }),
+            ...(question.questionType === "ORDERING" && question.orderingData && {
+              orderingData: question.orderingData
             }),
             };
           }),

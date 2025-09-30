@@ -2,13 +2,13 @@
 
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Question, Option, TextInputConfiguration, DropdownConfiguration } from "./quiz-editor-layout";
+import { Question, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration } from "./quiz-editor-layout";
 import { Language } from "./quiz-editor-provider";
 
 interface QuestionContentProps {
   question: Question;
   language: Language;
-  onChange: (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration) => void;
+  onChange: (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration) => void;
 }
 
 export function QuestionContent({
@@ -78,6 +78,21 @@ export function QuestionContent({
               onChange("options", []);
               onChange("dropdownData", defaultDropdownData);
             }
+
+            // Clear options for ORDERING questions and set default orderingData
+            if (value === "ORDERING") {
+              const defaultOrderingData: OrderingConfiguration = {
+                instructions: "Arrange the following items in the correct order:",
+                instructions_sl: "",
+                instructions_hr: "",
+                items: [],
+                allowPartialCredit: false,
+                exactOrderRequired: true
+              };
+
+              onChange("options", []);
+              onChange("orderingData", defaultOrderingData);
+            }
           }}
         >
           <SelectTrigger>
@@ -88,6 +103,7 @@ export function QuestionContent({
             <SelectItem value="MULTIPLE_CHOICE">Multiple Choice (Checkboxes)</SelectItem>
             <SelectItem value="TEXT_INPUT">Text Input</SelectItem>
             <SelectItem value="DROPDOWN">Dropdown Selection</SelectItem>
+            <SelectItem value="ORDERING">Ordering / Sequencing</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -109,6 +125,54 @@ export function QuestionContent({
           className="min-h-[100px] resize-none"
         />
       </div>
+
+      {/* Ordering Instructions (only shown for ORDERING question type) */}
+      {question.questionType === "ORDERING" && (
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-gray-900">
+            Ordering Instructions ({language.toUpperCase()})
+          </label>
+          <Textarea
+            value={
+              language === "sl"
+                ? question.orderingData?.instructions_sl || ""
+                : language === "hr"
+                ? question.orderingData?.instructions_hr || ""
+                : question.orderingData?.instructions || ""
+            }
+            onChange={(e) => {
+              const currentOrderingData = question.orderingData || {
+                instructions: "",
+                instructions_sl: "",
+                instructions_hr: "",
+                items: [],
+                allowPartialCredit: false,
+                exactOrderRequired: true,
+              };
+
+              const instructionsField =
+                language === "sl"
+                  ? "instructions_sl"
+                  : language === "hr"
+                  ? "instructions_hr"
+                  : "instructions";
+
+              onChange("orderingData", {
+                ...currentOrderingData,
+                [instructionsField]: e.target.value,
+              });
+            }}
+            placeholder={
+              language === "sl"
+                ? "Razporedi naslednje elemente v pravilnem vrstnem redu:"
+                : language === "hr"
+                ? "Poredaj sljedeće stavke u pravilnom redoslijedu:"
+                : "Arrange the following items in the correct order:"
+            }
+            className="min-h-[80px] resize-none"
+          />
+        </div>
+      )}
     </div>
   );
 }

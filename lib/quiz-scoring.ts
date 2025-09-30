@@ -1,6 +1,6 @@
 // lib/quiz-scoring.ts
 import { QuestionType } from "@prisma/client";
-import { MultipleChoiceDataType, PartialCreditRulesType, TextInputDataType, DropdownDataType } from "@/lib/schemas/quiz";
+import { MultipleChoiceDataType, PartialCreditRulesType, TextInputDataType, DropdownDataType, OrderingDataType } from "@/lib/schemas/quiz";
 
 // Types for scoring
 export interface QuestionData {
@@ -338,6 +338,188 @@ function generateDropdownFeedback(
 }
 
 /**
+ * Calculate score for an ordering question
+ */
+function scoreOrderingQuestion(
+  question: QuestionData,
+  answer: string[]
+): ScoreResult {
+  const orderingData = question.answersData as OrderingDataType | undefined;
+
+  if (!orderingData) {
+    throw new Error(`Ordering question ${question.id} missing configuration data`);
+  }
+
+  const { items, allowPartialCredit = false, exactOrderRequired = true } = orderingData;
+
+  // Get correct order by sorting items by correctPosition
+  const correctOrder = [...items]
+    .sort((a, b) => a.correctPosition - b.correctPosition)
+    .map(item => item.id);
+
+  const userOrder = answer;
+  const totalItems = items.length;
+  const maxScore = totalItems;
+
+  // Check if all items are present in the answer
+  const userSet = new Set(userOrder);
+  const correctSet = new Set(correctOrder);
+
+  if (userOrder.length !== totalItems ||
+      userSet.size !== totalItems ||
+      ![...userSet].every(id => correctSet.has(id))) {
+    return {
+      questionId: question.id,
+      selectedAnswers: answer,
+      correctAnswers: correctOrder,
+      isCorrect: false,
+      score: 0,
+      maxScore,
+      explanation: "Not all items were arranged. Please place all items in order."
+    };
+  }
+
+  // Check for exact order match
+  const isExactMatch = JSON.stringify(userOrder) === JSON.stringify(correctOrder);
+
+  if (exactOrderRequired && isExactMatch) {
+    return {
+      questionId: question.id,
+      selectedAnswers: answer,
+      correctAnswers: correctOrder,
+      isCorrect: true,
+      score: maxScore,
+      maxScore,
+      explanation: "Perfect! All items are in the correct order."
+    };
+  }
+
+  if (exactOrderRequired && !allowPartialCredit) {
+    return {
+      questionId: question.id,
+      selectedAnswers: answer,
+      correctAnswers: correctOrder,
+      isCorrect: false,
+      score: 0,
+      maxScore,
+      explanation: generateOrderingFeedback(correctOrder, userOrder, items)
+    };
+  }
+
+  // Partial credit calculation - simple proportional scoring
+  let correctPositions = 0;
+
+  // Count items in correct positions
+  for (let i = 0; i < userOrder.length; i++) {
+    if (userOrder[i] === correctOrder[i]) {
+      correctPositions++;
+    }
+  }
+
+  // Score is proportional to correct positions
+  const score = (correctPositions / totalItems) * maxScore;
+  const misplacements = totalItems - correctPositions;
+
+  const feedback = generateOrderingFeedback(correctOrder, userOrder, items);
+
+  return {
+    questionId: question.id,
+    selectedAnswers: answer,
+    correctAnswers: correctOrder,
+    isCorrect: score === maxScore,
+    score,
+    maxScore,
+    explanation: feedback,
+    details: [
+      {
+        dropdownId: "stats",
+        isCorrect: score === maxScore,
+        selectedOption: `${correctPositions} correct positions`,
+        correctOptions: [`${totalItems} total items, ${misplacements} misplaced`]
+      }
+    ]
+  };
+}
+
+/**
+ * Generate basic feedback for ordering questions
+ */
+function generateOrderingFeedback(
+  correctOrder: string[],
+  userOrder: string[],
+  items: OrderingDataType['items']
+): string {
+  const itemLookup = Object.fromEntries(items.map(item => [item.id, item]));
+
+  const correctLabels = correctOrder.map(id => {
+    const item = itemLookup[id];
+    return getItemDisplayText(item);
+  });
+
+  const userLabels = userOrder.map(id => {
+    const item = itemLookup[id];
+    return getItemDisplayText(item);
+  });
+
+  return `Correct order: ${correctLabels.join(' → ')}. Your order: ${userLabels.join(' → ')}`;
+}
+
+/**
+ * Generate detailed feedback for ordering questions with partial credit
+ */
+function generateDetailedOrderingFeedback(
+  correctOrder: string[],
+  userOrder: string[],
+  items: OrderingDataType['items'],
+  correctPositions: number,
+  adjacentPairs: number
+): string {
+  const totalItems = items.length;
+
+  if (correctPositions === totalItems) {
+    return "Perfect! All items are in the correct order.";
+  }
+
+  if (correctPositions === 0) {
+    return "None of the items are in the correct position. Please review the sequence.";
+  }
+
+  let feedback = `${correctPositions}/${totalItems} items in correct positions.`;
+
+  if (adjacentPairs > 0) {
+    feedback += ` ${adjacentPairs} correct adjacent relationships.`;
+  }
+
+  return feedback;
+}
+
+/**
+ * Get display text for an ordering item
+ */
+function getItemDisplayText(item: OrderingDataType['items'][0]): string {
+  const content = item.content;
+
+  if (content.type === "text") {
+    const text = content.text;
+    return text.length > 30 ? text.substring(0, 30) + "..." : text;
+  }
+
+  if (content.type === "image") {
+    return content.altText;
+  }
+
+  if (content.type === "mixed") {
+    const parts = [];
+    if (content.text) parts.push(content.text);
+    if (content.suffix) parts.push(content.suffix);
+    const combined = parts.join(" ");
+    return combined.length > 30 ? combined.substring(0, 30) + "..." : combined;
+  }
+
+  return "Item";
+}
+
+/**
  * Score a single question based on its type
  */
 export function scoreQuestion(
@@ -372,6 +554,13 @@ export function scoreQuestion(
     return scoreDropdownQuestion(question, answer);
   }
 
+  if (question.questionType === "ORDERING") {
+    if (!Array.isArray(answer)) {
+      throw new Error(`Ordering question ${question.id} received non-array answer`);
+    }
+    return scoreOrderingQuestion(question, answer);
+  }
+
   throw new Error(`Unsupported question type: ${question.questionType}`);
 }
 
@@ -392,22 +581,41 @@ export function scoreQuiz(
 
     if (answer === undefined) {
       // No answer provided - score as 0
+      let correctAnswers: string | string[] | Record<string, string[]>;
+      let maxScore = 1;
+
+      if (question.questionType === "SINGLE_CHOICE") {
+        correctAnswers = question.correctOptionId || "";
+      } else if (question.questionType === "MULTIPLE_CHOICE") {
+        correctAnswers = question.options.filter(opt => opt.correct).map(opt => opt.id);
+      } else if (question.questionType === "TEXT_INPUT") {
+        correctAnswers = (question.answersData as TextInputDataType)?.acceptableAnswers || [];
+      } else if (question.questionType === "DROPDOWN") {
+        const dropdownData = question.answersData as DropdownDataType | undefined;
+        const dropdownCount = dropdownData?.dropdowns.length || 1;
+        maxScore = dropdownCount;
+        correctAnswers = {};
+      } else if (question.questionType === "ORDERING") {
+        const orderingData = question.answersData as OrderingDataType | undefined;
+        const itemCount = orderingData?.items.length || 1;
+        maxScore = itemCount;
+        correctAnswers = orderingData?.items
+          .sort((a, b) => a.correctPosition - b.correctPosition)
+          .map(item => item.id) || [];
+      } else {
+        correctAnswers = [];
+      }
+
       questionResults.push({
         questionId: question.id,
         selectedAnswers: Array.isArray(answer) ? [] : "",
-        correctAnswers: question.questionType === "SINGLE_CHOICE"
-          ? (question.correctOptionId || "")
-          : question.questionType === "MULTIPLE_CHOICE"
-          ? question.options.filter(opt => opt.correct).map(opt => opt.id)
-          : question.questionType === "TEXT_INPUT"
-          ? (question.answersData as TextInputDataType)?.acceptableAnswers || []
-          : [],
+        correctAnswers,
         isCorrect: false,
         score: 0,
-        maxScore: 1,
+        maxScore,
         explanation: "No answer provided"
       });
-      maxTotalScore += 1;
+      maxTotalScore += maxScore;
       continue;
     }
 
@@ -625,6 +833,91 @@ export function validateDropdownConfig(
     if (typeof penalizeIncorrect !== "boolean") {
       errors.push("Penalize incorrect must be a boolean");
     }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Validate ordering question configuration
+ */
+export function validateOrderingConfig(
+  orderingData?: OrderingDataType
+): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!orderingData) {
+    errors.push("Ordering configuration is required");
+    return { isValid: false, errors };
+  }
+
+  // Check instructions
+  if (!orderingData.instructions || !orderingData.instructions.trim()) {
+    errors.push("Instructions are required");
+  }
+
+  // Check items
+  if (!orderingData.items || orderingData.items.length < 2) {
+    errors.push("At least 2 items are required");
+  } else {
+    // Validate each item
+    const itemIds = new Set<string>();
+    const positions = new Set<number>();
+
+    for (const item of orderingData.items) {
+      // Check for duplicate IDs
+      if (itemIds.has(item.id)) {
+        errors.push(`Duplicate item ID: ${item.id}`);
+      }
+      itemIds.add(item.id);
+
+      // Check for duplicate positions
+      if (positions.has(item.correctPosition)) {
+        errors.push(`Duplicate position: ${item.correctPosition}`);
+      }
+      positions.add(item.correctPosition);
+
+      // Validate content based on type
+      if (item.content.type === "text") {
+        if (!item.content.text || !item.content.text.trim()) {
+          errors.push(`Item ${item.id} must have text content`);
+        }
+      } else if (item.content.type === "image") {
+        if (!item.content.imageUrl) {
+          errors.push(`Item ${item.id} must have an image URL`);
+        }
+        if (!item.content.altText || !item.content.altText.trim()) {
+          errors.push(`Item ${item.id} must have alt text for the image`);
+        }
+      } else if (item.content.type === "mixed") {
+        // Mixed content must have at least text or image
+        if ((!item.content.text || !item.content.text.trim()) &&
+            !item.content.imageUrl) {
+          errors.push(`Item ${item.id} must have either text or image content`);
+        }
+      }
+    }
+
+    // Validate position numbers are sequential starting from 1
+    const sortedPositions = Array.from(positions).sort((a, b) => a - b);
+    for (let i = 0; i < sortedPositions.length; i++) {
+      if (sortedPositions[i] !== i + 1) {
+        errors.push(`Position numbers must be sequential starting from 1. Found gap at position ${i + 1}`);
+        break;
+      }
+    }
+  }
+
+  // Validate scoring configuration
+  if (orderingData.allowPartialCredit !== undefined && typeof orderingData.allowPartialCredit !== "boolean") {
+    errors.push("Allow partial credit must be a boolean");
+  }
+
+  if (orderingData.exactOrderRequired !== undefined && typeof orderingData.exactOrderRequired !== "boolean") {
+    errors.push("Exact order required must be a boolean");
   }
 
   return {

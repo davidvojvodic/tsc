@@ -76,17 +76,66 @@ const dropdownDataSchema = z.object({
   scoring: dropdownScoringSchema.optional(),
 });
 
+// Ordering content schemas
+const orderingTextContentSchema = z.object({
+  type: z.literal("text"),
+  text: z.string().min(1, "Text content required"),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+});
+
+const orderingImageContentSchema = z.object({
+  type: z.literal("image"),
+  imageUrl: z.string().url("Valid image URL required"),
+  altText: z.string().min(1, "Alt text required"),
+  altText_sl: z.string().optional(),
+  altText_hr: z.string().optional(),
+});
+
+const orderingMixedContentSchema = z.object({
+  type: z.literal("mixed"),
+  text: z.string().optional(),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+  imageUrl: z.string().url().optional(),
+  suffix: z.string().optional(),
+  suffix_sl: z.string().optional(),
+  suffix_hr: z.string().optional(),
+});
+
+// Ordering item schema
+const orderingItemSchema = z.object({
+  id: z.string().min(1, "Item ID required"),
+  content: z.discriminatedUnion("type", [
+    orderingTextContentSchema,
+    orderingImageContentSchema,
+    orderingMixedContentSchema,
+  ]),
+  correctPosition: z.number().int().positive(),
+});
+
+// Ordering specific data schema
+const orderingDataSchema = z.object({
+  instructions: z.string().min(1, "Instructions required"),
+  instructions_sl: z.string().optional(),
+  instructions_hr: z.string().optional(),
+  items: z.array(orderingItemSchema).min(2, "At least 2 items required").max(10, "Maximum 10 items allowed"),
+  allowPartialCredit: z.boolean().default(false),
+  exactOrderRequired: z.boolean().default(true),
+});
+
 // Question schema with support for both single and multiple choice
 const questionSchema = z.object({
   id: z.string().optional(), // For existing questions during updates
   text: z.string(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
-  questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT", "DROPDOWN"]).default("SINGLE_CHOICE"),
+  questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT", "DROPDOWN", "ORDERING"]).default("SINGLE_CHOICE"),
   options: z.array(optionSchema).optional(),
   multipleChoiceData: multipleChoiceDataSchema.optional(),
   textInputData: textInputDataSchema.optional(),
   dropdownData: dropdownDataSchema.optional(),
+  orderingData: orderingDataSchema.optional(),
 }).refine((data) => {
   // Question must have text in at least one language
   const hasQuestionText = (data.text && data.text.trim().length > 0) ||
@@ -185,6 +234,31 @@ const questionSchema = z.object({
     return true;
   }
 
+  // Validation for ordering questions
+  if (data.questionType === "ORDERING") {
+    if (!data.orderingData) {
+      return false;
+    }
+
+    // Must have at least 2 items
+    if (!data.orderingData.items || data.orderingData.items.length < 2) {
+      return false;
+    }
+
+    // Validate position numbers are sequential starting from 1
+    const positions = data.orderingData.items
+      .map(item => item.correctPosition)
+      .sort((a, b) => a - b);
+
+    for (let i = 0; i < positions.length; i++) {
+      if (positions[i] !== i + 1) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   return true;
 }, {
   message: "Invalid question configuration",
@@ -224,4 +298,6 @@ export type DropdownFieldType = z.infer<typeof dropdownFieldSchema>;
 export type DropdownOptionType = z.infer<typeof dropdownOptionSchema>;
 export type DropdownScoringType = z.infer<typeof dropdownScoringSchema>;
 export type PartialCreditRulesType = z.infer<typeof partialCreditRulesSchema>;
+export type OrderingDataType = z.infer<typeof orderingDataSchema>;
+export type OrderingItemType = z.infer<typeof orderingItemSchema>;
 export type QuizSubmissionType = z.infer<typeof quizSubmissionSchema>;

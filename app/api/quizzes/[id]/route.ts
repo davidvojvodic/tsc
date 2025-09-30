@@ -69,6 +69,30 @@ interface QuestionInput {
       penalizeIncorrect: boolean;
     };
   };
+  orderingData?: {
+    instructions: string;
+    instructions_sl?: string;
+    instructions_hr?: string;
+    items: Array<{
+      id: string;
+      content: {
+        type: "text" | "image" | "mixed";
+        text?: string;
+        text_sl?: string;
+        text_hr?: string;
+        imageUrl?: string;
+        altText?: string;
+        altText_sl?: string;
+        altText_hr?: string;
+        suffix?: string;
+        suffix_sl?: string;
+        suffix_hr?: string;
+      };
+      correctPosition: number;
+    }>;
+    allowPartialCredit?: boolean;
+    exactOrderRequired?: boolean;
+  };
 }
 
 interface QuizInput {
@@ -122,6 +146,8 @@ async function createQuestion(
     answersData = questionData.textInputData;
   } else if (questionData.questionType === "DROPDOWN" && questionData.dropdownData) {
     answersData = questionData.dropdownData;
+  } else if (questionData.questionType === "ORDERING" && questionData.orderingData) {
+    answersData = questionData.orderingData;
   }
 
   // Step 1: Create the question without setting correctOptionId
@@ -196,6 +222,8 @@ async function updateQuestion(
     answersData = questionData.textInputData;
   } else if (questionData.questionType === "DROPDOWN" && questionData.dropdownData) {
     answersData = questionData.dropdownData;
+  } else if (questionData.questionType === "ORDERING" && questionData.orderingData) {
+    answersData = questionData.orderingData;
   }
 
   // Step 1: Update the question's text and type
@@ -650,6 +678,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         }),
         ...(question.questionType === "DROPDOWN" && question.answersData && {
           dropdownData: question.answersData
+        }),
+        ...(question.questionType === "ORDERING" && question.answersData && {
+          orderingData: question.answersData
         }),
         };
       })

@@ -31,6 +31,8 @@ import { QuestionRenderer } from "@/components/quiz/question-renderer";
 
 import { getLocalizedContent } from "@/lib/language-utils";
 
+import type { OrderingItem, OrderingConfiguration } from "@/components/quiz-editor/quiz-editor-layout";
+
 interface Option {
   id: string;
   text: string;
@@ -91,11 +93,12 @@ interface Question {
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING";
   options?: Option[];
   multipleChoiceData?: MultipleChoiceData;
   textInputData?: TextInputData;
   dropdownData?: DropdownConfiguration;
+  orderingData?: OrderingConfiguration;
 }
 
 interface Quiz {
@@ -266,6 +269,11 @@ export default function QuizComponent({
       const dropdowns = currentQuestion.dropdownData?.dropdowns || [];
       return dropdowns.every(dropdown => dropdownAnswers[dropdown.id] && dropdownAnswers[dropdown.id].trim().length > 0);
     }
+    if (currentQuestion.questionType === "ORDERING") {
+      const orderingAnswer = Array.isArray(answer) ? answer : [];
+      const totalItems = currentQuestion.orderingData?.items.length || 0;
+      return orderingAnswer.length === totalItems;
+    }
     return !!answer;
   };
 
@@ -285,6 +293,11 @@ export default function QuizComponent({
         if (!dropdownAnswers || typeof dropdownAnswers !== "object") return false;
         const dropdowns = question.dropdownData?.dropdowns || [];
         return dropdowns.every(dropdown => dropdownAnswers[dropdown.id] && dropdownAnswers[dropdown.id].trim().length > 0);
+      }
+      if (question.questionType === "ORDERING") {
+        const orderingAnswer = Array.isArray(answer) ? answer : [];
+        const totalItems = question.orderingData?.items.length || 0;
+        return orderingAnswer.length === totalItems;
       }
       return !!answer;
     });
@@ -497,7 +510,12 @@ export default function QuizComponent({
         <div className="mb-6">
           <QuestionRenderer
             question={currentQuestion}
-            selectedAnswer={selectedOptions[currentQuestion.id] || (currentQuestion.questionType === "MULTIPLE_CHOICE" ? [] : currentQuestion.questionType === "DROPDOWN" ? {} : "")}
+            selectedAnswer={
+              selectedOptions[currentQuestion.id] ||
+              (currentQuestion.questionType === "MULTIPLE_CHOICE" ? [] :
+               currentQuestion.questionType === "ORDERING" ? [] :
+               currentQuestion.questionType === "DROPDOWN" ? {} : "")
+            }
             onAnswerChange={handleAnswerChange}
             language={language}
           />

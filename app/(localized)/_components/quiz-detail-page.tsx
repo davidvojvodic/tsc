@@ -5,13 +5,14 @@ import { Container } from "@/components/container";
 import QuizComponent from "@/components/quiz";
 import { SupportedLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
+import type { OrderingConfiguration } from "@/components/quiz-editor/quiz-editor-layout";
 
 interface Question {
   id: string;
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | null;
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | null;
   options?: {
     id: string;
     text: string;
@@ -59,6 +60,7 @@ interface Question {
       penalizeIncorrect: boolean;
     };
   };
+  orderingData?: OrderingConfiguration;
 }
 
 interface Quiz {
@@ -103,7 +105,8 @@ export function QuizDetailPage({ quiz, language }: QuizDetailPageProps) {
       options: localizedOptions,
       multipleChoiceData: question.multipleChoiceData ?? undefined,
       textInputData: question.textInputData ?? undefined,
-      dropdownData: question.dropdownData ?? undefined
+      dropdownData: question.dropdownData ?? undefined,
+      orderingData: question.orderingData ?? undefined
     };
   });
 

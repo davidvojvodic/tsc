@@ -97,9 +97,10 @@ export default async function QuizSubmissionsPage({
     redirect("/admin/quizzes");
   }
 
-  // Create lookup maps for questions and options
+  // Create lookup maps for questions, options, and ordering items
   const questionsMap = new Map();
   const optionsMap = new Map();
+  const orderingItemsMap = new Map(); // Map of questionId -> Map of itemId -> item content text
 
   quiz.questions.forEach((question, index) => {
     questionsMap.set(question.id, {
@@ -110,6 +111,30 @@ export default async function QuizSubmissionsPage({
     question.options.forEach((option) => {
       optionsMap.set(option.id, option);
     });
+
+    // Handle ORDERING questions - build a map of item IDs to their content
+    if (question.questionType === "ORDERING" && question.answersData) {
+      const orderingData = question.answersData as any;
+      if (orderingData.items && Array.isArray(orderingData.items)) {
+        const itemsMap = new Map();
+        orderingData.items.forEach((item: any) => {
+          // Get the text content based on item type
+          let contentText = "";
+          if (item.content.type === "text") {
+            contentText = item.content.text || item.id;
+          } else if (item.content.type === "image") {
+            contentText = item.content.altText || "Image";
+          } else if (item.content.type === "mixed") {
+            contentText = item.content.text || "Mixed content";
+          }
+          itemsMap.set(item.id, {
+            text: contentText,
+            correctPosition: item.correctPosition
+          });
+        });
+        orderingItemsMap.set(question.id, itemsMap);
+      }
+    }
   });
 
   // Calculate statistics
@@ -146,6 +171,17 @@ export default async function QuizSubmissionsPage({
             // For TEXT_INPUT questions, the answers are direct text values, not option IDs
             selectedAnswersText = selectedAnswerIds.filter(Boolean);
             correctAnswersText = correctAnswerIds.filter(Boolean);
+          } else if (question?.questionType === "ORDERING") {
+            // For ORDERING questions, map item IDs to their content text and show positions
+            const itemsMap = orderingItemsMap.get(result.questionId);
+            selectedAnswersText = selectedAnswerIds.map((id: string, index: number) => {
+              const item = itemsMap?.get(id);
+              return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
+            correctAnswersText = correctAnswerIds.map((id: string, index: number) => {
+              const item = itemsMap?.get(id);
+              return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
           } else {
             // For choice questions, look up option text by ID
             selectedAnswersText = selectedAnswerIds.map((id: string) => {
@@ -186,6 +222,20 @@ export default async function QuizSubmissionsPage({
             // For TEXT_INPUT questions, use the answer values directly
             selectedAnswersText = [answer.selectedOptionId || ''];
             correctAnswersText = [answer.correctOptionId || ''];
+          } else if (question?.questionType === "ORDERING") {
+            // For ORDERING questions in legacy format - unlikely but handle it
+            const itemsMap = orderingItemsMap.get(answer.questionId);
+            const selectedIds = Array.isArray(answer.selectedOptionId) ? answer.selectedOptionId : [answer.selectedOptionId];
+            const correctIds = Array.isArray(answer.correctOptionId) ? answer.correctOptionId : [answer.correctOptionId];
+
+            selectedAnswersText = selectedIds.map((id: string, index: number) => {
+              const item = itemsMap?.get(id);
+              return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
+            correctAnswersText = correctIds.map((id: string, index: number) => {
+              const item = itemsMap?.get(id);
+              return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
           } else {
             // For choice questions, look up option text by ID
             const selectedOption = optionsMap.get(answer.selectedOptionId);

@@ -26,11 +26,12 @@ export interface Question {
   text: string;
   text_sl?: string;
   text_hr?: string;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING";
   options: Option[];
   multipleChoiceData?: MultipleChoiceConfiguration;
   textInputData?: TextInputConfiguration;
   dropdownData?: DropdownConfiguration;
+  orderingData?: OrderingConfiguration;
   order?: number;
 }
 
@@ -88,6 +89,50 @@ export interface DropdownOption {
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;
+}
+
+// Ordering content types - matching backend schema
+export type OrderingTextContent = {
+  type: "text";
+  text: string;
+  text_sl?: string;
+  text_hr?: string;
+};
+
+export type OrderingImageContent = {
+  type: "image";
+  imageUrl: string;
+  altText: string;
+  altText_sl?: string;
+  altText_hr?: string;
+};
+
+export type OrderingMixedContent = {
+  type: "mixed";
+  text?: string;
+  text_sl?: string;
+  text_hr?: string;
+  imageUrl?: string;
+  suffix?: string;
+  suffix_sl?: string;
+  suffix_hr?: string;
+};
+
+export type OrderingItemContent = OrderingTextContent | OrderingImageContent | OrderingMixedContent;
+
+export interface OrderingItem {
+  id: string;
+  correctPosition: number; // Changed from 'position' to match backend schema
+  content: OrderingItemContent; // Nested content structure
+}
+
+export interface OrderingConfiguration {
+  instructions?: string;
+  instructions_sl?: string;
+  instructions_hr?: string;
+  items: OrderingItem[];
+  allowPartialCredit?: boolean;
+  exactOrderRequired?: boolean;
 }
 
 interface QuizEditorLayoutProps {

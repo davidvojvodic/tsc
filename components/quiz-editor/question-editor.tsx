@@ -8,11 +8,12 @@ import { QuestionContent } from "./question-content";
 import { OptionsEditor } from "./options-editor";
 import { TextInputConfigurationEditor } from "./text-input-configuration-editor";
 import { DropdownConfigurationEditor } from "./dropdown-configuration-editor";
+import { OrderingConfigurationEditor } from "./ordering-configuration-editor";
 import { QuestionActions } from "./question-actions";
 import { EmptyState } from "./empty-state";
 import { AutoSaveIndicator } from "./autosave-indicator";
 import { ScoringMethodSelector } from "./scoring-method-selector";
-import { Teacher, Option, TextInputConfiguration, DropdownConfiguration } from "./quiz-editor-layout";
+import { Teacher, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration } from "./quiz-editor-layout";
 
 interface QuestionEditorProps {
   questionIndex: number;
@@ -52,7 +53,7 @@ export function QuestionEditor({
     }
   };
 
-  const handleQuestionUpdate = (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration) => {
+  const handleQuestionUpdate = (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration) => {
     updateQuestion(questionIndex, { [field]: value });
   };
 
@@ -107,6 +108,12 @@ export function QuestionEditor({
             />
           ) : question.questionType === "DROPDOWN" ? (
             <DropdownConfigurationEditor
+              question={question}
+              language={currentLanguage}
+              onChange={handleQuestionUpdate}
+            />
+          ) : question.questionType === "ORDERING" ? (
+            <OrderingConfigurationEditor
               question={question}
               language={currentLanguage}
               onChange={handleQuestionUpdate}

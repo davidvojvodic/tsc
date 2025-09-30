@@ -67,6 +67,30 @@ interface QuestionInput {
       penalizeIncorrect: boolean;
     };
   };
+  orderingData?: {
+    instructions: string;
+    instructions_sl?: string;
+    instructions_hr?: string;
+    items: Array<{
+      id: string;
+      content: {
+        type: "text" | "image" | "mixed";
+        text?: string;
+        text_sl?: string;
+        text_hr?: string;
+        imageUrl?: string;
+        altText?: string;
+        altText_sl?: string;
+        altText_hr?: string;
+        suffix?: string;
+        suffix_sl?: string;
+        suffix_hr?: string;
+      };
+      correctPosition: number;
+    }>;
+    allowPartialCredit?: boolean;
+    exactOrderRequired?: boolean;
+  };
 }
 
 interface QuizInput {
@@ -126,6 +150,11 @@ async function createQuestion(
   // For DROPDOWN questions, store dropdownData in answersData field
   if (questionData.questionType === "DROPDOWN" && questionData.dropdownData) {
     answersData = questionData.dropdownData;
+  }
+
+  // For ORDERING questions, store orderingData in answersData field
+  if (questionData.questionType === "ORDERING" && questionData.orderingData) {
+    answersData = questionData.orderingData;
   }
 
   // Step 1: Create the question without setting correctOptionId

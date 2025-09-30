@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { MultipleChoiceQuestion } from "./question-types/multiple-choice-question";
 import { TextInputQuestion } from "./question-types/text-input-question";
 import { DropdownQuestion } from "./question-types/dropdown-question";
+import { OrderingQuestion } from "./question-types/ordering-question";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { cn } from "@/lib/utils";
@@ -65,16 +66,69 @@ interface DropdownConfiguration {
   };
 }
 
+// Ordering content types - matching backend schema
+type OrderingTextContent = {
+  type: "text";
+  text: string;
+  text_sl?: string;
+  text_hr?: string;
+};
+
+type OrderingImageContent = {
+  type: "image";
+  imageUrl: string;
+  altText: string;
+  altText_sl?: string;
+  altText_hr?: string;
+};
+
+type OrderingMixedContent = {
+  type: "mixed";
+  text?: string;
+  text_sl?: string;
+  text_hr?: string;
+  imageUrl?: string;
+  suffix?: string;
+  suffix_sl?: string;
+  suffix_hr?: string;
+};
+
+type OrderingItemContent = OrderingTextContent | OrderingImageContent | OrderingMixedContent;
+
+interface OrderingItem {
+  id: string;
+  correctPosition: number;
+  content: OrderingItemContent;
+}
+
+interface OrderingConfiguration {
+  instructions?: string;
+  instructions_sl?: string;
+  instructions_hr?: string;
+  items: OrderingItem[];
+  scoring?: {
+    exactOrder?: boolean;
+    partialCredit?: boolean;
+    penaltyPerMisplacement?: number;
+    adjacencyBonus?: boolean;
+  };
+  validation?: {
+    requireAllItems?: boolean;
+    allowPartialSubmission?: boolean;
+  };
+}
+
 interface Question {
   id: string;
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING";
   options?: Option[];
   multipleChoiceData?: MultipleChoiceData;
   textInputData?: TextInputData;
   dropdownData?: DropdownConfiguration;
+  orderingData?: OrderingConfiguration;
 }
 
 interface QuestionRendererProps {
@@ -110,6 +164,10 @@ export function QuestionRenderer({
 
   const handleDropdownChange = (questionId: string, answers: Record<string, string>) => {
     onAnswerChange(questionId, answers);
+  };
+
+  const handleOrderingChange = (questionId: string, order: string[]) => {
+    onAnswerChange(questionId, order);
   };
 
   if (question.questionType === "MULTIPLE_CHOICE") {
@@ -177,6 +235,26 @@ export function QuestionRenderer({
         dropdownData={question.dropdownData}
         selectedAnswers={typeof selectedAnswer === "object" && !Array.isArray(selectedAnswer) ? selectedAnswer : {}}
         onAnswerChange={handleDropdownChange}
+        disabled={disabled}
+        language={language}
+        className={className}
+      />
+    );
+  }
+
+  if (question.questionType === "ORDERING") {
+    // Ensure we have the required ordering data
+    if (!question.orderingData) {
+      console.warn(`Ordering question ${question.id} is missing orderingData`);
+      return null;
+    }
+
+    return (
+      <OrderingQuestion
+        questionId={question.id}
+        questionData={question.orderingData}
+        selectedAnswer={Array.isArray(selectedAnswer) ? selectedAnswer : []}
+        onAnswerChange={handleOrderingChange}
         disabled={disabled}
         language={language}
         className={className}

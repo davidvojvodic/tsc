@@ -57,6 +57,12 @@ export function validateQuestion(question: Question): ValidationResult {
       metRequirements = validationResult.metRequirements;
       break;
 
+    case "ORDERING":
+      validationResult = validateOrderingQuestion(question, result, totalRequirements, metRequirements);
+      totalRequirements = validationResult.totalRequirements;
+      metRequirements = validationResult.metRequirements;
+      break;
+
     case "SINGLE_CHOICE":
       validationResult = validateSingleChoiceQuestion(question, result, totalRequirements, metRequirements);
       totalRequirements = validationResult.totalRequirements;
@@ -316,6 +322,158 @@ function validateMultipleChoiceQuestion(
         field: "multipleChoiceData.minSelections",
         message: "Minimum selections cannot exceed maximum selections"
       });
+    }
+  }
+
+  return { totalRequirements, metRequirements };
+}
+
+function validateOrderingQuestion(
+  question: Question,
+  result: ValidationResult,
+  totalRequirements: number,
+  metRequirements: number
+): { totalRequirements: number; metRequirements: number } {
+  totalRequirements += 3; // Configuration, instructions, and items
+
+  if (!question.orderingData) {
+    result.errors.push({
+      field: "orderingData",
+      message: "Ordering configuration is required"
+    });
+    result.missingFields.push("Ordering configuration");
+    return { totalRequirements, metRequirements };
+  }
+
+  metRequirements++; // Has configuration
+
+  // Check instructions
+  if (!question.orderingData.instructions || !question.orderingData.instructions.trim()) {
+    result.errors.push({
+      field: "orderingData.instructions",
+      message: "Instructions are required"
+    });
+    result.missingFields.push("Instructions");
+  } else {
+    metRequirements++; // Has instructions
+  }
+
+  // Check items
+  if (!question.orderingData.items || question.orderingData.items.length < 2) {
+    result.errors.push({
+      field: "orderingData.items",
+      message: "At least 2 items are required"
+    });
+    result.missingFields.push("Ordering items");
+  } else if (question.orderingData.items.length > 10) {
+    result.errors.push({
+      field: "orderingData.items",
+      message: "Maximum 10 items allowed"
+    });
+  } else {
+    let allItemsValid = true;
+
+    question.orderingData.items.forEach((item, index) => {
+      totalRequirements += 3; // ID, content, and correctPosition
+
+      // Check item ID
+      if (!item.id || !item.id.trim()) {
+        result.errors.push({
+          field: `orderingData.items.${index}.id`,
+          message: `Item ${index + 1} ID is required`
+        });
+        result.missingFields.push(`Item ${index + 1} ID`);
+        allItemsValid = false;
+      } else {
+        metRequirements++;
+      }
+
+      // Check content type and nested content
+      if (!item.content || !item.content.type) {
+        result.errors.push({
+          field: `orderingData.items.${index}.content.type`,
+          message: `Item ${index + 1} content type is required`
+        });
+        result.missingFields.push(`Item ${index + 1} content type`);
+        allItemsValid = false;
+      } else {
+        if (item.content.type === "text") {
+          if (!item.content.text || !item.content.text.trim()) {
+            result.errors.push({
+              field: `orderingData.items.${index}.content.text`,
+              message: `Item ${index + 1} text is required`
+            });
+            allItemsValid = false;
+          } else {
+            metRequirements++;
+          }
+        } else if (item.content.type === "image") {
+          if (!item.content.imageUrl || !item.content.imageUrl.trim()) {
+            result.errors.push({
+              field: `orderingData.items.${index}.content.imageUrl`,
+              message: `Item ${index + 1} image URL is required`
+            });
+            allItemsValid = false;
+          } else if (!item.content.altText || !item.content.altText.trim()) {
+            result.errors.push({
+              field: `orderingData.items.${index}.content.altText`,
+              message: `Item ${index + 1} alt text is required for images`
+            });
+            allItemsValid = false;
+          } else {
+            metRequirements++;
+          }
+        } else if (item.content.type === "mixed") {
+          // At least one of text or imageUrl must be present
+          if ((!item.content.text || !item.content.text.trim()) && (!item.content.imageUrl || !item.content.imageUrl.trim())) {
+            result.errors.push({
+              field: `orderingData.items.${index}.content`,
+              message: `Item ${index + 1} must have text or image`
+            });
+            allItemsValid = false;
+          } else {
+            metRequirements++;
+          }
+        } else {
+          result.errors.push({
+            field: `orderingData.items.${index}.content.type`,
+            message: `Item ${index + 1} has invalid content type`
+          });
+          allItemsValid = false;
+        }
+      }
+
+      // Check correctPosition
+      if (typeof item.correctPosition !== "number" || item.correctPosition < 1) {
+        result.errors.push({
+          field: `orderingData.items.${index}.correctPosition`,
+          message: `Item ${index + 1} must have a positive correctPosition`
+        });
+        result.missingFields.push(`Item ${index + 1} correctPosition`);
+        allItemsValid = false;
+      } else {
+        metRequirements++;
+      }
+    });
+
+    // Validate positions are sequential starting from 1
+    const positions = question.orderingData.items
+      .map(item => item.correctPosition)
+      .sort((a, b) => a - b);
+
+    for (let i = 0; i < positions.length; i++) {
+      if (positions[i] !== i + 1) {
+        result.errors.push({
+          field: "orderingData.items",
+          message: `Positions must be sequential starting from 1. Found gap at position ${i + 1}`
+        });
+        allItemsValid = false;
+        break;
+      }
+    }
+
+    if (allItemsValid) {
+      metRequirements++; // All items valid
     }
   }
 

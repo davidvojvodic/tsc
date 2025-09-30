@@ -114,22 +114,25 @@ export default async function QuizSubmissionsPage({
 
     // Handle ORDERING questions - build a map of item IDs to their content
     if (question.questionType === "ORDERING" && question.answersData) {
-      const orderingData = question.answersData as any;
+      const orderingData = question.answersData as Record<string, unknown>;
       if (orderingData.items && Array.isArray(orderingData.items)) {
         const itemsMap = new Map();
-        orderingData.items.forEach((item: any) => {
+        orderingData.items.forEach((item: Record<string, unknown>) => {
           // Get the text content based on item type
           let contentText = "";
-          if (item.content.type === "text") {
-            contentText = item.content.text || item.id;
-          } else if (item.content.type === "image") {
-            contentText = item.content.altText || "Image";
-          } else if (item.content.type === "mixed") {
-            contentText = item.content.text || "Mixed content";
+          const content = item.content as Record<string, unknown>;
+          const contentType = content.type as string;
+
+          if (contentType === "text") {
+            contentText = (content.text as string) || (item.id as string);
+          } else if (contentType === "image") {
+            contentText = (content.altText as string) || "Image";
+          } else if (contentType === "mixed") {
+            contentText = (content.text as string) || "Mixed content";
           }
-          itemsMap.set(item.id, {
+          itemsMap.set(item.id as string, {
             text: contentText,
-            correctPosition: item.correctPosition
+            correctPosition: item.correctPosition as number
           });
         });
         orderingItemsMap.set(question.id, itemsMap);
@@ -152,16 +155,19 @@ export default async function QuizSubmissionsPage({
   // Format submissions for the data table
   const formattedSubmissions = quiz.submissions.map((submission) => {
     // Handle the answers structure - it's stored as JSON object, not array
-    const submissionData = submission.answers as any;
+    const submissionData = submission.answers as Record<string, unknown>;
     let answersArray: QuizAnswer[] = [];
 
     if (submissionData) {
-      if (submissionData.version === "2.0" && submissionData.scoreDetails?.questionResults) {
+      const scoreDetails = submissionData.scoreDetails as Record<string, unknown> | undefined;
+      const questionResults = scoreDetails?.questionResults as Record<string, unknown>[] | undefined;
+
+      if (submissionData.version === "2.0" && questionResults) {
         // New format with detailed scoring
-        answersArray = submissionData.scoreDetails.questionResults.map((result: any) => {
-          const question = questionsMap.get(result.questionId);
-          const selectedAnswerIds = Array.isArray(result.selectedAnswers) ? result.selectedAnswers : [result.selectedAnswers];
-          const correctAnswerIds = Array.isArray(result.correctAnswers) ? result.correctAnswers : [result.correctAnswers];
+        answersArray = questionResults.map((result: Record<string, unknown>) => {
+          const question = questionsMap.get(result.questionId as string);
+          const selectedAnswerIds = Array.isArray(result.selectedAnswers) ? result.selectedAnswers as string[] : [result.selectedAnswers as string];
+          const correctAnswerIds = Array.isArray(result.correctAnswers) ? result.correctAnswers as string[] : [result.correctAnswers as string];
 
           // Handle different question types differently
           let selectedAnswersText: string[];
@@ -195,24 +201,24 @@ export default async function QuizSubmissionsPage({
           }
 
           return {
-            questionId: result.questionId,
+            questionId: result.questionId as string,
             questionText: question?.text || `Question ${question?.displayOrder || '?'}`,
             questionOrder: question?.displayOrder || 0,
             questionType: question?.questionType || 'UNKNOWN',
-            selectedOptionId: Array.isArray(result.selectedAnswers) ? null : result.selectedAnswers,
+            selectedOptionId: Array.isArray(result.selectedAnswers) ? null : (result.selectedAnswers as string | null),
             selectedAnswers: selectedAnswerIds,
             selectedAnswersText,
             correctAnswers: correctAnswerIds,
             correctAnswersText,
-            isCorrect: result.isCorrect,
-            score: result.score,
-            maxScore: result.maxScore,
+            isCorrect: result.isCorrect as boolean,
+            score: result.score as number | undefined,
+            maxScore: result.maxScore as number | undefined,
           };
         });
       } else if (Array.isArray(submissionData)) {
         // Legacy format (array)
-        answersArray = submissionData.map((answer: any) => {
-          const question = questionsMap.get(answer.questionId);
+        answersArray = submissionData.map((answer: Record<string, unknown>) => {
+          const question = questionsMap.get(answer.questionId as string);
 
           // Handle different question types differently for legacy format
           let selectedAnswersText: string[];
@@ -220,13 +226,13 @@ export default async function QuizSubmissionsPage({
 
           if (question?.questionType === "TEXT_INPUT") {
             // For TEXT_INPUT questions, use the answer values directly
-            selectedAnswersText = [answer.selectedOptionId || ''];
-            correctAnswersText = [answer.correctOptionId || ''];
+            selectedAnswersText = [(answer.selectedOptionId as string) || ''];
+            correctAnswersText = [(answer.correctOptionId as string) || ''];
           } else if (question?.questionType === "ORDERING") {
             // For ORDERING questions in legacy format - unlikely but handle it
-            const itemsMap = orderingItemsMap.get(answer.questionId);
-            const selectedIds = Array.isArray(answer.selectedOptionId) ? answer.selectedOptionId : [answer.selectedOptionId];
-            const correctIds = Array.isArray(answer.correctOptionId) ? answer.correctOptionId : [answer.correctOptionId];
+            const itemsMap = orderingItemsMap.get(answer.questionId as string);
+            const selectedIds = Array.isArray(answer.selectedOptionId) ? answer.selectedOptionId as string[] : [answer.selectedOptionId as string];
+            const correctIds = Array.isArray(answer.correctOptionId) ? answer.correctOptionId as string[] : [answer.correctOptionId as string];
 
             selectedAnswersText = selectedIds.map((id: string, index: number) => {
               const item = itemsMap?.get(id);
@@ -238,23 +244,23 @@ export default async function QuizSubmissionsPage({
             });
           } else {
             // For choice questions, look up option text by ID
-            const selectedOption = optionsMap.get(answer.selectedOptionId);
-            const correctOption = optionsMap.get(answer.correctOptionId);
-            selectedAnswersText = [selectedOption?.text || answer.selectedOptionId];
-            correctAnswersText = [correctOption?.text || answer.correctOptionId];
+            const selectedOption = optionsMap.get(answer.selectedOptionId as string);
+            const correctOption = optionsMap.get(answer.correctOptionId as string);
+            selectedAnswersText = [selectedOption?.text || (answer.selectedOptionId as string)];
+            correctAnswersText = [correctOption?.text || (answer.correctOptionId as string)];
           }
 
           return {
-            questionId: answer.questionId,
+            questionId: answer.questionId as string,
             questionText: question?.text || `Question ${question?.displayOrder || '?'}`,
             questionOrder: question?.displayOrder || 0,
             questionType: question?.questionType || 'UNKNOWN',
-            selectedOptionId: answer.selectedOptionId,
-            selectedAnswers: [answer.selectedOptionId],
+            selectedOptionId: answer.selectedOptionId as string | null,
+            selectedAnswers: [answer.selectedOptionId as string],
             selectedAnswersText,
-            correctAnswers: [answer.correctOptionId],
+            correctAnswers: [answer.correctOptionId as string],
             correctAnswersText,
-            isCorrect: answer.isCorrect,
+            isCorrect: answer.isCorrect as boolean,
           };
         });
       }

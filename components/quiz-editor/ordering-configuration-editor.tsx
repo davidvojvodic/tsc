@@ -1,7 +1,7 @@
 "use client";
 
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Plus, Trash2, GripVertical, HelpCircle, Type, ImageIcon, Layers } from "lucide-react";
+import { Trash2, GripVertical, HelpCircle, Type, ImageIcon, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -288,7 +288,6 @@ export function OrderingConfigurationEditor({
 // Individual item editor component
 function ItemEditor({
   item,
-  index,
   language,
   onUpdate,
   onRemove,
@@ -296,12 +295,12 @@ function ItemEditor({
   dragHandleProps
 }: {
   item: OrderingItem;
-  index: number;
+  index?: number;
   language: Language;
   onUpdate: (updates: Partial<OrderingItem>) => void;
   onRemove: () => void;
   canRemove: boolean;
-  dragHandleProps: any;
+  dragHandleProps: unknown;
 }) {
   // Helper to transform content when type changes
   const changeContentType = (newType: "text" | "image" | "mixed") => {
@@ -362,31 +361,13 @@ function ItemEditor({
     onUpdate({ content: newContent });
   };
 
-  // Get current language-specific field values
-  const getTextField = (field: "text" | "altText" | "suffix") => {
-    const content = item.content;
-    if (language === "sl") {
-      return (content as any)[`${field}_sl`] || "";
-    }
-    if (language === "hr") {
-      return (content as any)[`${field}_hr`] || "";
-    }
-    return (content as any)[field] || "";
-  };
-
-  const updateTextField = (field: "text" | "altText" | "suffix", value: string) => {
-    const fieldName = language === "sl" ? `${field}_sl` :
-                      language === "hr" ? `${field}_hr` :
-                      field;
-    updateContent({ [fieldName]: value } as Partial<OrderingItemContent>);
-  };
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div {...dragHandleProps} className="cursor-move text-muted-foreground">
+            <div {...(dragHandleProps as Record<string, unknown> || {})} className="cursor-move text-muted-foreground">
               <GripVertical className="h-5 w-5" />
             </div>
             <Badge variant="outline" className="rounded-full">

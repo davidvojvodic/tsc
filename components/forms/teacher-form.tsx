@@ -281,7 +281,7 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
                               disabled={isLoading}
                               placeholder={`e.g. Senior Mathematics Teacher (${lang.toUpperCase()})`}
                               {...field}
-                              value={field.value || ""}
+                              value={(field.value as string) || ""}
                             />
                           </FormControl>
                           <FormMessage />
@@ -315,7 +315,7 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
                       disabled={isLoading}
                       placeholder="Enter contact email"
                       {...field}
-                      value={field.value || ""}
+                      value={(field.value as string) || ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -345,7 +345,7 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
                               className="resize-none"
                               rows={5}
                               {...field}
-                              value={field.value || ""}
+                              value={(field.value as string) || ""}
                             />
                           </FormControl>
                           <FormMessage />
@@ -395,8 +395,8 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
                   <Select
                     disabled={isLoading}
                     onValueChange={(val) => field.onChange(val === "none" ? null : val)}
-                    defaultValue={field.value || "none"}
-                    value={field.value || "none"}
+                    defaultValue={(field.value as string) || "none"}
+                    value={(field.value as string) || "none"}
                   >
                     <FormControl>
                       <SelectTrigger>

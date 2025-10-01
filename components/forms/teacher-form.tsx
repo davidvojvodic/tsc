@@ -34,6 +34,7 @@ import { UploadButton } from "@/lib/uploadthing";
 import { Label } from "../ui/label";
 import { LanguageTabs, SupportedLanguage } from "../ui/language-tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Switch } from "../ui/switch";
 
 // Form validation schema
 const formSchema = z.object({
@@ -45,6 +46,7 @@ const formSchema = z.object({
   email: z.string().email().optional().nullable(),
   displayOrder: z.number().int().default(0),
   school: z.enum(["tsc", "pts"]).optional().nullable(),
+  visible: z.boolean().default(true),
 
   // Multilingual fields
   title: z
@@ -82,6 +84,7 @@ interface TeacherFormProps {
     email: string | null;
     displayOrder: number;
     school?: string | null;
+    visible?: boolean;
     photoId: string | null;
     photo?: {
       url: string;
@@ -121,6 +124,7 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
       email: initialData?.email || null,
       displayOrder: initialData?.displayOrder || 0,
       school: (initialData?.school as "tsc" | "pts") || null,
+      visible: initialData?.visible ?? true,
     },
   });
 
@@ -409,6 +413,30 @@ export function TeacherForm({ initialData }: TeacherFormProps) {
                     Specify which school the teacher belongs to
                   </FormDescription>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="visible"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      Show on Homepage
+                    </FormLabel>
+                    <FormDescription>
+                      Display this teacher in the homepage carousel
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />

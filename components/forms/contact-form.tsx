@@ -54,7 +54,7 @@ const translations = {
   sl: {
     title: "Kontaktirajte nas",
     subtitle: "",
-    description: "Imate povratne informacije ali predloge o WaterWise?",
+    description: "Imate povratne informacije ali predloge o projektu WaterWise?",
     nameLabel: "Ime",
     namePlaceholder: "Vaše ime",
     emailLabel: "E-poštni naslov",
@@ -71,7 +71,7 @@ const translations = {
   hr: {
     title: "Kontaktirajte nas",
     subtitle: "Stvorimo valove zajedno",
-    description: "Imate povratne informacije ili prijedloge o WaterWise? Rado bismo čuli od vas i pomogli oblikovati budućnost pametnog navodnjavanja.",
+    description: "Imate povratne informacije ili prijedloge o projektu WaterWise? Rado bismo čuli od vas i pomogli oblikovati budućnost pametnog navodnjavanja.",
     nameLabel: "Ime",
     namePlaceholder: "Vaše ime",
     emailLabel: "Email adresa",

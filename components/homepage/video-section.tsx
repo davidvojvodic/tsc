@@ -12,13 +12,13 @@ interface VideoSectionProps {
 const translations = {
   title: {
     en: "System Overview",
-    sl: "Pregled Sistema",
-    hr: "Pregled Sustava"
+    sl: "Pregled sistema",
+    hr: "Pregled sustava"
   },
   description: {
     en: "Watch our advanced water management system in operation, showcasing real-time monitoring and automated irrigation controls.",
-    sl: "Oglejte si naš napredni sistem upravljanja vode v delovanju, ki prikazuje spremljanje v realnem času in avtomatizirane kontrole namakanja.",
-    hr: "Pogledajte naš napredni sustav upravljanja vodom u radu, koji prikazuje praćenje u realnom vremenu i automatizirane kontrole navodnjavanja."
+    sl: "Oglejte si naš napredni sistem upravljanja vode v delovanju, ki prikazuje spremljanje v realnem času, in avtomatizirano kontrolo namakanja.",
+    hr: "Pogledajte naš napredni sustav upravljanja vodom u radu, koji prikazuje praćenje u realnom vremenu, i automatizirane kontrole navodnjavanja."
   }
 };
 

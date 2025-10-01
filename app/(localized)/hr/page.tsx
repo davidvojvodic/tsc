@@ -41,6 +41,9 @@ export default async function HomePage() {
   });
 
   const teachers = await prisma.teacher.findMany({
+    where: {
+      visible: true,
+    },
     select: {
       id: true,
       name: true,

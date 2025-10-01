@@ -3,6 +3,8 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Teacher } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Eye, EyeOff } from "lucide-react";
 import { TeacherCellAction } from "./cell-action";
 
 export const columns: ColumnDef<Teacher>[] = [
@@ -52,6 +54,28 @@ export const columns: ColumnDef<Teacher>[] = [
             <span className="px-2 py-1 rounded-md bg-green-100 text-green-800">TSC</span>
           )}
         </div>
+      );
+    },
+  },
+  {
+    accessorKey: "visible",
+    header: "Visibility",
+    cell: ({ row }) => {
+      const visible = row.getValue("visible") as boolean;
+      return (
+        <Badge variant={visible ? "default" : "secondary"} className="gap-1">
+          {visible ? (
+            <>
+              <Eye className="h-3 w-3" />
+              <span>Visible</span>
+            </>
+          ) : (
+            <>
+              <EyeOff className="h-3 w-3" />
+              <span>Hidden</span>
+            </>
+          )}
+        </Badge>
       );
     },
   },

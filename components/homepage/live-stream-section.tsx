@@ -14,8 +14,8 @@ interface LiveStreamSectionProps {
 const translations = {
   title: {
     en: "Live System Monitoring",
-    sl: "Spremljanje Sistema v Živo",
-    hr: "Praćenje Sistema Uživo"
+    sl: "Spremljanje sistema v živo",
+    hr: "Praćenje sistema uživo"
   },
   subtitle: {
     en: "Real-Time Camera Feed",

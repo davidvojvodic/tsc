@@ -205,9 +205,10 @@ model Teacher {
   photoId      String?
   email        String?                    @db.VarChar(255)
   displayOrder Int                        @default(0)
+  school       String?                    @db.VarChar(255)
+  visible      Boolean                    @default(true)
   createdAt    DateTime                   @default(now())
   updatedAt    DateTime                   @updatedAt
-  school       String?                    @db.VarChar(255)
   activities   ProjectActivityToTeacher[]
   quizzes      Quiz[]
   photo        Media?                     @relation(fields: [photoId], references: [id])

@@ -26,6 +26,7 @@ export default async function TeachersPage() {
     displayOrder: teacher.displayOrder,
     photo: teacher.photo ? { url: teacher.photo.url } : null,
     school: teacher.school,
+    visible: teacher.visible,
     email: teacher.email,
     // Format the date when we prepare the data
     createdAt: format(teacher.createdAt, "PPP"),

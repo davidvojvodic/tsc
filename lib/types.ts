@@ -25,6 +25,8 @@ export interface Teacher {
 
   school?: string | null;
 
+  visible?: boolean;
+
   photo?: {
     url: string;
   } | null;

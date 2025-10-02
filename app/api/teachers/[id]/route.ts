@@ -19,6 +19,7 @@ const teacherSchema = z.object({
     .nullable(),
   displayOrder: z.number().int().default(0),
   school: z.enum(["tsc", "pts"]).optional().nullable(),
+  visible: z.boolean().default(true),
 
   // Multilingual fields
   title: z
@@ -141,6 +142,7 @@ export async function PATCH(
           email: validatedData.email,
           displayOrder: validatedData.displayOrder,
           school: validatedData.school,
+          visible: validatedData.visible,
           ...photoUpdate,
         },
         include: {
@@ -209,6 +211,7 @@ export async function POST(req: NextRequest) {
           email: validatedData.email,
           displayOrder: validatedData.displayOrder,
           school: validatedData.school,
+          visible: validatedData.visible,
           ...photoConnect,
         },
         include: {

@@ -64,6 +64,6 @@
       "maxDuration": 300
     }
   },
-  "buildCommand": "npm run build",
+  "buildCommand": "prisma generate && prisma migrate deploy && next build",
   "installCommand": "npm install --legacy-peer-deps"
 }

@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
           email: validatedData.email,
           displayOrder: validatedData.displayOrder,
           school: validatedData.school,
+          visible: validatedData.visible,
           ...photoConnect,
         },
         include: {

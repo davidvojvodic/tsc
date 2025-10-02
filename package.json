@@ -8,12 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "migration:validate": "node scripts/migration-validator.js",
-    "migration:test": "node scripts/migration-test-suite.js",
-    "migration:run": "node scripts/migration-runner.js",
-    "migration:monitor": "node scripts/migration-monitor.js",
-    "migration:dry-run": "node scripts/migration-runner.js --dry-run",
-    "migration:full-test": "npm run migration:validate pre && npm run migration:test && npm run migration:validate post"
+    "vercel-build": "prisma generate && prisma migrate deploy && next build"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",
@@ -82,7 +77,8 @@
     "uploadthing": "^7.5.2",
     "ws": "^8.18.0",
     "zod": "^3.25.0",
-    "zustand": "^5.0.1"
+    "zustand": "^5.0.1",
+    "prisma": "^5.21.1"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.13",
@@ -94,7 +90,6 @@
     "eslint-config-next": "^15.0.0",
     "plaiceholder": "^3.0.0",
     "postcss": "^8",
-    "prisma": "^5.21.1",
     "sharp": "^0.34.3",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"

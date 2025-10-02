@@ -9,23 +9,23 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(uuid())
-  email           String           @unique
-  name            String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  emailVerified   Boolean          @default(false)
-  image           String?          @db.Text
-  banExpires      DateTime?
-  banReason       String?          @db.Text
-  banned          Boolean?         @default(false)
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  name                  String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  emailVerified         Boolean                @default(false)
+  image                 String?                @db.Text
+  banExpires            DateTime?
+  banReason             String?                @db.Text
+  banned                Boolean?               @default(false)
   role                  Role                   @default(USER)
   Account               Account[]
+  contactSubmissions    ContactSubmission[]
   pages                 Page[]
+  passwordResetRequests PasswordResetRequest[]
   quizSubmissions       QuizSubmission[]
   Session               Session[]
-  passwordResetRequests PasswordResetRequest[]
-  contactSubmissions    ContactSubmission[]
 
   @@map("user")
 }
@@ -208,6 +208,7 @@ model Teacher {
   createdAt    DateTime                   @default(now())
   updatedAt    DateTime                   @updatedAt
   school       String?                    @db.VarChar(255)
+  visible      Boolean                    @default(true)
   activities   ProjectActivityToTeacher[]
   quizzes      Quiz[]
   photo        Media?                     @relation(fields: [photoId], references: [id])
@@ -240,20 +241,20 @@ model Quiz {
 }
 
 model Question {
-  id                String       @id @default(uuid())
-  text              String       @db.Text
-  text_sl           String?      @db.Text
-  text_hr           String?      @db.Text
-  questionType      QuestionType @default(SINGLE_CHOICE)
-  answersData       Json?
-  migrationVersion  Int          @default(1)
-  quizId            String
-  correctOptionId   String?      @unique
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  options           Option[]     @relation("QuestionOptions")
-  correctOption     Option?      @relation("CorrectAnswer", fields: [correctOptionId], references: [id])
-  quiz              Quiz         @relation(fields: [quizId], references: [id])
+  id               String       @id @default(uuid())
+  text             String       @db.Text
+  text_sl          String?      @db.Text
+  text_hr          String?      @db.Text
+  questionType     QuestionType @default(SINGLE_CHOICE)
+  answersData      Json?
+  migrationVersion Int          @default(1)
+  quizId           String
+  correctOptionId  String?      @unique
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  options          Option[]     @relation("QuestionOptions")
+  correctOption    Option?      @relation("CorrectAnswer", fields: [correctOptionId], references: [id])
+  quiz             Quiz         @relation(fields: [quizId], references: [id])
 
   @@index([quizId])
   @@index([questionType])
@@ -462,7 +463,6 @@ model PasswordResetRequest {
   expiresAt   DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   User        User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
@@ -480,7 +480,6 @@ model ContactSubmission {
   userId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   user      User?    @relation(fields: [userId], references: [id])
 
   @@index([status])

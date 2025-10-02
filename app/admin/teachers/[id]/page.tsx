@@ -32,6 +32,7 @@ export default async function TeacherPage({
         email: teacher.email,
         displayOrder: teacher.displayOrder,
         school: teacher.school,
+        visible: teacher.visible,
         photoId: teacher.photoId,
         photo: teacher.photo ? { url: teacher.photo.url } : null,
         createdAt: teacher.createdAt.toISOString(),

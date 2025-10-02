@@ -30,6 +30,7 @@ export const teacherSchema = z.object({
     .nullable(),
   displayOrder: z.number().int().default(0),
   school: z.enum(["tsc", "pts"]).optional().nullable(),
+  visible: z.boolean().default(true),
   photo: z
     .object({
       url: z.string().url(),

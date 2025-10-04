@@ -1,7 +1,7 @@
 "use client";
 
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Trash2, GripVertical, HelpCircle, Type, ImageIcon, Layers } from "lucide-react";
+import { Trash2, GripVertical, HelpCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { OrderingConfiguration, OrderingItem, OrderingItemContent, OrderingTextContent, OrderingImageContent, OrderingMixedContent } from "./quiz-editor-layout";
+import type { OrderingConfiguration, OrderingItem, OrderingItemContent, OrderingTextContent } from "./quiz-editor-layout";
 
 type Language = "en" | "sl" | "hr";
 
@@ -45,39 +45,16 @@ export function OrderingConfigurationEditor({
     onChange("orderingData", newConfiguration);
   };
 
-  const addItem = (contentType: "text" | "image" | "mixed") => {
+  const addItem = () => {
     const newPosition = orderingData.items.length + 1;
     const newId = `item-${Date.now()}`;
 
-    let content: OrderingItemContent;
-
-    if (contentType === "text") {
-      content = {
-        type: "text",
-        text: `Step ${newPosition}`,
-        text_sl: "",
-        text_hr: "",
-      } as OrderingTextContent;
-    } else if (contentType === "image") {
-      content = {
-        type: "image",
-        imageUrl: "",
-        altText: `Image ${newPosition}`,
-        altText_sl: "",
-        altText_hr: "",
-      } as OrderingImageContent;
-    } else {
-      content = {
-        type: "mixed",
-        text: `Step ${newPosition}`,
-        text_sl: "",
-        text_hr: "",
-        imageUrl: "",
-        suffix: "",
-        suffix_sl: "",
-        suffix_hr: "",
-      } as OrderingMixedContent;
-    }
+    const content: OrderingTextContent = {
+      type: "text",
+      text: `Step ${newPosition}`,
+      text_sl: "",
+      text_hr: "",
+    };
 
     const newItem: OrderingItem = {
       id: newId,
@@ -149,38 +126,16 @@ export function OrderingConfigurationEditor({
               Add items that users will arrange in the correct sequence (2-10 items)
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              onClick={() => addItem("text")}
-              size="sm"
-              variant="outline"
-              disabled={orderingData.items.length >= 10}
-            >
-              <Type className="mr-2 h-4 w-4" />
-              Text
-            </Button>
-            <Button
-              type="button"
-              onClick={() => addItem("image")}
-              size="sm"
-              variant="outline"
-              disabled={orderingData.items.length >= 10}
-            >
-              <ImageIcon className="mr-2 h-4 w-4" />
-              Image
-            </Button>
-            <Button
-              type="button"
-              onClick={() => addItem("mixed")}
-              size="sm"
-              variant="outline"
-              disabled={orderingData.items.length >= 10}
-            >
-              <Layers className="mr-2 h-4 w-4" />
-              Mixed
-            </Button>
-          </div>
+          <Button
+            type="button"
+            onClick={addItem}
+            size="sm"
+            variant="outline"
+            disabled={orderingData.items.length >= 10}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Item
+          </Button>
         </div>
 
         <DragDropContext onDragEnd={handleDragEnd}>
@@ -312,62 +267,9 @@ function ItemEditor({
   canRemove: boolean;
   dragHandleProps: unknown;
 }) {
-  // Helper to transform content when type changes
-  const changeContentType = (newType: "text" | "image" | "mixed") => {
-    const oldContent = item.content;
-    let newContent: OrderingItemContent;
-
-    if (newType === "text") {
-      newContent = {
-        type: "text",
-        text: oldContent.type === "text" ? oldContent.text :
-              oldContent.type === "mixed" ? oldContent.text || "" : "",
-        text_sl: oldContent.type === "text" ? oldContent.text_sl :
-                 oldContent.type === "mixed" ? oldContent.text_sl : "",
-        text_hr: oldContent.type === "text" ? oldContent.text_hr :
-                 oldContent.type === "mixed" ? oldContent.text_hr : "",
-      } as OrderingTextContent;
-    } else if (newType === "image") {
-      newContent = {
-        type: "image",
-        imageUrl: oldContent.type === "image" ? oldContent.imageUrl :
-                  oldContent.type === "mixed" ? oldContent.imageUrl || "" : "",
-        altText: oldContent.type === "image" ? oldContent.altText : `Image ${item.correctPosition}`,
-        altText_sl: oldContent.type === "image" ? oldContent.altText_sl : "",
-        altText_hr: oldContent.type === "image" ? oldContent.altText_hr : "",
-      } as OrderingImageContent;
-    } else {
-      newContent = {
-        type: "mixed",
-        text: oldContent.type === "text" ? oldContent.text :
-              oldContent.type === "mixed" ? oldContent.text : "",
-        text_sl: oldContent.type === "text" ? oldContent.text_sl :
-                 oldContent.type === "mixed" ? oldContent.text_sl : "",
-        text_hr: oldContent.type === "text" ? oldContent.text_hr :
-                 oldContent.type === "mixed" ? oldContent.text_hr : "",
-        imageUrl: oldContent.type === "image" ? oldContent.imageUrl :
-                  oldContent.type === "mixed" ? oldContent.imageUrl : "",
-        suffix: oldContent.type === "mixed" ? oldContent.suffix : "",
-        suffix_sl: oldContent.type === "mixed" ? oldContent.suffix_sl : "",
-        suffix_hr: oldContent.type === "mixed" ? oldContent.suffix_hr : "",
-      } as OrderingMixedContent;
-    }
-
-    onUpdate({ content: newContent });
-  };
-
-  // Helper to update nested content fields
-  const updateContent = (updates: Partial<OrderingItemContent>) => {
-    let newContent: OrderingItemContent;
-
-    if (item.content.type === "text") {
-      newContent = { ...item.content, ...updates } as OrderingTextContent;
-    } else if (item.content.type === "image") {
-      newContent = { ...item.content, ...updates } as OrderingImageContent;
-    } else {
-      newContent = { ...item.content, ...updates } as OrderingMixedContent;
-    }
-
+  // Helper to update text content fields
+  const updateContent = (updates: Partial<OrderingTextContent>) => {
+    const newContent: OrderingTextContent = { ...item.content as OrderingTextContent, ...updates };
     onUpdate({ content: newContent });
   };
 
@@ -399,28 +301,7 @@ function ItemEditor({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Content Type */}
-        <div className="space-y-2">
-          <Label>Content Type</Label>
-          <Select
-            value={item.content.type}
-            onValueChange={(value: "text" | "image" | "mixed") => {
-              changeContentType(value);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="text">Text Only</SelectItem>
-              <SelectItem value="image">Image Only</SelectItem>
-              <SelectItem value="mixed">Mixed (Text + Image)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Content fields based on type */}
-        {item.content.type === "text" && (
+        {/* Text content only */}
           <Tabs defaultValue={language} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="en">English</TabsTrigger>
@@ -455,128 +336,6 @@ function ItemEditor({
               />
             </TabsContent>
           </Tabs>
-        )}
-
-        {item.content.type === "image" && (
-          <>
-            <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input
-                value={item.content.imageUrl}
-                onChange={(e) => updateContent({ imageUrl: e.target.value })}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-            <Tabs defaultValue={language} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="en">English</TabsTrigger>
-                <TabsTrigger value="sl">Slovenian</TabsTrigger>
-                <TabsTrigger value="hr">Croatian</TabsTrigger>
-              </TabsList>
-              <TabsContent value="en" className="space-y-2">
-                <Label>Alt Text (EN)</Label>
-                <Input
-                  value={item.content.altText}
-                  onChange={(e) => updateContent({ altText: e.target.value })}
-                  placeholder="Describe the image..."
-                />
-              </TabsContent>
-              <TabsContent value="sl" className="space-y-2">
-                <Label>Alt Text (SL)</Label>
-                <Input
-                  value={item.content.altText_sl || ""}
-                  onChange={(e) => updateContent({ altText_sl: e.target.value })}
-                  placeholder="Describe the image in Slovenian..."
-                />
-              </TabsContent>
-              <TabsContent value="hr" className="space-y-2">
-                <Label>Alt Text (HR)</Label>
-                <Input
-                  value={item.content.altText_hr || ""}
-                  onChange={(e) => updateContent({ altText_hr: e.target.value })}
-                  placeholder="Describe the image in Croatian..."
-                />
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
-
-        {item.content.type === "mixed" && (
-          <>
-            <Tabs defaultValue={language} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="en">English</TabsTrigger>
-                <TabsTrigger value="sl">Slovenian</TabsTrigger>
-                <TabsTrigger value="hr">Croatian</TabsTrigger>
-              </TabsList>
-              <TabsContent value="en" className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Text Content (EN)</Label>
-                  <Textarea
-                    value={item.content.text || ""}
-                    onChange={(e) => updateContent({ text: e.target.value })}
-                    placeholder="Enter step description..."
-                    className="min-h-[80px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Suffix Text (EN) - Optional</Label>
-                  <Input
-                    value={item.content.suffix || ""}
-                    onChange={(e) => updateContent({ suffix: e.target.value })}
-                    placeholder="Additional text after image..."
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent value="sl" className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Text Content (SL)</Label>
-                  <Textarea
-                    value={item.content.text_sl || ""}
-                    onChange={(e) => updateContent({ text_sl: e.target.value })}
-                    placeholder="Enter step description in Slovenian..."
-                    className="min-h-[80px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Suffix Text (SL) - Optional</Label>
-                  <Input
-                    value={item.content.suffix_sl || ""}
-                    onChange={(e) => updateContent({ suffix_sl: e.target.value })}
-                    placeholder="Additional text after image in Slovenian..."
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent value="hr" className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Text Content (HR)</Label>
-                  <Textarea
-                    value={item.content.text_hr || ""}
-                    onChange={(e) => updateContent({ text_hr: e.target.value })}
-                    placeholder="Enter step description in Croatian..."
-                    className="min-h-[80px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Suffix Text (HR) - Optional</Label>
-                  <Input
-                    value={item.content.suffix_hr || ""}
-                    onChange={(e) => updateContent({ suffix_hr: e.target.value })}
-                    placeholder="Additional text after image in Croatian..."
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
-            <div className="space-y-2">
-              <Label>Image URL - Optional</Label>
-              <Input
-                value={item.content.imageUrl || ""}
-                onChange={(e) => updateContent({ imageUrl: e.target.value })}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-          </>
-        )}
       </CardContent>
     </Card>
   );

@@ -51,7 +51,7 @@ async function getQuizWithSubmissions(quizId: string) {
           },
         },
         orderBy: {
-          createdAt: 'asc',
+          createdAt: "asc",
         },
       },
       submissions: {
@@ -97,11 +97,12 @@ export default async function QuizSubmissionsPage({
     redirect("/admin/quizzes");
   }
 
-  // Create lookup maps for questions, options, and ordering/matching items
+  // Create lookup maps for questions, options, ordering/matching/dropdown items
   const questionsMap = new Map();
   const optionsMap = new Map();
   const orderingItemsMap = new Map(); // Map of questionId -> Map of itemId -> item content text
   const matchingItemsMap = new Map(); // Map of questionId -> { leftItems: Map, rightItems: Map }
+  const dropdownDataMap = new Map(); // Map of questionId -> dropdown configuration
 
   quiz.questions.forEach((question, index) => {
     questionsMap.set(question.id, {
@@ -186,6 +187,11 @@ export default async function QuizSubmissionsPage({
 
       matchingItemsMap.set(question.id, { leftItems, rightItems });
     }
+
+    // Handle DROPDOWN questions - store the dropdown configuration
+    if (question.questionType === "DROPDOWN" && question.answersData) {
+      dropdownDataMap.set(question.id, question.answersData);
+    }
   });
 
   // Calculate statistics
@@ -263,6 +269,36 @@ export default async function QuizSubmissionsPage({
               }
               return String(answer);
             });
+          } else if (question?.questionType === "DROPDOWN") {
+            // For DROPDOWN questions, format as "dropdown_label: selected_option"
+            const dropdownData = dropdownDataMap.get(result.questionId) as Record<string, unknown> | undefined;
+            const dropdowns = dropdownData?.dropdowns as Array<{
+              id: string;
+              label: string;
+              options: Array<{ id: string; text: string; isCorrect: boolean }>;
+            }> | undefined;
+
+            // Selected answers are objects like { dropdownId: optionId }
+            selectedAnswersText = [];
+            correctAnswersText = [];
+
+            if (typeof selectedAnswerIds[0] === 'object' && selectedAnswerIds[0] !== null) {
+              const selections = selectedAnswerIds[0] as Record<string, string>;
+              dropdowns?.forEach(dropdown => {
+                const selectedOptionId = selections[dropdown.id];
+                const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId);
+                selectedAnswersText.push(`${dropdown.label}: ${selectedOption?.text || selectedOptionId}`);
+              });
+            }
+
+            if (typeof correctAnswerIds[0] === 'object' && correctAnswerIds[0] !== null) {
+              const correctSelections = correctAnswerIds[0] as Record<string, string>;
+              dropdowns?.forEach(dropdown => {
+                const correctOptionId = correctSelections[dropdown.id];
+                const correctOption = dropdown.options.find(opt => opt.id === correctOptionId);
+                correctAnswersText.push(`${dropdown.label}: ${correctOption?.text || correctOptionId || ''}`);
+              });
+            }
           } else {
             // For choice questions, look up option text by ID
             selectedAnswersText = selectedAnswerIds.map((id: string) => {
@@ -349,6 +385,35 @@ export default async function QuizSubmissionsPage({
               }
               return String(conn);
             });
+          } else if (question?.questionType === "DROPDOWN") {
+            // For DROPDOWN questions in legacy format
+            const dropdownData = dropdownDataMap.get(answer.questionId as string) as Record<string, unknown> | undefined;
+            const dropdowns = dropdownData?.dropdowns as Array<{
+              id: string;
+              label: string;
+              options: Array<{ id: string; text: string; isCorrect: boolean }>;
+            }> | undefined;
+
+            selectedAnswersText = [];
+            correctAnswersText = [];
+
+            if (typeof answer.selectedOptionId === 'object' && answer.selectedOptionId !== null) {
+              const selections = answer.selectedOptionId as Record<string, string>;
+              dropdowns?.forEach(dropdown => {
+                const selectedOptionId = selections[dropdown.id];
+                const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId);
+                selectedAnswersText.push(`${dropdown.label}: ${selectedOption?.text || selectedOptionId}`);
+              });
+            }
+
+            if (typeof answer.correctOptionId === 'object' && answer.correctOptionId !== null) {
+              const correctSelections = answer.correctOptionId as Record<string, string[]>;
+              dropdowns?.forEach(dropdown => {
+                const correctOptionIds = correctSelections[dropdown.id] || [];
+                const correctOptions = dropdown.options.filter(opt => correctOptionIds.includes(opt.id));
+                correctAnswersText.push(`${dropdown.label}: ${correctOptions.map(opt => opt.text).join(', ')}`);
+              });
+            }
           } else {
             // For choice questions, look up option text by ID
             const selectedOption = optionsMap.get(answer.selectedOptionId as string);

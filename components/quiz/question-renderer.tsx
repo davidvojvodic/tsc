@@ -83,18 +83,7 @@ type OrderingImageContent = {
   altText_hr?: string;
 };
 
-type OrderingMixedContent = {
-  type: "mixed";
-  text?: string;
-  text_sl?: string;
-  text_hr?: string;
-  imageUrl?: string;
-  suffix?: string;
-  suffix_sl?: string;
-  suffix_hr?: string;
-};
-
-type OrderingItemContent = OrderingTextContent | OrderingImageContent | OrderingMixedContent;
+type OrderingItemContent = OrderingTextContent;
 
 interface OrderingItem {
   id: string;
@@ -145,7 +134,7 @@ interface MatchingConfiguration {
   instructions?: string;
   instructions_sl?: string;
   instructions_hr?: string;
-  matchingType: "one-to-one" | "one-to-many" | "many-to-one" | "many-to-many";
+  matchingType: "one-to-one";
   leftItems: MatchingItem[];
   rightItems: MatchingItem[];
   correctMatches: CorrectMatch[];

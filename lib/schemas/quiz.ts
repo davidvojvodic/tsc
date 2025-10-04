@@ -76,7 +76,7 @@ const dropdownDataSchema = z.object({
   scoring: dropdownScoringSchema.optional(),
 });
 
-// Ordering content schemas
+// Ordering content schemas - simplified to text only
 const orderingTextContentSchema = z.object({
   type: z.literal("text"),
   text: z.string().min(1, "Text content required"),
@@ -84,33 +84,10 @@ const orderingTextContentSchema = z.object({
   text_hr: z.string().optional(),
 });
 
-const orderingImageContentSchema = z.object({
-  type: z.literal("image"),
-  imageUrl: z.string().url("Valid image URL required"),
-  altText: z.string().min(1, "Alt text required"),
-  altText_sl: z.string().optional(),
-  altText_hr: z.string().optional(),
-});
-
-const orderingMixedContentSchema = z.object({
-  type: z.literal("mixed"),
-  text: z.string().optional(),
-  text_sl: z.string().optional(),
-  text_hr: z.string().optional(),
-  imageUrl: z.string().url().optional(),
-  suffix: z.string().optional(),
-  suffix_sl: z.string().optional(),
-  suffix_hr: z.string().optional(),
-});
-
-// Ordering item schema
+// Ordering item schema - text only
 const orderingItemSchema = z.object({
   id: z.string().min(1, "Item ID required"),
-  content: z.discriminatedUnion("type", [
-    orderingTextContentSchema,
-    orderingImageContentSchema,
-    orderingMixedContentSchema,
-  ]),
+  content: orderingTextContentSchema,
   correctPosition: z.number().int().positive(),
 });
 
@@ -124,18 +101,11 @@ const orderingDataSchema = z.object({
   exactOrderRequired: z.boolean().default(true),
 });
 
-// Matching reuses the same content schemas as ordering
-const matchingItemContentSchema = z.discriminatedUnion("type", [
-  orderingTextContentSchema,
-  orderingImageContentSchema,
-  orderingMixedContentSchema,
-]);
-
-// Matching item schema (similar to ordering but uses 'position' not 'correctPosition')
+// Matching item schema - text only (similar to ordering but uses 'position' not 'correctPosition')
 const matchingItemSchema = z.object({
   id: z.string().min(1, "Item ID required"),
   position: z.number().int().positive(),
-  content: matchingItemContentSchema,
+  content: orderingTextContentSchema,
 });
 
 // Correct match schema

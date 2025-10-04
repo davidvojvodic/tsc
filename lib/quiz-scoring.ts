@@ -503,24 +503,9 @@ function generateDetailedOrderingFeedback(
 function getItemDisplayText(item: OrderingDataType['items'][0]): string {
   const content = item.content;
 
-  if (content.type === "text") {
-    const text = content.text;
-    return text.length > 30 ? text.substring(0, 30) + "..." : text;
-  }
-
-  if (content.type === "image") {
-    return content.altText;
-  }
-
-  if (content.type === "mixed") {
-    const parts = [];
-    if (content.text) parts.push(content.text);
-    if (content.suffix) parts.push(content.suffix);
-    const combined = parts.join(" ");
-    return combined.length > 30 ? combined.substring(0, 30) + "..." : combined;
-  }
-
-  return "Item";
+  // Text only content
+  const text = content.text;
+  return text.length > 30 ? text.substring(0, 30) + "..." : text;
 }
 
 /**
@@ -1090,24 +1075,9 @@ export function validateOrderingConfig(
       }
       positions.add(item.correctPosition);
 
-      // Validate content based on type
-      if (item.content.type === "text") {
-        if (!item.content.text || !item.content.text.trim()) {
-          errors.push(`Item ${item.id} must have text content`);
-        }
-      } else if (item.content.type === "image") {
-        if (!item.content.imageUrl) {
-          errors.push(`Item ${item.id} must have an image URL`);
-        }
-        if (!item.content.altText || !item.content.altText.trim()) {
-          errors.push(`Item ${item.id} must have alt text for the image`);
-        }
-      } else if (item.content.type === "mixed") {
-        // Mixed content must have at least text or image
-        if ((!item.content.text || !item.content.text.trim()) &&
-            !item.content.imageUrl) {
-          errors.push(`Item ${item.id} must have either text or image content`);
-        }
+      // Validate text content
+      if (!item.content.text || !item.content.text.trim()) {
+        errors.push(`Item ${item.id} must have text content`);
       }
     }
 

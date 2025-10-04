@@ -111,6 +111,7 @@ export function OptionsEditor({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <input
+                        key={`${option.id}-${option.isCorrect}`}
                         type={question.questionType === "SINGLE_CHOICE" ? "radio" : "checkbox"}
                         name={question.questionType === "SINGLE_CHOICE" ? "correct-option" : undefined}
                         checked={option.isCorrect}

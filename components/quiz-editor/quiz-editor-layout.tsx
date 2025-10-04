@@ -92,7 +92,7 @@ export interface DropdownOption {
   isCorrect: boolean;
 }
 
-// Ordering content types - matching backend schema
+// Ordering content types - simplified to text only
 export type OrderingTextContent = {
   type: "text";
   text: string;
@@ -100,26 +100,7 @@ export type OrderingTextContent = {
   text_hr?: string;
 };
 
-export type OrderingImageContent = {
-  type: "image";
-  imageUrl: string;
-  altText: string;
-  altText_sl?: string;
-  altText_hr?: string;
-};
-
-export type OrderingMixedContent = {
-  type: "mixed";
-  text?: string;
-  text_sl?: string;
-  text_hr?: string;
-  imageUrl?: string;
-  suffix?: string;
-  suffix_sl?: string;
-  suffix_hr?: string;
-};
-
-export type OrderingItemContent = OrderingTextContent | OrderingImageContent | OrderingMixedContent;
+export type OrderingItemContent = OrderingTextContent;
 
 export interface OrderingItem {
   id: string;

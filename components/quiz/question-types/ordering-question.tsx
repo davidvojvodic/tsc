@@ -159,58 +159,9 @@ export function OrderingQuestion({
   const renderItemContent = (item: OrderingItem) => {
     const { content } = item;
 
-    switch (content.type) {
-      case "image":
-        return content.imageUrl ? (
-          <div className="relative w-full h-32 rounded-md overflow-hidden">
-            <Image
-              src={content.imageUrl}
-              alt={getLocalizedContent(content, "altText", language) || "Ordering item"}
-              fill
-              className="object-cover"
-            />
-          </div>
-        ) : (
-          <div className="w-full h-32 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
-            No image
-          </div>
-        );
-
-      case "mixed":
-        const text = getLocalizedContent(content, "text", language);
-        const suffix = getLocalizedContent(content, "suffix", language);
-
-        return (
-          <div className="flex items-center gap-3">
-            {content.imageUrl && (
-              <div className="relative w-20 h-20 rounded-md overflow-hidden flex-shrink-0">
-                <Image
-                  src={content.imageUrl}
-                  alt={getLocalizedContent(content, "altText", language) || "Ordering item"}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
-            <div className="flex-1">
-              {text && <span>{text}</span>}
-              {suffix && <span className="text-muted-foreground ml-1">{suffix}</span>}
-            </div>
-          </div>
-        );
-
-      case "text":
-      default:
-        const textContent = getLocalizedContent(content, "text", language);
-        const textSuffix = getLocalizedContent(content, "suffix", language);
-
-        return (
-          <span>
-            {textContent}
-            {textSuffix && <span className="text-muted-foreground ml-1">{textSuffix}</span>}
-          </span>
-        );
-    }
+    // Text only content
+    const textContent = getLocalizedContent(content, "text", language);
+    return <span>{textContent}</span>;
   };
 
   const progressCount = orderedItems.length;

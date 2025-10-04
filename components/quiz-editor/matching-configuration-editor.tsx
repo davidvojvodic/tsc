@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Trash2, GripVertical, HelpCircle, Type, ImageIcon, Layers, Plus, ArrowRight, X } from "lucide-react";
+import { Trash2, GripVertical, HelpCircle, Plus, ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,8 +19,6 @@ import type {
   MatchingItem,
   MatchingItemContent,
   OrderingTextContent,
-  OrderingImageContent,
-  OrderingMixedContent,
   CorrectMatch
 } from "./quiz-editor-layout";
 
@@ -80,40 +78,17 @@ export function MatchingConfigurationEditor({
   };
 
   // Add item to left or right column
-  const addItem = (column: "left" | "right", contentType: "text" | "image" | "mixed") => {
+  const addItem = (column: "left" | "right") => {
     const targetItems = column === "left" ? matchingData.leftItems : matchingData.rightItems;
     const newPosition = targetItems.length + 1;
     const newId = `${column}-item-${Date.now()}`;
 
-    let content: MatchingItemContent;
-
-    if (contentType === "text") {
-      content = {
-        type: "text",
-        text: column === "left" ? `Left item ${newPosition}` : `Right item ${newPosition}`,
-        text_sl: "",
-        text_hr: "",
-      } as OrderingTextContent;
-    } else if (contentType === "image") {
-      content = {
-        type: "image",
-        imageUrl: "",
-        altText: `${column === "left" ? "Left" : "Right"} image ${newPosition}`,
-        altText_sl: "",
-        altText_hr: "",
-      } as OrderingImageContent;
-    } else {
-      content = {
-        type: "mixed",
-        text: column === "left" ? `Left item ${newPosition}` : `Right item ${newPosition}`,
-        text_sl: "",
-        text_hr: "",
-        imageUrl: "",
-        suffix: "",
-        suffix_sl: "",
-        suffix_hr: "",
-      } as OrderingMixedContent;
-    }
+    const content: OrderingTextContent = {
+      type: "text",
+      text: column === "left" ? `Left item ${newPosition}` : `Right item ${newPosition}`,
+      text_sl: "",
+      text_hr: "",
+    };
 
     const newItem: MatchingItem = {
       id: newId,
@@ -266,13 +241,7 @@ export function MatchingConfigurationEditor({
 
   // Get item label for display
   const getItemLabel = (item: MatchingItem) => {
-    if (item.content.type === "text") {
-      return item.content.text || item.id;
-    } else if (item.content.type === "image") {
-      return item.content.altText || item.id;
-    } else {
-      return item.content.text || item.id;
-    }
+    return item.content.text || item.id;
   };
 
   // Validation warnings
@@ -346,35 +315,16 @@ export function MatchingConfigurationEditor({
                 <CardTitle className="text-base">Left Items</CardTitle>
                 <CardDescription>Items to match from</CardDescription>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={() => addItem("left", "text")}
-                  size="sm"
-                  variant="outline"
-                  disabled={matchingData.leftItems.length >= 10}
-                >
-                  <Type className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => addItem("left", "image")}
-                  size="sm"
-                  variant="outline"
-                  disabled={matchingData.leftItems.length >= 10}
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => addItem("left", "mixed")}
-                  size="sm"
-                  variant="outline"
-                  disabled={matchingData.leftItems.length >= 10}
-                >
-                  <Layers className="h-4 w-4" />
-                </Button>
-              </div>
+              <Button
+                type="button"
+                onClick={() => addItem("left")}
+                size="sm"
+                variant="outline"
+                disabled={matchingData.leftItems.length >= 10}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -437,35 +387,16 @@ export function MatchingConfigurationEditor({
                 <CardTitle className="text-base">Right Items</CardTitle>
                 <CardDescription>Items to match to</CardDescription>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={() => addItem("right", "text")}
-                  size="sm"
-                  variant="outline"
-                  disabled={matchingData.rightItems.length >= 10}
-                >
-                  <Type className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => addItem("right", "image")}
-                  size="sm"
-                  variant="outline"
-                  disabled={matchingData.rightItems.length >= 10}
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => addItem("right", "mixed")}
-                  size="sm"
-                  variant="outline"
-                  disabled={matchingData.rightItems.length >= 10}
-                >
-                  <Layers className="h-4 w-4" />
-                </Button>
-              </div>
+              <Button
+                type="button"
+                onClick={() => addItem("right")}
+                size="sm"
+                variant="outline"
+                disabled={matchingData.rightItems.length >= 10}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -771,62 +702,9 @@ function ItemEditor({
   isDistractor?: boolean;
   onToggleDistractor?: () => void;
 }) {
-  // Helper to transform content when type changes
-  const changeContentType = (newType: "text" | "image" | "mixed") => {
-    const oldContent = item.content;
-    let newContent: MatchingItemContent;
-
-    if (newType === "text") {
-      newContent = {
-        type: "text",
-        text: oldContent.type === "text" ? oldContent.text :
-              oldContent.type === "mixed" ? oldContent.text || "" : "",
-        text_sl: oldContent.type === "text" ? oldContent.text_sl :
-                 oldContent.type === "mixed" ? oldContent.text_sl : "",
-        text_hr: oldContent.type === "text" ? oldContent.text_hr :
-                 oldContent.type === "mixed" ? oldContent.text_hr : "",
-      } as OrderingTextContent;
-    } else if (newType === "image") {
-      newContent = {
-        type: "image",
-        imageUrl: oldContent.type === "image" ? oldContent.imageUrl :
-                  oldContent.type === "mixed" ? oldContent.imageUrl || "" : "",
-        altText: oldContent.type === "image" ? oldContent.altText : `Image ${item.position}`,
-        altText_sl: oldContent.type === "image" ? oldContent.altText_sl : "",
-        altText_hr: oldContent.type === "image" ? oldContent.altText_hr : "",
-      } as OrderingImageContent;
-    } else {
-      newContent = {
-        type: "mixed",
-        text: oldContent.type === "text" ? oldContent.text :
-              oldContent.type === "mixed" ? oldContent.text : "",
-        text_sl: oldContent.type === "text" ? oldContent.text_sl :
-                 oldContent.type === "mixed" ? oldContent.text_sl : "",
-        text_hr: oldContent.type === "text" ? oldContent.text_hr :
-                 oldContent.type === "mixed" ? oldContent.text_hr : "",
-        imageUrl: oldContent.type === "image" ? oldContent.imageUrl :
-                  oldContent.type === "mixed" ? oldContent.imageUrl : "",
-        suffix: oldContent.type === "mixed" ? oldContent.suffix : "",
-        suffix_sl: oldContent.type === "mixed" ? oldContent.suffix_sl : "",
-        suffix_hr: oldContent.type === "mixed" ? oldContent.suffix_hr : "",
-      } as OrderingMixedContent;
-    }
-
-    onUpdate({ content: newContent });
-  };
-
-  // Helper to update nested content fields
-  const updateContent = (updates: Partial<MatchingItemContent>) => {
-    let newContent: MatchingItemContent;
-
-    if (item.content.type === "text") {
-      newContent = { ...item.content, ...updates } as OrderingTextContent;
-    } else if (item.content.type === "image") {
-      newContent = { ...item.content, ...updates } as OrderingImageContent;
-    } else {
-      newContent = { ...item.content, ...updates } as OrderingMixedContent;
-    }
-
+  // Helper to update text content fields
+  const updateContent = (updates: Partial<OrderingTextContent>) => {
+    const newContent: OrderingTextContent = { ...item.content as OrderingTextContent, ...updates };
     onUpdate({ content: newContent });
   };
 
@@ -868,184 +746,41 @@ function ItemEditor({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Content Type */}
-        <div className="space-y-2">
-          <Label>Content Type</Label>
-          <Select
-            value={item.content.type}
-            onValueChange={(value: "text" | "image" | "mixed") => {
-              changeContentType(value);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="text">Text Only</SelectItem>
-              <SelectItem value="image">Image Only</SelectItem>
-              <SelectItem value="mixed">Mixed (Text + Image)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Content fields based on type */}
-        {item.content.type === "text" && (
-          <Tabs defaultValue={language} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="en">English</TabsTrigger>
-              <TabsTrigger value="sl">Slovenian</TabsTrigger>
-              <TabsTrigger value="hr">Croatian</TabsTrigger>
-            </TabsList>
-            <TabsContent value="en" className="space-y-2">
-              <Label>Text Content (EN)</Label>
-              <Textarea
-                value={item.content.text}
-                onChange={(e) => updateContent({ text: e.target.value })}
-                placeholder="Enter item text..."
-                className="min-h-[80px]"
-              />
-            </TabsContent>
-            <TabsContent value="sl" className="space-y-2">
-              <Label>Text Content (SL)</Label>
-              <Textarea
-                value={item.content.text_sl || ""}
-                onChange={(e) => updateContent({ text_sl: e.target.value })}
-                placeholder="Enter item text in Slovenian..."
-                className="min-h-[80px]"
-              />
-            </TabsContent>
-            <TabsContent value="hr" className="space-y-2">
-              <Label>Text Content (HR)</Label>
-              <Textarea
-                value={item.content.text_hr || ""}
-                onChange={(e) => updateContent({ text_hr: e.target.value })}
-                placeholder="Enter item text in Croatian..."
-                className="min-h-[80px]"
-              />
-            </TabsContent>
-          </Tabs>
-        )}
-
-        {item.content.type === "image" && (
-          <>
-            <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input
-                value={item.content.imageUrl}
-                onChange={(e) => updateContent({ imageUrl: e.target.value })}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-            <Tabs defaultValue={language} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="en">English</TabsTrigger>
-                <TabsTrigger value="sl">Slovenian</TabsTrigger>
-                <TabsTrigger value="hr">Croatian</TabsTrigger>
-              </TabsList>
-              <TabsContent value="en" className="space-y-2">
-                <Label>Alt Text (EN)</Label>
-                <Input
-                  value={item.content.altText}
-                  onChange={(e) => updateContent({ altText: e.target.value })}
-                  placeholder="Describe the image..."
-                />
-              </TabsContent>
-              <TabsContent value="sl" className="space-y-2">
-                <Label>Alt Text (SL)</Label>
-                <Input
-                  value={item.content.altText_sl || ""}
-                  onChange={(e) => updateContent({ altText_sl: e.target.value })}
-                  placeholder="Describe the image in Slovenian..."
-                />
-              </TabsContent>
-              <TabsContent value="hr" className="space-y-2">
-                <Label>Alt Text (HR)</Label>
-                <Input
-                  value={item.content.altText_hr || ""}
-                  onChange={(e) => updateContent({ altText_hr: e.target.value })}
-                  placeholder="Describe the image in Croatian..."
-                />
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
-
-        {item.content.type === "mixed" && (
-          <>
-            <Tabs defaultValue={language} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="en">English</TabsTrigger>
-                <TabsTrigger value="sl">Slovenian</TabsTrigger>
-                <TabsTrigger value="hr">Croatian</TabsTrigger>
-              </TabsList>
-              <TabsContent value="en" className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Text Content (EN)</Label>
-                  <Textarea
-                    value={item.content.text || ""}
-                    onChange={(e) => updateContent({ text: e.target.value })}
-                    placeholder="Enter item text..."
-                    className="min-h-[80px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Suffix Text (EN) - Optional</Label>
-                  <Input
-                    value={item.content.suffix || ""}
-                    onChange={(e) => updateContent({ suffix: e.target.value })}
-                    placeholder="Additional text after image..."
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent value="sl" className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Text Content (SL)</Label>
-                  <Textarea
-                    value={item.content.text_sl || ""}
-                    onChange={(e) => updateContent({ text_sl: e.target.value })}
-                    placeholder="Enter item text in Slovenian..."
-                    className="min-h-[80px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Suffix Text (SL) - Optional</Label>
-                  <Input
-                    value={item.content.suffix_sl || ""}
-                    onChange={(e) => updateContent({ suffix_sl: e.target.value })}
-                    placeholder="Additional text after image in Slovenian..."
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent value="hr" className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Text Content (HR)</Label>
-                  <Textarea
-                    value={item.content.text_hr || ""}
-                    onChange={(e) => updateContent({ text_hr: e.target.value })}
-                    placeholder="Enter item text in Croatian..."
-                    className="min-h-[80px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Suffix Text (HR) - Optional</Label>
-                  <Input
-                    value={item.content.suffix_hr || ""}
-                    onChange={(e) => updateContent({ suffix_hr: e.target.value })}
-                    placeholder="Additional text after image in Croatian..."
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
-            <div className="space-y-2">
-              <Label>Image URL - Optional</Label>
-              <Input
-                value={item.content.imageUrl || ""}
-                onChange={(e) => updateContent({ imageUrl: e.target.value })}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-          </>
-        )}
+        {/* Text content only */}
+        <Tabs defaultValue={language} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="en">English</TabsTrigger>
+            <TabsTrigger value="sl">Slovenian</TabsTrigger>
+            <TabsTrigger value="hr">Croatian</TabsTrigger>
+          </TabsList>
+          <TabsContent value="en" className="space-y-2">
+            <Label>Text Content (EN)</Label>
+            <Textarea
+              value={item.content.text}
+              onChange={(e) => updateContent({ text: e.target.value })}
+              placeholder="Enter item text..."
+              className="min-h-[80px]"
+            />
+          </TabsContent>
+          <TabsContent value="sl" className="space-y-2">
+            <Label>Text Content (SL)</Label>
+            <Textarea
+              value={item.content.text_sl || ""}
+              onChange={(e) => updateContent({ text_sl: e.target.value })}
+              placeholder="Enter item text in Slovenian..."
+              className="min-h-[80px]"
+            />
+          </TabsContent>
+          <TabsContent value="hr" className="space-y-2">
+            <Label>Text Content (HR)</Label>
+            <Textarea
+              value={item.content.text_hr || ""}
+              onChange={(e) => updateContent({ text_hr: e.target.value })}
+              placeholder="Enter item text in Croatian..."
+              className="min-h-[80px]"
+            />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

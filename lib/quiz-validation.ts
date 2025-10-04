@@ -413,39 +413,6 @@ function validateOrderingQuestion(
           } else {
             metRequirements++;
           }
-        } else if (item.content.type === "image") {
-          if (!item.content.imageUrl || !item.content.imageUrl.trim()) {
-            result.errors.push({
-              field: `orderingData.items.${index}.content.imageUrl`,
-              message: `Item ${index + 1} image URL is required`
-            });
-            allItemsValid = false;
-          } else if (!item.content.altText || !item.content.altText.trim()) {
-            result.errors.push({
-              field: `orderingData.items.${index}.content.altText`,
-              message: `Item ${index + 1} alt text is required for images`
-            });
-            allItemsValid = false;
-          } else {
-            metRequirements++;
-          }
-        } else if (item.content.type === "mixed") {
-          // At least one of text or imageUrl must be present
-          if ((!item.content.text || !item.content.text.trim()) && (!item.content.imageUrl || !item.content.imageUrl.trim())) {
-            result.errors.push({
-              field: `orderingData.items.${index}.content`,
-              message: `Item ${index + 1} must have text or image`
-            });
-            allItemsValid = false;
-          } else {
-            metRequirements++;
-          }
-        } else {
-          result.errors.push({
-            field: `orderingData.items.${index}.content.type`,
-            message: `Item ${index + 1} has invalid content type`
-          });
-          allItemsValid = false;
         }
       }
 
@@ -577,32 +544,6 @@ function validateMatchingQuestion(
           } else {
             metRequirements++;
           }
-        } else if (item.content.type === "image") {
-          if (!item.content.imageUrl || !item.content.imageUrl.trim()) {
-            result.errors.push({
-              field: `matchingData.leftItems.${index}.content.imageUrl`,
-              message: `Left item ${index + 1} image URL is required`
-            });
-            allLeftItemsValid = false;
-          } else if (!item.content.altText || !item.content.altText.trim()) {
-            result.errors.push({
-              field: `matchingData.leftItems.${index}.content.altText`,
-              message: `Left item ${index + 1} alt text is required for images`
-            });
-            allLeftItemsValid = false;
-          } else {
-            metRequirements++;
-          }
-        } else if (item.content.type === "mixed") {
-          if ((!item.content.text || !item.content.text.trim()) && (!item.content.imageUrl || !item.content.imageUrl.trim())) {
-            result.errors.push({
-              field: `matchingData.leftItems.${index}.content`,
-              message: `Left item ${index + 1} must have text or image`
-            });
-            allLeftItemsValid = false;
-          } else {
-            metRequirements++;
-          }
         }
       }
     });
@@ -668,32 +609,6 @@ function validateMatchingQuestion(
             result.errors.push({
               field: `matchingData.rightItems.${index}.content.text`,
               message: `Right item ${index + 1} text is required`
-            });
-            allRightItemsValid = false;
-          } else {
-            metRequirements++;
-          }
-        } else if (item.content.type === "image") {
-          if (!item.content.imageUrl || !item.content.imageUrl.trim()) {
-            result.errors.push({
-              field: `matchingData.rightItems.${index}.content.imageUrl`,
-              message: `Right item ${index + 1} image URL is required`
-            });
-            allRightItemsValid = false;
-          } else if (!item.content.altText || !item.content.altText.trim()) {
-            result.errors.push({
-              field: `matchingData.rightItems.${index}.content.altText`,
-              message: `Right item ${index + 1} alt text is required for images`
-            });
-            allRightItemsValid = false;
-          } else {
-            metRequirements++;
-          }
-        } else if (item.content.type === "mixed") {
-          if ((!item.content.text || !item.content.text.trim()) && (!item.content.imageUrl || !item.content.imageUrl.trim())) {
-            result.errors.push({
-              field: `matchingData.rightItems.${index}.content`,
-              message: `Right item ${index + 1} must have text or image`
             });
             allRightItemsValid = false;
           } else {

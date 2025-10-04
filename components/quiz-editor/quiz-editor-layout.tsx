@@ -26,12 +26,13 @@ export interface Question {
   text: string;
   text_sl?: string;
   text_hr?: string;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING";
   options: Option[];
   multipleChoiceData?: MultipleChoiceConfiguration;
   textInputData?: TextInputConfiguration;
   dropdownData?: DropdownConfiguration;
   orderingData?: OrderingConfiguration;
+  matchingData?: MatchingConfiguration;
   order?: number;
 }
 
@@ -133,6 +134,49 @@ export interface OrderingConfiguration {
   items: OrderingItem[];
   allowPartialCredit?: boolean;
   exactOrderRequired?: boolean;
+}
+
+// Matching content types - reuse the same content structure as Ordering
+export type MatchingItemContent = OrderingItemContent;
+
+export interface MatchingItem {
+  id: string;
+  position: number;
+  content: MatchingItemContent;
+}
+
+export interface CorrectMatch {
+  leftId: string;
+  rightId: string;
+  explanation?: string;
+  explanation_sl?: string;
+  explanation_hr?: string;
+}
+
+export interface MatchingConfiguration {
+  instructions?: string;
+  instructions_sl?: string;
+  instructions_hr?: string;
+  matchingType: "one-to-one";
+  leftItems: MatchingItem[];
+  rightItems: MatchingItem[];
+  correctMatches: CorrectMatch[];
+  distractors?: string[];
+  scoring?: {
+    pointsPerMatch: number;
+    penalizeIncorrect: boolean;
+    penaltyPerIncorrect: number;
+    requireAllMatches: boolean;
+    partialCredit: boolean;
+  };
+  display?: {
+    connectionStyle: "line" | "arrow" | "dashed";
+    connectionColor: string;
+    correctColor: string;
+    incorrectColor: string;
+    showConnectionLabels: boolean;
+    animateConnections: boolean;
+  };
 }
 
 interface QuizEditorLayoutProps {

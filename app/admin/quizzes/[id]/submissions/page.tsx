@@ -97,10 +97,11 @@ export default async function QuizSubmissionsPage({
     redirect("/admin/quizzes");
   }
 
-  // Create lookup maps for questions, options, and ordering items
+  // Create lookup maps for questions, options, and ordering/matching items
   const questionsMap = new Map();
   const optionsMap = new Map();
   const orderingItemsMap = new Map(); // Map of questionId -> Map of itemId -> item content text
+  const matchingItemsMap = new Map(); // Map of questionId -> { leftItems: Map, rightItems: Map }
 
   quiz.questions.forEach((question, index) => {
     questionsMap.set(question.id, {
@@ -137,6 +138,53 @@ export default async function QuizSubmissionsPage({
         });
         orderingItemsMap.set(question.id, itemsMap);
       }
+    }
+
+    // Handle MATCHING questions - build maps for left and right items
+    if (question.questionType === "MATCHING" && question.answersData) {
+      const matchingData = question.answersData as Record<string, unknown>;
+      const leftItems = new Map();
+      const rightItems = new Map();
+
+      // Process left items
+      if (matchingData.leftItems && Array.isArray(matchingData.leftItems)) {
+        matchingData.leftItems.forEach((item: Record<string, unknown>) => {
+          const content = item.content as Record<string, unknown>;
+          const contentType = content.type as string;
+          let contentText = "";
+
+          if (contentType === "text") {
+            contentText = (content.text as string) || (item.id as string);
+          } else if (contentType === "image") {
+            contentText = (content.altText as string) || "Image";
+          } else if (contentType === "mixed") {
+            contentText = (content.text as string) || "Mixed content";
+          }
+
+          leftItems.set(item.id as string, contentText);
+        });
+      }
+
+      // Process right items
+      if (matchingData.rightItems && Array.isArray(matchingData.rightItems)) {
+        matchingData.rightItems.forEach((item: Record<string, unknown>) => {
+          const content = item.content as Record<string, unknown>;
+          const contentType = content.type as string;
+          let contentText = "";
+
+          if (contentType === "text") {
+            contentText = (content.text as string) || (item.id as string);
+          } else if (contentType === "image") {
+            contentText = (content.altText as string) || "Image";
+          } else if (contentType === "mixed") {
+            contentText = (content.text as string) || "Mixed content";
+          }
+
+          rightItems.set(item.id as string, contentText);
+        });
+      }
+
+      matchingItemsMap.set(question.id, { leftItems, rightItems });
     }
   });
 
@@ -187,6 +235,33 @@ export default async function QuizSubmissionsPage({
             correctAnswersText = correctAnswerIds.map((id: string, index: number) => {
               const item = itemsMap?.get(id);
               return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
+          } else if (question?.questionType === "MATCHING") {
+            // For MATCHING questions, format connections as "Left Item → Right Item"
+            const items = matchingItemsMap.get(result.questionId);
+            const leftItems = items?.leftItems || new Map();
+            const rightItems = items?.rightItems || new Map();
+
+            // Selected answers are connection objects
+            selectedAnswersText = selectedAnswerIds.map((answer: unknown) => {
+              if (typeof answer === 'object' && answer !== null && 'leftId' in answer && 'rightId' in answer) {
+                const connection = answer as { leftId: string; rightId: string };
+                const leftText = leftItems.get(connection.leftId) || connection.leftId;
+                const rightText = rightItems.get(connection.rightId) || connection.rightId;
+                return `${leftText} → ${rightText}`;
+              }
+              return String(answer);
+            });
+
+            // Correct answers are also connection objects
+            correctAnswersText = correctAnswerIds.map((answer: unknown) => {
+              if (typeof answer === 'object' && answer !== null && 'leftId' in answer && 'rightId' in answer) {
+                const connection = answer as { leftId: string; rightId: string };
+                const leftText = leftItems.get(connection.leftId) || connection.leftId;
+                const rightText = rightItems.get(connection.rightId) || connection.rightId;
+                return `${leftText} → ${rightText}`;
+              }
+              return String(answer);
             });
           } else {
             // For choice questions, look up option text by ID
@@ -241,6 +316,38 @@ export default async function QuizSubmissionsPage({
             correctAnswersText = correctIds.map((id: string, index: number) => {
               const item = itemsMap?.get(id);
               return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
+          } else if (question?.questionType === "MATCHING") {
+            // For MATCHING questions in legacy format - unlikely but handle it
+            const items = matchingItemsMap.get(answer.questionId as string);
+            const leftItems = items?.leftItems || new Map();
+            const rightItems = items?.rightItems || new Map();
+
+            const selectedConnections = Array.isArray(answer.selectedOptionId)
+              ? answer.selectedOptionId as unknown[]
+              : [answer.selectedOptionId];
+            const correctConnections = Array.isArray(answer.correctOptionId)
+              ? answer.correctOptionId as unknown[]
+              : [answer.correctOptionId];
+
+            selectedAnswersText = selectedConnections.map((conn: unknown) => {
+              if (typeof conn === 'object' && conn !== null && 'leftId' in conn && 'rightId' in conn) {
+                const connection = conn as { leftId: string; rightId: string };
+                const leftText = leftItems.get(connection.leftId) || connection.leftId;
+                const rightText = rightItems.get(connection.rightId) || connection.rightId;
+                return `${leftText} → ${rightText}`;
+              }
+              return String(conn);
+            });
+
+            correctAnswersText = correctConnections.map((conn: unknown) => {
+              if (typeof conn === 'object' && conn !== null && 'leftId' in conn && 'rightId' in conn) {
+                const connection = conn as { leftId: string; rightId: string };
+                const leftText = leftItems.get(connection.leftId) || connection.leftId;
+                const rightText = rightItems.get(connection.rightId) || connection.rightId;
+                return `${leftText} → ${rightText}`;
+              }
+              return String(conn);
             });
           } else {
             // For choice questions, look up option text by ID

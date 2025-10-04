@@ -93,7 +93,7 @@ interface Question {
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING";
   options?: Option[];
   multipleChoiceData?: MultipleChoiceData;
   textInputData?: TextInputData;
@@ -227,7 +227,7 @@ export default function QuizComponent({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   const [selectedOptions, setSelectedOptions] = useState<
-    Record<string, string | string[] | Record<string, string>>
+    Record<string, string | string[] | Record<string, string> | Array<{leftId: string; rightId: string}>>
   >({});
 
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -246,7 +246,10 @@ export default function QuizComponent({
 
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
 
-  const handleAnswerChange = (questionId: string, answer: string | string[] | Record<string, string>) => {
+  const handleAnswerChange = (
+    questionId: string,
+    answer: string | string[] | Record<string, string> | Array<{leftId: string; rightId: string}>
+  ) => {
     setSelectedOptions((prev) => ({
       ...prev,
       [questionId]: answer,
@@ -274,6 +277,11 @@ export default function QuizComponent({
       const totalItems = currentQuestion.orderingData?.items.length || 0;
       return orderingAnswer.length === totalItems;
     }
+    if (currentQuestion.questionType === "MATCHING") {
+      const matchingAnswer = Array.isArray(answer) ? answer : [];
+      // At least one connection required
+      return matchingAnswer.length > 0;
+    }
     return !!answer;
   };
 
@@ -298,6 +306,11 @@ export default function QuizComponent({
         const orderingAnswer = Array.isArray(answer) ? answer : [];
         const totalItems = question.orderingData?.items.length || 0;
         return orderingAnswer.length === totalItems;
+      }
+      if (question.questionType === "MATCHING") {
+        const matchingAnswer = Array.isArray(answer) ? answer : [];
+        // At least one connection required
+        return matchingAnswer.length > 0;
       }
       return !!answer;
     });
@@ -514,6 +527,7 @@ export default function QuizComponent({
               selectedOptions[currentQuestion.id] ||
               (currentQuestion.questionType === "MULTIPLE_CHOICE" ? [] :
                currentQuestion.questionType === "ORDERING" ? [] :
+               currentQuestion.questionType === "MATCHING" ? [] :
                currentQuestion.questionType === "DROPDOWN" ? {} : "")
             }
             onAnswerChange={handleAnswerChange}

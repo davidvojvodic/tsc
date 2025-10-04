@@ -93,6 +93,69 @@ interface QuestionInput {
     allowPartialCredit?: boolean;
     exactOrderRequired?: boolean;
   };
+  matchingData?: {
+    instructions: string;
+    instructions_sl?: string;
+    instructions_hr?: string;
+    matchingType: "one-to-one";
+    leftItems: Array<{
+      id: string;
+      position: number;
+      content: {
+        type: "text" | "image" | "mixed";
+        text?: string;
+        text_sl?: string;
+        text_hr?: string;
+        imageUrl?: string;
+        altText?: string;
+        altText_sl?: string;
+        altText_hr?: string;
+        suffix?: string;
+        suffix_sl?: string;
+        suffix_hr?: string;
+      };
+    }>;
+    rightItems: Array<{
+      id: string;
+      position: number;
+      content: {
+        type: "text" | "image" | "mixed";
+        text?: string;
+        text_sl?: string;
+        text_hr?: string;
+        imageUrl?: string;
+        altText?: string;
+        altText_sl?: string;
+        altText_hr?: string;
+        suffix?: string;
+        suffix_sl?: string;
+        suffix_hr?: string;
+      };
+    }>;
+    correctMatches: Array<{
+      leftId: string;
+      rightId: string;
+      explanation?: string;
+      explanation_sl?: string;
+      explanation_hr?: string;
+    }>;
+    distractors?: string[];
+    scoring?: {
+      pointsPerMatch: number;
+      penalizeIncorrect: boolean;
+      penaltyPerIncorrect: number;
+      requireAllMatches: boolean;
+      partialCredit: boolean;
+    };
+    display?: {
+      connectionStyle: "line" | "arrow" | "dashed";
+      connectionColor: string;
+      correctColor: string;
+      incorrectColor: string;
+      showConnectionLabels: boolean;
+      animateConnections: boolean;
+    };
+  };
 }
 
 interface QuizInput {
@@ -148,6 +211,8 @@ async function createQuestion(
     answersData = questionData.dropdownData;
   } else if (questionData.questionType === "ORDERING" && questionData.orderingData) {
     answersData = questionData.orderingData;
+  } else if (questionData.questionType === "MATCHING" && questionData.matchingData) {
+    answersData = questionData.matchingData;
   }
 
   // Step 1: Create the question without setting correctOptionId
@@ -224,6 +289,8 @@ async function updateQuestion(
     answersData = questionData.dropdownData;
   } else if (questionData.questionType === "ORDERING" && questionData.orderingData) {
     answersData = questionData.orderingData;
+  } else if (questionData.questionType === "MATCHING" && questionData.matchingData) {
+    answersData = questionData.matchingData;
   }
 
   // Step 1: Update the question's text and type
@@ -681,6 +748,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         }),
         ...(question.questionType === "ORDERING" && question.answersData && {
           orderingData: question.answersData
+        }),
+        ...(question.questionType === "MATCHING" && question.answersData && {
+          matchingData: question.answersData
         }),
         };
       })

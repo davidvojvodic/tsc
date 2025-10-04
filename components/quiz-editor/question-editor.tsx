@@ -9,11 +9,13 @@ import { OptionsEditor } from "./options-editor";
 import { TextInputConfigurationEditor } from "./text-input-configuration-editor";
 import { DropdownConfigurationEditor } from "./dropdown-configuration-editor";
 import { OrderingConfigurationEditor } from "./ordering-configuration-editor";
+import { MatchingConfigurationEditor } from "./matching-configuration-editor";
 import { QuestionActions } from "./question-actions";
 import { EmptyState } from "./empty-state";
 import { AutoSaveIndicator } from "./autosave-indicator";
 import { ScoringMethodSelector } from "./scoring-method-selector";
-import { Teacher, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration } from "./quiz-editor-layout";
+import { Teacher, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration } from "./quiz-editor-layout";
+import { validateQuestion } from "@/lib/quiz-validation";
 
 interface QuestionEditorProps {
   questionIndex: number;
@@ -53,7 +55,7 @@ export function QuestionEditor({
     }
   };
 
-  const handleQuestionUpdate = (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration) => {
+  const handleQuestionUpdate = (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration) => {
     updateQuestion(questionIndex, { [field]: value });
   };
 
@@ -83,9 +85,28 @@ export function QuestionEditor({
           currentLanguage={currentLanguage}
           onLanguageChange={setCurrentLanguage}
           hasContent={{
-            en: !!question.text,
-            sl: !!question.text_sl,
-            hr: !!question.text_hr
+            en: (() => {
+              const validation = validateQuestion({ ...question, text: question.text });
+              // For matching questions, check if errors array is empty and completion percentage is high
+              if (question.questionType === "MATCHING") {
+                return validation.errors.length === 0 && validation.completionPercentage >= 90;
+              }
+              return validation.status === "complete";
+            })(),
+            sl: (() => {
+              const validation = validateQuestion({ ...question, text: question.text_sl || question.text });
+              if (question.questionType === "MATCHING") {
+                return validation.errors.length === 0 && validation.completionPercentage >= 90 && !!question.text_sl;
+              }
+              return validation.status === "complete" && !!question.text_sl;
+            })(),
+            hr: (() => {
+              const validation = validateQuestion({ ...question, text: question.text_hr || question.text });
+              if (question.questionType === "MATCHING") {
+                return validation.errors.length === 0 && validation.completionPercentage >= 90 && !!question.text_hr;
+              }
+              return validation.status === "complete" && !!question.text_hr;
+            })()
           }}
         />
       </div>
@@ -114,6 +135,12 @@ export function QuestionEditor({
             />
           ) : question.questionType === "ORDERING" ? (
             <OrderingConfigurationEditor
+              question={question}
+              language={currentLanguage}
+              onChange={handleQuestionUpdate}
+            />
+          ) : question.questionType === "MATCHING" ? (
+            <MatchingConfigurationEditor
               question={question}
               language={currentLanguage}
               onChange={handleQuestionUpdate}

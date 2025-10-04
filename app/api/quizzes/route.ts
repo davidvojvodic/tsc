@@ -91,6 +91,69 @@ interface QuestionInput {
     allowPartialCredit?: boolean;
     exactOrderRequired?: boolean;
   };
+  matchingData?: {
+    instructions: string;
+    instructions_sl?: string;
+    instructions_hr?: string;
+    matchingType: "one-to-one";
+    leftItems: Array<{
+      id: string;
+      position: number;
+      content: {
+        type: "text" | "image" | "mixed";
+        text?: string;
+        text_sl?: string;
+        text_hr?: string;
+        imageUrl?: string;
+        altText?: string;
+        altText_sl?: string;
+        altText_hr?: string;
+        suffix?: string;
+        suffix_sl?: string;
+        suffix_hr?: string;
+      };
+    }>;
+    rightItems: Array<{
+      id: string;
+      position: number;
+      content: {
+        type: "text" | "image" | "mixed";
+        text?: string;
+        text_sl?: string;
+        text_hr?: string;
+        imageUrl?: string;
+        altText?: string;
+        altText_sl?: string;
+        altText_hr?: string;
+        suffix?: string;
+        suffix_sl?: string;
+        suffix_hr?: string;
+      };
+    }>;
+    correctMatches: Array<{
+      leftId: string;
+      rightId: string;
+      explanation?: string;
+      explanation_sl?: string;
+      explanation_hr?: string;
+    }>;
+    distractors?: string[];
+    scoring?: {
+      pointsPerMatch: number;
+      penalizeIncorrect: boolean;
+      penaltyPerIncorrect: number;
+      requireAllMatches: boolean;
+      partialCredit: boolean;
+    };
+    display?: {
+      connectionStyle: "line" | "arrow" | "dashed";
+      connectionColor: string;
+      correctColor: string;
+      incorrectColor: string;
+      showConnectionLabels: boolean;
+      animateConnections: boolean;
+    };
+  };
 }
 
 interface QuizInput {
@@ -157,6 +220,11 @@ async function createQuestion(
     answersData = questionData.orderingData;
   }
 
+  // For MATCHING questions, store matchingData in answersData field
+  if (questionData.questionType === "MATCHING" && questionData.matchingData) {
+    answersData = questionData.matchingData;
+  }
+
   // Step 1: Create the question without setting correctOptionId
   const question = await tx.question.create({
     data: {
@@ -171,7 +239,9 @@ async function createQuestion(
   });
 
   // Step 2: Create all options associated with the question (if any)
-  const options = questionData.options ? await Promise.all(
+  // Only create options for choice-based questions
+  const shouldCreateOptions = ["SINGLE_CHOICE", "MULTIPLE_CHOICE"].includes(questionData.questionType);
+  const options = shouldCreateOptions && questionData.options ? await Promise.all(
     questionData.options.map((opt) =>
       tx.option.create({
         data: {
@@ -298,6 +368,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Handle other types of errors
+    console.error("[QUIZZES_POST] Error:", error);
+    if (error instanceof Error) {
+      console.error("[QUIZZES_POST] Error stack:", error.stack);
+    }
 
     return new NextResponse(
       error instanceof Error ? error.message : "Internal error",

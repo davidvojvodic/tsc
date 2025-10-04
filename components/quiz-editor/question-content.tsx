@@ -2,13 +2,13 @@
 
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Question, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration } from "./quiz-editor-layout";
+import { Question, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration } from "./quiz-editor-layout";
 import { Language } from "./quiz-editor-provider";
 
 interface QuestionContentProps {
   question: Question;
   language: Language;
-  onChange: (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration) => void;
+  onChange: (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration) => void;
 }
 
 export function QuestionContent({
@@ -93,6 +93,38 @@ export function QuestionContent({
               onChange("options", []);
               onChange("orderingData", defaultOrderingData);
             }
+
+            // Clear options for MATCHING questions and set default matchingData
+            if (value === "MATCHING") {
+              const defaultMatchingData: MatchingConfiguration = {
+                instructions: "Match the items on the left with the corresponding items on the right:",
+                instructions_sl: "",
+                instructions_hr: "",
+                matchingType: "one-to-one",
+                leftItems: [],
+                rightItems: [],
+                correctMatches: [],
+                distractors: [],
+                scoring: {
+                  pointsPerMatch: 1,
+                  penalizeIncorrect: false,
+                  penaltyPerIncorrect: 0,
+                  requireAllMatches: true,
+                  partialCredit: false,
+                },
+                display: {
+                  connectionStyle: "line",
+                  connectionColor: "#3b82f6",
+                  correctColor: "#10b981",
+                  incorrectColor: "#ef4444",
+                  showConnectionLabels: false,
+                  animateConnections: true,
+                }
+              };
+
+              onChange("options", []);
+              onChange("matchingData", defaultMatchingData);
+            }
           }}
         >
           <SelectTrigger>
@@ -104,6 +136,7 @@ export function QuestionContent({
             <SelectItem value="TEXT_INPUT">Text Input</SelectItem>
             <SelectItem value="DROPDOWN">Dropdown Selection</SelectItem>
             <SelectItem value="ORDERING">Ordering / Sequencing</SelectItem>
+            <SelectItem value="MATCHING">Matching / Connecting</SelectItem>
           </SelectContent>
         </Select>
       </div>

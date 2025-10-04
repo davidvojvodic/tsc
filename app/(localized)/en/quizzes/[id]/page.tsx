@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { QuizDetailPage } from "../../../_components/quiz-detail-page";
-import type { OrderingConfiguration } from "@/components/quiz-editor/quiz-editor-layout";
+import type { OrderingConfiguration, MatchingConfiguration } from "@/components/quiz-editor/quiz-editor-layout";
 
 async function getQuiz(id: string) {
   try {
@@ -44,7 +44,7 @@ export default async function QuizPage({
     questions: quiz.questions
       .map(question => ({
         ...question,
-        questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING",
+        questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING",
         options: question.options?.map(option => ({
           ...option,
           isCorrect: option.correct // Map 'correct' to 'isCorrect'
@@ -101,6 +101,10 @@ export default async function QuizPage({
         // Transform answersData to orderingData for ordering questions
         orderingData: question.questionType === "ORDERING" && question.answersData
           ? question.answersData as unknown as OrderingConfiguration
+          : undefined,
+        // Transform answersData to matchingData for matching questions
+        matchingData: question.questionType === "MATCHING" && question.answersData
+          ? question.answersData as unknown as MatchingConfiguration
           : undefined
       }))
   };

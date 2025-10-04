@@ -63,6 +63,12 @@ export function validateQuestion(question: Question): ValidationResult {
       metRequirements = validationResult.metRequirements;
       break;
 
+    case "MATCHING":
+      validationResult = validateMatchingQuestion(question, result, totalRequirements, metRequirements);
+      totalRequirements = validationResult.totalRequirements;
+      metRequirements = validationResult.metRequirements;
+      break;
+
     case "SINGLE_CHOICE":
       validationResult = validateSingleChoiceQuestion(question, result, totalRequirements, metRequirements);
       totalRequirements = validationResult.totalRequirements;
@@ -474,6 +480,275 @@ function validateOrderingQuestion(
 
     if (allItemsValid) {
       metRequirements++; // All items valid
+    }
+  }
+
+  return { totalRequirements, metRequirements };
+}
+
+function validateMatchingQuestion(
+  question: Question,
+  result: ValidationResult,
+  totalRequirements: number,
+  metRequirements: number
+): { totalRequirements: number; metRequirements: number } {
+  totalRequirements += 5; // Configuration, instructions, left items, right items, and matches
+
+  if (!question.matchingData) {
+    result.errors.push({
+      field: "matchingData",
+      message: "Matching configuration is required"
+    });
+    result.missingFields.push("Matching configuration");
+    return { totalRequirements, metRequirements };
+  }
+
+  metRequirements++; // Has configuration
+
+  // Check instructions
+  if (!question.matchingData.instructions || !question.matchingData.instructions.trim()) {
+    result.errors.push({
+      field: "matchingData.instructions",
+      message: "Instructions are required"
+    });
+    result.missingFields.push("Instructions");
+  } else {
+    metRequirements++; // Has instructions
+  }
+
+  // Check left items
+  if (!question.matchingData.leftItems || question.matchingData.leftItems.length < 2) {
+    result.errors.push({
+      field: "matchingData.leftItems",
+      message: "At least 2 left items are required"
+    });
+    result.missingFields.push("Left items");
+  } else if (question.matchingData.leftItems.length > 8) {
+    result.errors.push({
+      field: "matchingData.leftItems",
+      message: "Maximum 8 left items allowed"
+    });
+  } else {
+    let allLeftItemsValid = true;
+
+    question.matchingData.leftItems.forEach((item, index) => {
+      totalRequirements += 3; // ID, position, and content
+
+      // Check item ID
+      if (!item.id || !item.id.trim()) {
+        result.errors.push({
+          field: `matchingData.leftItems.${index}.id`,
+          message: `Left item ${index + 1} ID is required`
+        });
+        result.missingFields.push(`Left item ${index + 1} ID`);
+        allLeftItemsValid = false;
+      } else {
+        metRequirements++;
+      }
+
+      // Check position
+      if (typeof item.position !== "number" || item.position < 1) {
+        result.errors.push({
+          field: `matchingData.leftItems.${index}.position`,
+          message: `Left item ${index + 1} must have a positive position`
+        });
+        result.missingFields.push(`Left item ${index + 1} position`);
+        allLeftItemsValid = false;
+      } else {
+        metRequirements++;
+      }
+
+      // Check content (same validation as ordering items)
+      if (!item.content || !item.content.type) {
+        result.errors.push({
+          field: `matchingData.leftItems.${index}.content.type`,
+          message: `Left item ${index + 1} content type is required`
+        });
+        result.missingFields.push(`Left item ${index + 1} content type`);
+        allLeftItemsValid = false;
+      } else {
+        if (item.content.type === "text") {
+          if (!item.content.text || !item.content.text.trim()) {
+            result.errors.push({
+              field: `matchingData.leftItems.${index}.content.text`,
+              message: `Left item ${index + 1} text is required`
+            });
+            allLeftItemsValid = false;
+          } else {
+            metRequirements++;
+          }
+        } else if (item.content.type === "image") {
+          if (!item.content.imageUrl || !item.content.imageUrl.trim()) {
+            result.errors.push({
+              field: `matchingData.leftItems.${index}.content.imageUrl`,
+              message: `Left item ${index + 1} image URL is required`
+            });
+            allLeftItemsValid = false;
+          } else if (!item.content.altText || !item.content.altText.trim()) {
+            result.errors.push({
+              field: `matchingData.leftItems.${index}.content.altText`,
+              message: `Left item ${index + 1} alt text is required for images`
+            });
+            allLeftItemsValid = false;
+          } else {
+            metRequirements++;
+          }
+        } else if (item.content.type === "mixed") {
+          if ((!item.content.text || !item.content.text.trim()) && (!item.content.imageUrl || !item.content.imageUrl.trim())) {
+            result.errors.push({
+              field: `matchingData.leftItems.${index}.content`,
+              message: `Left item ${index + 1} must have text or image`
+            });
+            allLeftItemsValid = false;
+          } else {
+            metRequirements++;
+          }
+        }
+      }
+    });
+
+    if (allLeftItemsValid) {
+      metRequirements++; // All left items valid
+    }
+  }
+
+  // Check right items
+  if (!question.matchingData.rightItems || question.matchingData.rightItems.length < 2) {
+    result.errors.push({
+      field: "matchingData.rightItems",
+      message: "At least 2 right items are required"
+    });
+    result.missingFields.push("Right items");
+  } else if (question.matchingData.rightItems.length > 10) {
+    result.errors.push({
+      field: "matchingData.rightItems",
+      message: "Maximum 10 right items allowed"
+    });
+  } else {
+    let allRightItemsValid = true;
+
+    question.matchingData.rightItems.forEach((item, index) => {
+      totalRequirements += 3; // ID, position, and content
+
+      // Check item ID
+      if (!item.id || !item.id.trim()) {
+        result.errors.push({
+          field: `matchingData.rightItems.${index}.id`,
+          message: `Right item ${index + 1} ID is required`
+        });
+        result.missingFields.push(`Right item ${index + 1} ID`);
+        allRightItemsValid = false;
+      } else {
+        metRequirements++;
+      }
+
+      // Check position
+      if (typeof item.position !== "number" || item.position < 1) {
+        result.errors.push({
+          field: `matchingData.rightItems.${index}.position`,
+          message: `Right item ${index + 1} must have a positive position`
+        });
+        result.missingFields.push(`Right item ${index + 1} position`);
+        allRightItemsValid = false;
+      } else {
+        metRequirements++;
+      }
+
+      // Check content (same validation as ordering items)
+      if (!item.content || !item.content.type) {
+        result.errors.push({
+          field: `matchingData.rightItems.${index}.content.type`,
+          message: `Right item ${index + 1} content type is required`
+        });
+        result.missingFields.push(`Right item ${index + 1} content type`);
+        allRightItemsValid = false;
+      } else {
+        if (item.content.type === "text") {
+          if (!item.content.text || !item.content.text.trim()) {
+            result.errors.push({
+              field: `matchingData.rightItems.${index}.content.text`,
+              message: `Right item ${index + 1} text is required`
+            });
+            allRightItemsValid = false;
+          } else {
+            metRequirements++;
+          }
+        } else if (item.content.type === "image") {
+          if (!item.content.imageUrl || !item.content.imageUrl.trim()) {
+            result.errors.push({
+              field: `matchingData.rightItems.${index}.content.imageUrl`,
+              message: `Right item ${index + 1} image URL is required`
+            });
+            allRightItemsValid = false;
+          } else if (!item.content.altText || !item.content.altText.trim()) {
+            result.errors.push({
+              field: `matchingData.rightItems.${index}.content.altText`,
+              message: `Right item ${index + 1} alt text is required for images`
+            });
+            allRightItemsValid = false;
+          } else {
+            metRequirements++;
+          }
+        } else if (item.content.type === "mixed") {
+          if ((!item.content.text || !item.content.text.trim()) && (!item.content.imageUrl || !item.content.imageUrl.trim())) {
+            result.errors.push({
+              field: `matchingData.rightItems.${index}.content`,
+              message: `Right item ${index + 1} must have text or image`
+            });
+            allRightItemsValid = false;
+          } else {
+            metRequirements++;
+          }
+        }
+      }
+    });
+
+    if (allRightItemsValid) {
+      metRequirements++; // All right items valid
+    }
+  }
+
+  // Check correct matches
+  if (!question.matchingData.correctMatches || question.matchingData.correctMatches.length < 1) {
+    result.errors.push({
+      field: "matchingData.correctMatches",
+      message: "At least 1 correct match is required"
+    });
+    result.missingFields.push("Correct matches");
+  } else {
+    metRequirements++; // Has matches
+  }
+
+  // Validate position numbers are sequential for both columns (if items exist)
+  if (question.matchingData.leftItems && question.matchingData.leftItems.length >= 2) {
+    const leftPositions = question.matchingData.leftItems
+      .map(item => item.position)
+      .sort((a, b) => a - b);
+
+    for (let i = 0; i < leftPositions.length; i++) {
+      if (leftPositions[i] !== i + 1) {
+        result.errors.push({
+          field: "matchingData.leftItems",
+          message: `Left item positions must be sequential starting from 1. Found gap at position ${i + 1}`
+        });
+        break;
+      }
+    }
+  }
+
+  if (question.matchingData.rightItems && question.matchingData.rightItems.length >= 2) {
+    const rightPositions = question.matchingData.rightItems
+      .map(item => item.position)
+      .sort((a, b) => a - b);
+
+    for (let i = 0; i < rightPositions.length; i++) {
+      if (rightPositions[i] !== i + 1) {
+        result.errors.push({
+          field: "matchingData.rightItems",
+          message: `Right item positions must be sequential starting from 1. Found gap at position ${i + 1}`
+        });
+        break;
+      }
     }
   }
 

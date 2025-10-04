@@ -5,7 +5,7 @@ import { Trash2, GripVertical, HelpCircle, Type, ImageIcon, Layers } from "lucid
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -250,41 +250,45 @@ export function OrderingConfigurationEditor({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              checked={orderingData.exactOrderRequired ?? true}
-              onCheckedChange={(checked) => updateConfiguration({
-                exactOrderRequired: !!checked,
-                allowPartialCredit: checked ? false : orderingData.allowPartialCredit
-              })}
-            />
-            <div className="space-y-1 leading-none">
-              <Label>Exact Order Required</Label>
-              <p className="text-sm text-muted-foreground">
-                All items must be in exact correct positions to earn full points (no partial credit)
-              </p>
+          <Label className="text-sm font-medium">Scoring Method</Label>
+          <RadioGroup
+            value={orderingData.exactOrderRequired ?? true ? "ALL_OR_NOTHING" : "PARTIAL_CREDIT"}
+            onValueChange={(value) => updateConfiguration({
+              exactOrderRequired: value === "ALL_OR_NOTHING",
+              allowPartialCredit: value === "PARTIAL_CREDIT"
+            })}
+            className="space-y-2"
+          >
+            <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <RadioGroupItem value="ALL_OR_NOTHING" id="ordering-all-or-nothing" />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="ordering-all-or-nothing"
+                  className="text-sm font-medium leading-none cursor-pointer"
+                >
+                  All or Nothing
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  All items must be in exact correct positions to earn points
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              checked={orderingData.allowPartialCredit ?? false}
-              disabled={orderingData.exactOrderRequired ?? true}
-              onCheckedChange={(checked) => updateConfiguration({
-                allowPartialCredit: !!checked,
-                exactOrderRequired: checked ? false : orderingData.exactOrderRequired
-              })}
-            />
-            <div className="space-y-1 leading-none">
-              <Label className={orderingData.exactOrderRequired ? "text-muted-foreground" : ""}>
-                Allow Partial Credit
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Award points for items in correct positions even if not all are correct
-                {orderingData.exactOrderRequired && " (disabled when exact order is required)"}
-              </p>
+            <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <RadioGroupItem value="PARTIAL_CREDIT" id="ordering-partial-credit" />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="ordering-partial-credit"
+                  className="text-sm font-medium leading-none cursor-pointer"
+                >
+                  Partial Credit
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Award points for each item in the correct position
+                </p>
+              </div>
             </div>
-          </div>
+          </RadioGroup>
         </CardContent>
       </Card>
     </div>
@@ -395,35 +399,24 @@ function ItemEditor({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Item ID and Content Type */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Item ID</Label>
-            <Input
-              value={item.id}
-              onChange={(e) => onUpdate({ id: e.target.value })}
-              placeholder="item1"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Content Type</Label>
-            <Select
-              value={item.content.type}
-              onValueChange={(value: "text" | "image" | "mixed") => {
-                changeContentType(value);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Text Only</SelectItem>
-                <SelectItem value="image">Image Only</SelectItem>
-                <SelectItem value="mixed">Mixed (Text + Image)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Content Type */}
+        <div className="space-y-2">
+          <Label>Content Type</Label>
+          <Select
+            value={item.content.type}
+            onValueChange={(value: "text" | "image" | "mixed") => {
+              changeContentType(value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="text">Text Only</SelectItem>
+              <SelectItem value="image">Image Only</SelectItem>
+              <SelectItem value="mixed">Mixed (Text + Image)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Content fields based on type */}

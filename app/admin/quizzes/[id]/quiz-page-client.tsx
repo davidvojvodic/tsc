@@ -66,8 +66,8 @@ export default function QuizPageClient({
             text_sl: question.text_sl,
             text_hr: question.text_hr,
             questionType: question.questionType || "SINGLE_CHOICE", // Add questionType
-            // Only include options for choice-based questions, not for TEXT_INPUT, DROPDOWN, or ORDERING
-            ...(question.questionType !== "TEXT_INPUT" && question.questionType !== "DROPDOWN" && question.questionType !== "ORDERING" && {
+            // Only include options for choice-based questions, not for TEXT_INPUT, DROPDOWN, ORDERING, or MATCHING
+            ...(question.questionType !== "TEXT_INPUT" && question.questionType !== "DROPDOWN" && question.questionType !== "ORDERING" && question.questionType !== "MATCHING" && {
               options: question.options.map((option) => ({
                 // Only include ID if it's a real database UUID, not a generated ID
                 ...(quizId !== "new" && isRealUUID(option.id) && { id: option.id }),
@@ -88,6 +88,9 @@ export default function QuizPageClient({
             }),
             ...(question.questionType === "ORDERING" && question.orderingData && {
               orderingData: question.orderingData
+            }),
+            ...(question.questionType === "MATCHING" && question.matchingData && {
+              matchingData: question.matchingData
             }),
             };
           }),

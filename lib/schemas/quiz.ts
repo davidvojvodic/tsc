@@ -124,18 +124,75 @@ const orderingDataSchema = z.object({
   exactOrderRequired: z.boolean().default(true),
 });
 
+// Matching reuses the same content schemas as ordering
+const matchingItemContentSchema = z.discriminatedUnion("type", [
+  orderingTextContentSchema,
+  orderingImageContentSchema,
+  orderingMixedContentSchema,
+]);
+
+// Matching item schema (similar to ordering but uses 'position' not 'correctPosition')
+const matchingItemSchema = z.object({
+  id: z.string().min(1, "Item ID required"),
+  position: z.number().int().positive(),
+  content: matchingItemContentSchema,
+});
+
+// Correct match schema
+const correctMatchSchema = z.object({
+  leftId: z.string().min(1, "Left item ID required"),
+  rightId: z.string().min(1, "Right item ID required"),
+  explanation: z.string().optional(),
+  explanation_sl: z.string().optional(),
+  explanation_hr: z.string().optional(),
+});
+
+// Matching scoring schema
+const matchingScoringSchema = z.object({
+  pointsPerMatch: z.number().positive().default(1),
+  penalizeIncorrect: z.boolean().default(true),
+  penaltyPerIncorrect: z.number().min(0).max(2).default(0.5),
+  requireAllMatches: z.boolean().default(false),
+  partialCredit: z.boolean().default(true),
+});
+
+// Matching display schema (optional, most can use defaults)
+const matchingDisplaySchema = z.object({
+  connectionStyle: z.enum(["line", "arrow", "dashed"]).default("line"),
+  connectionColor: z.string().default("#3b82f6"),
+  correctColor: z.string().default("#10b981"),
+  incorrectColor: z.string().default("#ef4444"),
+  showConnectionLabels: z.boolean().default(false),
+  animateConnections: z.boolean().default(true),
+});
+
+// Matching specific data schema
+const matchingDataSchema = z.object({
+  instructions: z.string().min(1, "Instructions required"),
+  instructions_sl: z.string().optional(),
+  instructions_hr: z.string().optional(),
+  matchingType: z.literal("one-to-one").default("one-to-one"),
+  leftItems: z.array(matchingItemSchema).min(2, "At least 2 left items required").max(8, "Maximum 8 left items allowed"),
+  rightItems: z.array(matchingItemSchema).min(2, "At least 2 right items required").max(10, "Maximum 10 right items allowed"),
+  correctMatches: z.array(correctMatchSchema).min(1, "At least 1 correct match required"),
+  distractors: z.array(z.string()).optional(),
+  scoring: matchingScoringSchema.optional(),
+  display: matchingDisplaySchema.optional(),
+});
+
 // Question schema with support for both single and multiple choice
 const questionSchema = z.object({
   id: z.string().optional(), // For existing questions during updates
   text: z.string(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
-  questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT", "DROPDOWN", "ORDERING"]).default("SINGLE_CHOICE"),
+  questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT", "DROPDOWN", "ORDERING", "MATCHING"]).default("SINGLE_CHOICE"),
   options: z.array(optionSchema).optional(),
   multipleChoiceData: multipleChoiceDataSchema.optional(),
   textInputData: textInputDataSchema.optional(),
   dropdownData: dropdownDataSchema.optional(),
   orderingData: orderingDataSchema.optional(),
+  matchingData: matchingDataSchema.optional(),
 }).refine((data) => {
   // Question must have text in at least one language
   const hasQuestionText = (data.text && data.text.trim().length > 0) ||
@@ -259,6 +316,67 @@ const questionSchema = z.object({
     return true;
   }
 
+  // Validation for matching questions
+  if (data.questionType === "MATCHING") {
+    if (!data.matchingData) {
+      return false;
+    }
+
+    const { leftItems, rightItems, correctMatches, matchingType, distractors } = data.matchingData;
+
+    // Must have at least 2 items in each column
+    if (leftItems.length < 2 || rightItems.length < 2) {
+      return false;
+    }
+
+    // All correct matches must reference existing items
+    const leftIds = leftItems.map(item => item.id);
+    const rightIds = rightItems.map(item => item.id);
+
+    for (const match of correctMatches) {
+      if (!leftIds.includes(match.leftId) || !rightIds.includes(match.rightId)) {
+        return false;
+      }
+    }
+
+    // Validate one-to-one matching: no duplicates allowed
+    const leftMatches = correctMatches.map(m => m.leftId);
+    const rightMatches = correctMatches.map(m => m.rightId);
+    const uniqueLeft = new Set(leftMatches);
+    const uniqueRight = new Set(rightMatches);
+
+    if (uniqueLeft.size !== leftMatches.length || uniqueRight.size !== rightMatches.length) {
+      return false;
+    }
+
+    // Validate distractors are valid right item IDs
+    if (distractors && distractors.length > 0) {
+      for (const distractorId of distractors) {
+        if (!rightIds.includes(distractorId)) {
+          return false;
+        }
+      }
+    }
+
+    // Validate position numbers are sequential for both columns
+    const leftPositions = leftItems.map(item => item.position).sort((a, b) => a - b);
+    const rightPositions = rightItems.map(item => item.position).sort((a, b) => a - b);
+
+    for (let i = 0; i < leftPositions.length; i++) {
+      if (leftPositions[i] !== i + 1) {
+        return false;
+      }
+    }
+
+    for (let i = 0; i < rightPositions.length; i++) {
+      if (rightPositions[i] !== i + 1) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   return true;
 }, {
   message: "Invalid question configuration",
@@ -275,14 +393,18 @@ export const quizSchema = z.object({
   questions: z.array(questionSchema).min(1, "At least 1 question is required"),
 });
 
-// Schema for quiz submissions - supports single choice, multiple choice, text input, and dropdown answers
+// Schema for quiz submissions - supports all question types
 export const quizSubmissionSchema = z.object({
   answers: z.record(
     z.string(), // questionId
     z.union([
       z.string(), // Single choice: optionId OR Text input: answer text
-      z.array(z.string()), // Multiple choice: array of optionIds
-      z.record(z.string(), z.string()) // Dropdown: dropdownId -> selectedOptionId
+      z.array(z.string()), // Multiple choice: array of optionIds OR Ordering: array of itemIds
+      z.record(z.string(), z.string()), // Dropdown: dropdownId -> selectedOptionId
+      z.array(z.object({ // Matching: array of connections
+        leftId: z.string(),
+        rightId: z.string()
+      }))
     ])
   ),
 });
@@ -300,4 +422,7 @@ export type DropdownScoringType = z.infer<typeof dropdownScoringSchema>;
 export type PartialCreditRulesType = z.infer<typeof partialCreditRulesSchema>;
 export type OrderingDataType = z.infer<typeof orderingDataSchema>;
 export type OrderingItemType = z.infer<typeof orderingItemSchema>;
+export type MatchingDataType = z.infer<typeof matchingDataSchema>;
+export type MatchingItemType = z.infer<typeof matchingItemSchema>;
+export type CorrectMatchType = z.infer<typeof correctMatchSchema>;
 export type QuizSubmissionType = z.infer<typeof quizSubmissionSchema>;

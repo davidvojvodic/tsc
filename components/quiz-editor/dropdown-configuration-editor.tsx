@@ -4,10 +4,12 @@ import { Plus, Trash2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Language } from "./quiz-editor-provider";
 
 interface DropdownOption {
@@ -231,24 +233,48 @@ export function DropdownConfigurationEditor({
             />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              checked={dropdownData.scoring?.requireAllCorrect || false}
-              onCheckedChange={(checked) => updateConfiguration({
-                scoring: {
-                  pointsPerDropdown: dropdownData.scoring?.pointsPerDropdown ?? 1,
-                  requireAllCorrect: !!checked,
-                  penalizeIncorrect: dropdownData.scoring?.penalizeIncorrect ?? false
-                }
-              })}
-            />
-            <div className="space-y-1 leading-none">
-              <Label>Require All Correct</Label>
-              <p className="text-sm text-muted-foreground">
-                All dropdowns must be correct to earn any points
-              </p>
+          <Label className="text-sm font-medium">Scoring Method</Label>
+          <RadioGroup
+            value={dropdownData.scoring?.requireAllCorrect ?? true ? "ALL_OR_NOTHING" : "PARTIAL_CREDIT"}
+            onValueChange={(value) => updateConfiguration({
+              scoring: {
+                pointsPerDropdown: 1,
+                requireAllCorrect: value === "ALL_OR_NOTHING",
+                penalizeIncorrect: false
+              }
+            })}
+            className="space-y-2"
+          >
+            <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <RadioGroupItem value="ALL_OR_NOTHING" id="dropdown-all-or-nothing" />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="dropdown-all-or-nothing"
+                  className="text-sm font-medium leading-none cursor-pointer"
+                >
+                  All or Nothing
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  All dropdowns must be correct to earn points
+                </p>
+              </div>
             </div>
-          </div>
+
+            <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <RadioGroupItem value="PARTIAL_CREDIT" id="dropdown-partial-credit" />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="dropdown-partial-credit"
+                  className="text-sm font-medium leading-none cursor-pointer"
+                >
+                  Partial Credit
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Award points for each correct dropdown selection
+                </p>
+              </div>
+            </div>
+          </RadioGroup>
         </CardContent>
       </Card>
     </div>
@@ -311,13 +337,11 @@ function DropdownFieldEditor({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex-1 space-y-2">
-            <Label>Dropdown ID</Label>
-            <Input
-              value={dropdown.id}
-              onChange={(e) => onUpdate({ id: e.target.value })}
-              placeholder="dropdown1"
-            />
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="rounded-full">
+              {dropdown.id}
+            </Badge>
+            <span className="text-sm text-muted-foreground">Use {`{${dropdown.id}}`} in template</span>
           </div>
           {canRemove && (
             <Button
@@ -325,7 +349,7 @@ function DropdownFieldEditor({
               variant="ghost"
               size="sm"
               onClick={onRemove}
-              className="text-destructive ml-4"
+              className="text-destructive"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

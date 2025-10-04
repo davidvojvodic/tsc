@@ -1,6 +1,6 @@
 // lib/quiz-scoring.ts
 import { QuestionType } from "@prisma/client";
-import { MultipleChoiceDataType, PartialCreditRulesType, TextInputDataType, DropdownDataType, OrderingDataType } from "@/lib/schemas/quiz";
+import { MultipleChoiceDataType, PartialCreditRulesType, TextInputDataType, DropdownDataType, OrderingDataType, MatchingDataType } from "@/lib/schemas/quiz";
 
 // Types for scoring
 export interface QuestionData {
@@ -16,8 +16,8 @@ export interface QuestionData {
 
 export interface ScoreResult {
   questionId: string;
-  selectedAnswers: string | string[] | Record<string, string>;
-  correctAnswers: string | string[] | Record<string, string[]>;
+  selectedAnswers: string | string[] | Record<string, string> | Array<{leftId: string; rightId: string}>;
+  correctAnswers: string | string[] | Record<string, string[]> | Array<{leftId: string; rightId: string}>;
   isCorrect: boolean;
   score: number;
   maxScore: number;
@@ -27,7 +27,11 @@ export interface ScoreResult {
     isCorrect: boolean;
     selectedOption: string;
     correctOptions: string[];
-  }>;
+  }> | {
+    correctConnections: number;
+    incorrectConnections: number;
+    missedConnections: number;
+  };
 }
 
 export interface QuizScoreResult {
@@ -520,11 +524,176 @@ function getItemDisplayText(item: OrderingDataType['items'][0]): string {
 }
 
 /**
+ * Calculate score for a matching question
+ */
+function scoreMatchingQuestion(
+  question: QuestionData,
+  answer: Array<{leftId: string; rightId: string}>
+): ScoreResult {
+  const matchingData = question.answersData as MatchingDataType | undefined;
+
+  if (!matchingData) {
+    throw new Error(`Matching question ${question.id} missing configuration data`);
+  }
+
+  const { correctMatches, scoring, matchingType, leftItems, rightItems } = matchingData;
+  const {
+    pointsPerMatch = 1,
+    penalizeIncorrect = true,
+    penaltyPerIncorrect = 0.5,
+    requireAllMatches = false,
+    partialCredit = true
+  } = scoring || {};
+
+  const userConnections = answer;
+  const totalCorrectMatches = correctMatches.length;
+  const maxScore = totalCorrectMatches * pointsPerMatch;
+
+  // Create lookup for correct matches
+  const correctMatchesSet = new Set(
+    correctMatches.map(match => `${match.leftId}-${match.rightId}`)
+  );
+
+  // Validate one-to-one matching constraints for user answer
+  const validationResult = validateUserMatchingConstraints(userConnections);
+
+  if (!validationResult.isValid) {
+    return {
+      questionId: question.id,
+      selectedAnswers: answer,
+      correctAnswers: correctMatches.map(m => ({ leftId: m.leftId, rightId: m.rightId })),
+      isCorrect: false,
+      score: 0,
+      maxScore,
+      explanation: validationResult.error,
+    };
+  }
+
+  // Analyze user connections
+  let correctConnections = 0;
+  let incorrectConnections = 0;
+
+  for (const connection of userConnections) {
+    const connectionKey = `${connection.leftId}-${connection.rightId}`;
+    const isCorrect = correctMatchesSet.has(connectionKey);
+
+    if (isCorrect) {
+      correctConnections++;
+    } else {
+      incorrectConnections++;
+    }
+  }
+
+  // Calculate base score
+  let score = 0;
+
+  if (requireAllMatches && correctConnections !== totalCorrectMatches) {
+    // All matches required but not achieved
+    score = 0;
+  } else if (partialCredit) {
+    // Award points for correct connections
+    score = correctConnections * pointsPerMatch;
+
+    // Apply penalty for incorrect connections
+    if (penalizeIncorrect && incorrectConnections > 0) {
+      const penalty = incorrectConnections * penaltyPerIncorrect * pointsPerMatch;
+      score = Math.max(0, score - penalty);
+    }
+  } else {
+    // No partial credit - either all correct or zero
+    score = correctConnections === totalCorrectMatches ? maxScore : 0;
+  }
+
+  const missedConnections = totalCorrectMatches - correctConnections;
+  const feedback = generateMatchingFeedback(
+    correctConnections,
+    incorrectConnections,
+    missedConnections,
+    totalCorrectMatches
+  );
+
+  return {
+    questionId: question.id,
+    selectedAnswers: answer,
+    correctAnswers: correctMatches.map(m => ({ leftId: m.leftId, rightId: m.rightId })),
+    isCorrect: score === maxScore && missedConnections === 0,
+    score: Math.round(score * 100) / 100,
+    maxScore,
+    explanation: feedback,
+    details: {
+      correctConnections,
+      incorrectConnections,
+      missedConnections,
+    },
+  };
+}
+
+/**
+ * Validate one-to-one matching constraints for user connections
+ */
+function validateUserMatchingConstraints(
+  connections: Array<{leftId: string; rightId: string}>
+): {isValid: boolean; error?: string} {
+
+  const leftItems = connections.map(c => c.leftId);
+  const rightItems = connections.map(c => c.rightId);
+
+  const uniqueLeftItems = new Set(leftItems);
+  const uniqueRightItems = new Set(rightItems);
+
+  if (uniqueLeftItems.size !== leftItems.length) {
+    return {
+      isValid: false,
+      error: "Each left item can only be connected once"
+    };
+  }
+
+  if (uniqueRightItems.size !== rightItems.length) {
+    return {
+      isValid: false,
+      error: "Each right item can only be connected once"
+    };
+  }
+
+  return { isValid: true };
+}
+
+/**
+ * Generate feedback for matching questions
+ */
+function generateMatchingFeedback(
+  correct: number,
+  incorrect: number,
+  missed: number,
+  total: number
+): string {
+  if (correct === total && incorrect === 0) {
+    return "Perfect! All connections are correct.";
+  }
+
+  if (correct === 0) {
+    return "None of the connections are correct. Please review the content and try again.";
+  }
+
+  let feedback = `${correct}/${total} correct connections.`;
+
+  if (incorrect > 0) {
+    feedback += ` ${incorrect} incorrect connection${incorrect > 1 ? 's' : ''}.`;
+  }
+
+  if (missed > 0) {
+    feedback += ` ${missed} connection${missed > 1 ? 's' : ''} missing.`;
+  }
+
+  return feedback;
+}
+
+/**
  * Score a single question based on its type
  */
 export function scoreQuestion(
   question: QuestionData,
-  answer: string | string[] | Record<string, string>
+  answer: string | string[] | Record<string, string> | Array<{leftId: string; rightId: string}>
 ): ScoreResult {
   if (question.questionType === "SINGLE_CHOICE") {
     if (Array.isArray(answer) || typeof answer === "object") {
@@ -536,6 +705,13 @@ export function scoreQuestion(
   if (question.questionType === "MULTIPLE_CHOICE") {
     if (!Array.isArray(answer)) {
       throw new Error(`Multiple choice question ${question.id} received non-array answer`);
+    }
+    // Type guard for string array
+    const isStringArray = (arr: unknown[]): arr is string[] => {
+      return arr.every(item => typeof item === 'string');
+    };
+    if (!isStringArray(answer)) {
+      throw new Error(`Multiple choice question ${question.id} received invalid array format`);
     }
     return scoreMultipleChoiceQuestion(question, answer);
   }
@@ -558,7 +734,36 @@ export function scoreQuestion(
     if (!Array.isArray(answer)) {
       throw new Error(`Ordering question ${question.id} received non-array answer`);
     }
+    // Type guard for string array
+    const isStringArray = (arr: unknown[]): arr is string[] => {
+      return arr.every(item => typeof item === 'string');
+    };
+    if (!isStringArray(answer)) {
+      throw new Error(`Ordering question ${question.id} received invalid array format`);
+    }
     return scoreOrderingQuestion(question, answer);
+  }
+
+  if (question.questionType === "MATCHING") {
+    if (!Array.isArray(answer)) {
+      throw new Error(`Matching question ${question.id} received non-array answer`);
+    }
+    // Type guard for matching connections
+    const isMatchingAnswer = (arr: unknown[]): arr is Array<{leftId: string; rightId: string}> => {
+      return arr.every(item =>
+        typeof item === 'object' &&
+        item !== null &&
+        'leftId' in item &&
+        'rightId' in item &&
+        typeof (item as any).leftId === 'string' &&
+        typeof (item as any).rightId === 'string'
+      );
+    };
+
+    if (!isMatchingAnswer(answer)) {
+      throw new Error(`Matching question ${question.id} received invalid answer format`);
+    }
+    return scoreMatchingQuestion(question, answer);
   }
 
   throw new Error(`Unsupported question type: ${question.questionType}`);
@@ -569,7 +774,7 @@ export function scoreQuestion(
  */
 export function scoreQuiz(
   questions: QuestionData[],
-  answers: Record<string, string | string[] | Record<string, string>>
+  answers: Record<string, string | string[] | Record<string, string> | Array<{leftId: string; rightId: string}>>
 ): QuizScoreResult {
   const questionResults: ScoreResult[] = [];
   let totalScore = 0;
@@ -581,7 +786,7 @@ export function scoreQuiz(
 
     if (answer === undefined) {
       // No answer provided - score as 0
-      let correctAnswers: string | string[] | Record<string, string[]>;
+      let correctAnswers: string | string[] | Record<string, string[]> | Array<{leftId: string; rightId: string}>;
       let maxScore = 1;
 
       if (question.questionType === "SINGLE_CHOICE") {
@@ -602,6 +807,11 @@ export function scoreQuiz(
         correctAnswers = orderingData?.items
           .sort((a, b) => a.correctPosition - b.correctPosition)
           .map(item => item.id) || [];
+      } else if (question.questionType === "MATCHING") {
+        const matchingData = question.answersData as MatchingDataType | undefined;
+        const matchCount = matchingData?.correctMatches.length || 1;
+        maxScore = matchCount;
+        correctAnswers = matchingData?.correctMatches.map(m => ({ leftId: m.leftId, rightId: m.rightId })) || [];
       } else {
         correctAnswers = [];
       }

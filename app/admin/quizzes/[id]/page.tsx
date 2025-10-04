@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { MultipleChoiceDataType, TextInputDataType, DropdownDataType, OrderingDataType } from "@/lib/schemas/quiz";
+import { MultipleChoiceDataType, TextInputDataType, DropdownDataType, OrderingDataType, MatchingDataType } from "@/lib/schemas/quiz";
 import QuizPageClient from "./quiz-page-client";
 
 export default async function QuizPage({
@@ -80,8 +80,8 @@ export default async function QuizPage({
             text: question.text,
             text_sl: question.text_sl ?? undefined,
             text_hr: question.text_hr ?? undefined,
-            questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING",
-            options: (question.questionType === "TEXT_INPUT" || question.questionType === "DROPDOWN" || question.questionType === "ORDERING") ? [] : question.options.map((option) => ({
+            questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING",
+            options: (question.questionType === "TEXT_INPUT" || question.questionType === "DROPDOWN" || question.questionType === "ORDERING" || question.questionType === "MATCHING") ? [] : question.options.map((option) => ({
               id: option.id,
               text: option.text,
               text_sl: option.text_sl ?? undefined,
@@ -99,6 +99,9 @@ export default async function QuizPage({
               : undefined,
             orderingData: question.questionType === "ORDERING" && question.answersData
               ? (question.answersData as OrderingDataType)
+              : undefined,
+            matchingData: question.questionType === "MATCHING" && question.answersData
+              ? (question.answersData as MatchingDataType)
               : undefined,
           })),
       }

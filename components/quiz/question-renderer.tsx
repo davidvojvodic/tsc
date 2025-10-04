@@ -7,6 +7,7 @@ import { MultipleChoiceQuestion } from "./question-types/multiple-choice-questio
 import { TextInputQuestion } from "./question-types/text-input-question";
 import { DropdownQuestion } from "./question-types/dropdown-question";
 import { OrderingQuestion } from "./question-types/ordering-question";
+import { MatchingQuestion } from "./question-types/matching-question";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { cn } from "@/lib/utils";
@@ -118,23 +119,72 @@ interface OrderingConfiguration {
   };
 }
 
+// Matching types (reuse content types from ordering)
+type MatchingItemContent = OrderingItemContent;
+
+interface MatchingItem {
+  id: string;
+  position: number;
+  content: MatchingItemContent;
+}
+
+interface MatchingConnection {
+  leftId: string;
+  rightId: string;
+}
+
+interface CorrectMatch {
+  leftId: string;
+  rightId: string;
+  explanation?: string;
+  explanation_sl?: string;
+  explanation_hr?: string;
+}
+
+interface MatchingConfiguration {
+  instructions?: string;
+  instructions_sl?: string;
+  instructions_hr?: string;
+  matchingType: "one-to-one" | "one-to-many" | "many-to-one" | "many-to-many";
+  leftItems: MatchingItem[];
+  rightItems: MatchingItem[];
+  correctMatches: CorrectMatch[];
+  distractors?: string[];
+  scoring?: {
+    pointsPerMatch: number;
+    penalizeIncorrect: boolean;
+    penaltyPerIncorrect: number;
+    requireAllMatches: boolean;
+    partialCredit: boolean;
+  };
+  display?: {
+    connectionStyle: "line" | "arrow" | "dashed";
+    connectionColor: string;
+    correctColor: string;
+    incorrectColor: string;
+    showConnectionLabels: boolean;
+    animateConnections: boolean;
+  };
+}
+
 interface Question {
   id: string;
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING";
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING";
   options?: Option[];
   multipleChoiceData?: MultipleChoiceData;
   textInputData?: TextInputData;
   dropdownData?: DropdownConfiguration;
   orderingData?: OrderingConfiguration;
+  matchingData?: MatchingConfiguration;
 }
 
 interface QuestionRendererProps {
   question: Question;
-  selectedAnswer: string | string[] | Record<string, string>;
-  onAnswerChange: (questionId: string, answer: string | string[] | Record<string, string>) => void;
+  selectedAnswer: string | string[] | Record<string, string> | MatchingConnection[];
+  onAnswerChange: (questionId: string, answer: string | string[] | Record<string, string> | MatchingConnection[]) => void;
   disabled?: boolean;
   showValidation?: boolean;
   language?: SupportedLanguage;
@@ -170,12 +220,21 @@ export function QuestionRenderer({
     onAnswerChange(questionId, order);
   };
 
+  const handleMatchingChange = (questionId: string, connections: MatchingConnection[]) => {
+    onAnswerChange(questionId, connections);
+  };
+
   if (question.questionType === "MULTIPLE_CHOICE") {
     // Ensure we have the required multiple choice data
     if (!question.multipleChoiceData) {
       console.warn(`Multiple choice question ${question.id} is missing multipleChoiceData`);
       return null;
     }
+
+    // Type guard for string array
+    const isStringArray = (answer: typeof selectedAnswer): answer is string[] => {
+      return Array.isArray(answer) && (answer.length === 0 || typeof answer[0] === 'string');
+    };
 
     return (
       <MultipleChoiceQuestion
@@ -185,7 +244,7 @@ export function QuestionRenderer({
         text_hr={question.text_hr}
         options={question.options || []}
         multipleChoiceData={question.multipleChoiceData}
-        selectedOptions={Array.isArray(selectedAnswer) ? selectedAnswer : []}
+        selectedOptions={isStringArray(selectedAnswer) ? selectedAnswer : []}
         onSelectionChange={handleMultipleChoiceChange}
         disabled={disabled}
         showValidation={showValidation}
@@ -249,15 +308,45 @@ export function QuestionRenderer({
       return null;
     }
 
+    // Type guard for string array
+    const isStringArray = (answer: typeof selectedAnswer): answer is string[] => {
+      return Array.isArray(answer) && (answer.length === 0 || typeof answer[0] === 'string');
+    };
+
     return (
       <OrderingQuestion
         questionId={question.id}
         questionData={question.orderingData}
-        selectedAnswer={Array.isArray(selectedAnswer) ? selectedAnswer : []}
+        selectedAnswer={isStringArray(selectedAnswer) ? selectedAnswer : []}
         onAnswerChange={handleOrderingChange}
         disabled={disabled}
         language={language}
         className={className}
+      />
+    );
+  }
+
+  if (question.questionType === "MATCHING") {
+    // Ensure we have the required matching data
+    if (!question.matchingData) {
+      console.warn(`Matching question ${question.id} is missing matchingData`);
+      return null;
+    }
+
+    // Type guard to check if selectedAnswer is MatchingConnection[]
+    const isMatchingAnswer = (answer: typeof selectedAnswer): answer is MatchingConnection[] => {
+      return Array.isArray(answer) &&
+             (answer.length === 0 || (typeof answer[0] === 'object' && 'leftId' in answer[0] && 'rightId' in answer[0]));
+    };
+
+    return (
+      <MatchingQuestion
+        questionId={question.id}
+        questionData={question.matchingData}
+        language={language}
+        selectedAnswer={isMatchingAnswer(selectedAnswer) ? selectedAnswer : []}
+        onAnswerChange={handleMatchingChange}
+        disabled={disabled}
       />
     );
   }

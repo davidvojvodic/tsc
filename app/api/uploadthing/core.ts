@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 const f = createUploadthing();
 
 export const ourFileRouter = {
-  // Add the new imageUploader
+  // General image uploader
   imageUploader: f({ image: { maxFileSize: "16MB" } })
     .middleware(async () => {
       const headersObj = await headers();
@@ -19,9 +19,28 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("Image upload complete for userId:", metadata.userId);
-      console.log("File URL:", file.ufsUrl);
+      console.log("File URL:", file.url);
 
       return { uploadedBy: metadata.userId };
+    }),
+
+  // Question image uploader (4MB max for better performance)
+  questionImageUploader: f({ image: { maxFileSize: "4MB" } })
+    .middleware(async () => {
+      const headersObj = await headers();
+      const session = await auth.api.getSession({
+        headers: headersObj,
+      });
+
+      if (!session) throw new Error("Unauthorized");
+
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log("Question image upload complete for userId:", metadata.userId);
+      console.log("File URL:", file.url);
+
+      return { uploadedBy: metadata.userId, url: file.url };
     }),
 
   // Your existing materialUploader

@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Question, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration } from "./quiz-editor-layout";
 import { Language } from "./quiz-editor-provider";
+import { QuestionImageUploader } from "./question-image-uploader";
 
 interface QuestionContentProps {
   question: Question;
@@ -145,6 +146,11 @@ export function QuestionContent({
       <div className="space-y-3">
         <label className="text-sm font-medium text-gray-900">
           Question Text ({language.toUpperCase()})
+          {question.questionType === "TEXT_INPUT" && (
+            <span className="text-muted-foreground font-normal ml-2">
+              (Optional if image is provided)
+            </span>
+          )}
         </label>
         <Textarea
           value={currentText}
@@ -158,6 +164,15 @@ export function QuestionContent({
           className="min-h-[100px] resize-none"
         />
       </div>
+
+      {/* Image Upload (only shown for TEXT_INPUT and only in EN language) */}
+      {question.questionType === "TEXT_INPUT" && language === "en" && (
+        <QuestionImageUploader
+          imageUrl={question.imageUrl}
+          onImageUpload={(url) => onChange("imageUrl", url)}
+          onImageRemove={() => onChange("imageUrl", "")}
+        />
+      )}
 
       {/* Ordering Instructions (only shown for ORDERING question type) */}
       {question.questionType === "ORDERING" && (

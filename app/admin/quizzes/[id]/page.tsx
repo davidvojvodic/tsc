@@ -80,6 +80,7 @@ export default async function QuizPage({
             text: question.text,
             text_sl: question.text_sl ?? undefined,
             text_hr: question.text_hr ?? undefined,
+            imageUrl: question.imageUrl ?? undefined,
             questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING",
             options: (question.questionType === "TEXT_INPUT" || question.questionType === "DROPDOWN" || question.questionType === "ORDERING" || question.questionType === "MATCHING") ? [] : question.options.map((option) => ({
               id: option.id,

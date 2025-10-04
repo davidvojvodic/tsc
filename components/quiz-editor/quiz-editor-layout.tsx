@@ -26,6 +26,7 @@ export interface Question {
   text: string;
   text_sl?: string;
   text_hr?: string;
+  imageUrl?: string;
   questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING";
   options: Option[];
   multipleChoiceData?: MultipleChoiceConfiguration;

@@ -156,6 +156,7 @@ const questionSchema = z.object({
   text: z.string(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
+  imageUrl: z.string().url().optional(),
   questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT", "DROPDOWN", "ORDERING", "MATCHING"]).default("SINGLE_CHOICE"),
   options: z.array(optionSchema).optional(),
   multipleChoiceData: multipleChoiceDataSchema.optional(),
@@ -164,12 +165,24 @@ const questionSchema = z.object({
   orderingData: orderingDataSchema.optional(),
   matchingData: matchingDataSchema.optional(),
 }).refine((data) => {
-  // Question must have text in at least one language
-  const hasQuestionText = (data.text && data.text.trim().length > 0) ||
-                         (data.text_sl && data.text_sl.trim().length > 0) ||
-                         (data.text_hr && data.text_hr.trim().length > 0);
-  if (!hasQuestionText) {
-    return false;
+  // For TEXT_INPUT questions: must have text OR imageUrl
+  if (data.questionType === "TEXT_INPUT") {
+    const hasQuestionText = (data.text && data.text.trim().length > 0) ||
+                           (data.text_sl && data.text_sl.trim().length > 0) ||
+                           (data.text_hr && data.text_hr.trim().length > 0);
+    const hasImageUrl = data.imageUrl && data.imageUrl.trim().length > 0;
+
+    if (!hasQuestionText && !hasImageUrl) {
+      return false;
+    }
+  } else {
+    // For all other question types: text is required
+    const hasQuestionText = (data.text && data.text.trim().length > 0) ||
+                           (data.text_sl && data.text_sl.trim().length > 0) ||
+                           (data.text_hr && data.text_hr.trim().length > 0);
+    if (!hasQuestionText) {
+      return false;
+    }
   }
 
   // Validation for single choice questions

@@ -161,6 +161,7 @@ interface Question {
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
+  imageUrl?: string | null;
   questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING";
   options?: Option[];
   multipleChoiceData?: MultipleChoiceData;
@@ -256,6 +257,7 @@ export function QuestionRenderer({
         text={question.text}
         text_sl={question.text_sl}
         text_hr={question.text_hr}
+        imageUrl={question.imageUrl}
         textInputData={question.textInputData}
         answer={typeof selectedAnswer === "string" ? selectedAnswer : ""}
         onAnswerChange={handleTextInputChange}

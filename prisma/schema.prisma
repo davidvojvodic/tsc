@@ -245,6 +245,7 @@ model Question {
   text             String       @db.Text
   text_sl          String?      @db.Text
   text_hr          String?      @db.Text
+  imageUrl         String?      @db.VarChar(2048)
   questionType     QuestionType @default(SINGLE_CHOICE)
   answersData      Json?
   migrationVersion Int          @default(1)

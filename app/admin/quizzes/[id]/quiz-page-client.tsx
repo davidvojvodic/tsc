@@ -65,6 +65,7 @@ export default function QuizPageClient({
             text: question.text,
             text_sl: question.text_sl,
             text_hr: question.text_hr,
+            imageUrl: question.imageUrl,
             questionType: question.questionType || "SINGLE_CHOICE", // Add questionType
             // Only include options for choice-based questions, not for TEXT_INPUT, DROPDOWN, ORDERING, or MATCHING
             ...(question.questionType !== "TEXT_INPUT" && question.questionType !== "DROPDOWN" && question.questionType !== "ORDERING" && question.questionType !== "MATCHING" && {

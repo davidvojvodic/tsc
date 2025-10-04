@@ -23,6 +23,7 @@ interface QuestionInput {
   text: string;
   text_sl?: string;
   text_hr?: string;
+  imageUrl?: string;
   questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING" | "DRAG_DROP_IMAGE";
   options?: OptionInput[]; // Made optional for TEXT_INPUT and DROPDOWN questions
   multipleChoiceData?: {
@@ -231,6 +232,7 @@ async function createQuestion(
       text: questionData.text,
       text_sl: questionData.text_sl,
       text_hr: questionData.text_hr,
+      imageUrl: questionData.imageUrl,
       questionType: questionData.questionType,
       answersData: answersData,
       quizId: quizId,

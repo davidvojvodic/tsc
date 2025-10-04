@@ -12,6 +12,7 @@ interface Question {
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
+  imageUrl?: string | null;
   questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING" | null;
   options?: {
     id: string;
@@ -102,6 +103,7 @@ export function QuizDetailPage({ quiz, language }: QuizDetailPageProps) {
     return {
       id: question.id,
       text: questionText || question.text,
+      imageUrl: question.imageUrl,
       questionType: question.questionType || "SINGLE_CHOICE",
       options: localizedOptions,
       multipleChoiceData: question.multipleChoiceData ?? undefined,

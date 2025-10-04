@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { AlertCircle, CheckCircle, Info } from "lucide-react";
+import Image from "next/image";
 
 interface TextInputData {
   inputType?: "text" | "number" | "email" | "url"; // Optional for backward compatibility
@@ -25,6 +26,7 @@ interface TextInputQuestionProps {
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
+  imageUrl?: string | null;
   textInputData: TextInputData;
   answer: string;
   onAnswerChange: (questionId: string, answer: string) => void;
@@ -81,6 +83,7 @@ export function TextInputQuestion({
   text,
   text_sl,
   text_hr,
+  imageUrl,
   textInputData,
   answer,
   onAnswerChange,
@@ -187,26 +190,42 @@ export function TextInputQuestion({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Question text */}
-      <div className="space-y-2">
-        <h3 className="text-xl font-medium">
-          {getLocalizedContent({ text, text_sl, text_hr }, "text", language)}
-        </h3>
-
-        {/* Input type info */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Info className="h-4 w-4" />
-          <span>{getInputTypeLabel()}</span>
-          {answer.trim() && (
-            <Badge
-              variant={isValid ? "default" : "destructive"}
-              className="text-xs"
-            >
-              {isValid ? "Valid" : "Invalid"}
-            </Badge>
-          )}
+      {/* Question Image (if provided) */}
+      {imageUrl && (
+        <div className="w-full max-w-2xl mx-auto">
+          <Image
+            src={imageUrl}
+            alt="Question image"
+            width={800}
+            height={600}
+            className="w-full h-auto rounded-lg border shadow-sm"
+            priority
+          />
         </div>
-      </div>
+      )}
+
+      {/* Question text (only show if text exists) */}
+      {text && text.trim() && (
+        <div className="space-y-2">
+          <h3 className="text-xl font-medium">
+            {getLocalizedContent({ text, text_sl, text_hr }, "text", language)}
+          </h3>
+
+          {/* Input type info */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Info className="h-4 w-4" />
+            <span>{getInputTypeLabel()}</span>
+            {answer.trim() && (
+              <Badge
+                variant={isValid ? "default" : "destructive"}
+                className="text-xs"
+              >
+                {isValid ? "Valid" : "Invalid"}
+              </Badge>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Input field */}
       <div className="space-y-2">

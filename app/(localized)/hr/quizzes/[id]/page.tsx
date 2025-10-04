@@ -43,7 +43,11 @@ export default async function QuizPage({
     ...quiz,
     questions: quiz.questions
       .map(question => ({
-        ...question,
+        id: question.id,
+        text: question.text,
+        text_sl: question.text_sl,
+        text_hr: question.text_hr,
+        imageUrl: question.imageUrl,
         questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING",
         options: question.options?.map(option => ({
           ...option,

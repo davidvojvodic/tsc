@@ -308,7 +308,7 @@ export function MatchingQuestion({
     switch (content.type) {
       case "image":
         return content.imageUrl ? (
-          <div className="relative w-full h-24 rounded-md overflow-hidden">
+          <div className="relative w-full h-32 rounded-md overflow-hidden">
             <Image
               src={content.imageUrl}
               alt={getLocalizedContent(content, "altText", language) || "Matching item"}
@@ -317,7 +317,7 @@ export function MatchingQuestion({
             />
           </div>
         ) : (
-          <div className="w-full h-24 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-sm">
+          <div className="w-full h-32 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-sm">
             No image
           </div>
         );
@@ -327,9 +327,9 @@ export function MatchingQuestion({
         const suffix = getLocalizedContent(content, "suffix", language);
 
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3">
             {content.imageUrl && (
-              <div className="relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
+              <div className="relative w-full h-32 rounded-md overflow-hidden">
                 <Image
                   src={content.imageUrl}
                   alt={getLocalizedContent(content, "altText", language) || "Matching item"}
@@ -338,10 +338,12 @@ export function MatchingQuestion({
                 />
               </div>
             )}
-            <div className="flex-1 text-sm">
-              {text && <span>{text}</span>}
-              {suffix && <span className="text-muted-foreground ml-1">{suffix}</span>}
-            </div>
+            {(text || suffix) && (
+              <div className="text-sm">
+                {text && <span>{text}</span>}
+                {suffix && <span className="text-muted-foreground ml-1">{suffix}</span>}
+              </div>
+            )}
           </div>
         );
 
@@ -477,12 +479,26 @@ export function MatchingQuestion({
 
               if (!leftItem || !rightItem) return null;
 
+              // Helper to get display text for connection
+              const getConnectionText = (item: MatchingItem) => {
+                const { content } = item;
+                if (content.type === "text") {
+                  return getLocalizedContent(content, "text", language);
+                } else if (content.type === "image") {
+                  return "[Image]";
+                } else if (content.type === "mixed") {
+                  const text = getLocalizedContent(content, "text", language);
+                  return text || "[Image]";
+                }
+                return "";
+              };
+
               return (
                 <div key={index} className="flex items-center justify-between text-sm bg-muted p-2 rounded">
                   <span className="flex-1 truncate">
-                    {getLocalizedContent(leftItem.content, "text", language)}
+                    {getConnectionText(leftItem)}
                     {' → '}
-                    {getLocalizedContent(rightItem.content, "text", language)}
+                    {getConnectionText(rightItem)}
                   </span>
                   {!disabled && (
                     <Button

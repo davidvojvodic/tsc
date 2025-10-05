@@ -118,8 +118,34 @@ export interface OrderingConfiguration {
   exactOrderRequired?: boolean;
 }
 
-// Matching content types - reuse the same content structure as Ordering
-export type MatchingItemContent = OrderingItemContent;
+// Matching content types - supports text, image, and mixed
+export type MatchingTextContent = {
+  type: "text";
+  text: string;
+  text_sl?: string;
+  text_hr?: string;
+};
+
+export type MatchingImageContent = {
+  type: "image";
+  imageUrl: string;
+  altText?: string;
+  altText_sl?: string;
+  altText_hr?: string;
+};
+
+export type MatchingMixedContent = {
+  type: "mixed";
+  text?: string;
+  text_sl?: string;
+  text_hr?: string;
+  imageUrl?: string;
+  suffix?: string;
+  suffix_sl?: string;
+  suffix_hr?: string;
+};
+
+export type MatchingItemContent = MatchingTextContent | MatchingImageContent | MatchingMixedContent;
 
 export interface MatchingItem {
   id: string;

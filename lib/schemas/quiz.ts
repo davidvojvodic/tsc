@@ -101,11 +101,44 @@ const orderingDataSchema = z.object({
   exactOrderRequired: z.boolean().default(true),
 });
 
-// Matching item schema - text only (similar to ordering but uses 'position' not 'correctPosition')
+// Matching content schemas - supports text, image, and mixed
+const matchingTextContentSchema = z.object({
+  type: z.literal("text"),
+  text: z.string().min(1, "Text content required"),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+});
+
+const matchingImageContentSchema = z.object({
+  type: z.literal("image"),
+  imageUrl: z.string().url().min(1, "Image URL required"),
+  altText: z.string().optional(),
+  altText_sl: z.string().optional(),
+  altText_hr: z.string().optional(),
+});
+
+const matchingMixedContentSchema = z.object({
+  type: z.literal("mixed"),
+  text: z.string().optional(),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+  imageUrl: z.string().url().optional(),
+  suffix: z.string().optional(),
+  suffix_sl: z.string().optional(),
+  suffix_hr: z.string().optional(),
+});
+
+const matchingItemContentSchema = z.discriminatedUnion("type", [
+  matchingTextContentSchema,
+  matchingImageContentSchema,
+  matchingMixedContentSchema,
+]);
+
+// Matching item schema - supports text, image, and mixed content
 const matchingItemSchema = z.object({
   id: z.string().min(1, "Item ID required"),
   position: z.number().int().positive(),
-  content: orderingTextContentSchema,
+  content: matchingItemContentSchema,
 });
 
 // Correct match schema

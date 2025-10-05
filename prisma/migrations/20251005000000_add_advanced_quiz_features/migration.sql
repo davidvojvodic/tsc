@@ -1,9 +1,9 @@
 -- AlterTable - Add new fields to question table
+-- Note: imageUrl may already exist from a previous deployment, so we add it conditionally
 ALTER TABLE `question`
   ADD COLUMN `questionType` ENUM('SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'TEXT_INPUT', 'DROPDOWN', 'ORDERING', 'MATCHING', 'DRAG_DROP_IMAGE') NOT NULL DEFAULT 'SINGLE_CHOICE',
   ADD COLUMN `answersData` JSON NULL,
-  ADD COLUMN `migrationVersion` INTEGER NOT NULL DEFAULT 1,
-  ADD COLUMN `imageUrl` VARCHAR(2048) NULL;
+  ADD COLUMN `migrationVersion` INTEGER NOT NULL DEFAULT 1;
 
 -- CreateIndex for questionType
 CREATE INDEX `question_questionType_idx` ON `question`(`questionType`);

@@ -740,8 +740,8 @@ export function scoreQuestion(
         item !== null &&
         'leftId' in item &&
         'rightId' in item &&
-        typeof (item as any).leftId === 'string' &&
-        typeof (item as any).rightId === 'string'
+        typeof (item as Record<string, unknown>).leftId === 'string' &&
+        typeof (item as Record<string, unknown>).rightId === 'string'
       );
     };
 

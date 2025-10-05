@@ -244,7 +244,14 @@ export function MatchingConfigurationEditor({
 
   // Get item label for display
   const getItemLabel = (item: MatchingItem) => {
-    return item.content.text || item.id;
+    if (item.content.type === "text") {
+      return item.content.text || item.id;
+    } else if (item.content.type === "image") {
+      return "[Image]";
+    } else if (item.content.type === "mixed") {
+      return item.content.text || "[Image]";
+    }
+    return item.id;
   };
 
   // Validation warnings
@@ -604,7 +611,7 @@ export function MatchingConfigurationEditor({
             <Alert>
               <HelpCircle className="h-4 w-4" />
               <AlertDescription>
-                No matches defined yet. Click "Add Match" to define correct matches between left and right items.
+                No matches defined yet. Click &quot;Add Match&quot; to define correct matches between left and right items.
               </AlertDescription>
             </Alert>
           )}
@@ -712,26 +719,26 @@ function ItemEditor({
     setContentType(newType);
 
     if (newType === "text") {
-      const newContent: MatchingItemContent = {
+      const newContent: MatchingTextContent = {
         type: "text",
-        text: item.content.text || "",
-        text_sl: item.content.text_sl || "",
-        text_hr: item.content.text_hr || "",
+        text: item.content.type === "text" || item.content.type === "mixed" ? (item.content.text || "") : "",
+        text_sl: item.content.type === "text" || item.content.type === "mixed" ? (item.content.text_sl || "") : "",
+        text_hr: item.content.type === "text" || item.content.type === "mixed" ? (item.content.text_hr || "") : "",
       };
       onUpdate({ content: newContent });
     } else if (newType === "image") {
-      const newContent: MatchingItemContent = {
+      const newContent: MatchingImageContent = {
         type: "image",
-        imageUrl: (item.content as any).imageUrl || "",
+        imageUrl: item.content.type === "image" || item.content.type === "mixed" ? (item.content.imageUrl || "") : "",
       };
       onUpdate({ content: newContent });
     } else if (newType === "mixed") {
-      const newContent: MatchingItemContent = {
+      const newContent: MatchingMixedContent = {
         type: "mixed",
-        text: item.content.text || "",
-        text_sl: item.content.text_sl || "",
-        text_hr: item.content.text_hr || "",
-        imageUrl: (item.content as any).imageUrl || "",
+        text: item.content.type === "text" || item.content.type === "mixed" ? (item.content.text || "") : "",
+        text_sl: item.content.type === "text" || item.content.type === "mixed" ? (item.content.text_sl || "") : "",
+        text_hr: item.content.type === "text" || item.content.type === "mixed" ? (item.content.text_hr || "") : "",
+        imageUrl: item.content.type === "image" || item.content.type === "mixed" ? (item.content.imageUrl || "") : "",
       };
       onUpdate({ content: newContent });
     }
@@ -819,7 +826,7 @@ function ItemEditor({
             <TabsContent value="en" className="space-y-2">
               <Label>{contentType === "mixed" ? "Text (EN)" : "Text Content (EN)"}</Label>
               <Textarea
-                value={item.content.text || ""}
+                value={(item.content.type === "text" || item.content.type === "mixed") ? (item.content.text || "") : ""}
                 onChange={(e) => updateTextContent({ text: e.target.value })}
                 placeholder="Enter item text..."
                 className="min-h-[80px]"
@@ -828,7 +835,7 @@ function ItemEditor({
             <TabsContent value="sl" className="space-y-2">
               <Label>{contentType === "mixed" ? "Text (SL)" : "Text Content (SL)"}</Label>
               <Textarea
-                value={item.content.text_sl || ""}
+                value={(item.content.type === "text" || item.content.type === "mixed") ? (item.content.text_sl || "") : ""}
                 onChange={(e) => updateTextContent({ text_sl: e.target.value })}
                 placeholder="Enter item text in Slovenian..."
                 className="min-h-[80px]"
@@ -837,7 +844,7 @@ function ItemEditor({
             <TabsContent value="hr" className="space-y-2">
               <Label>{contentType === "mixed" ? "Text (HR)" : "Text Content (HR)"}</Label>
               <Textarea
-                value={item.content.text_hr || ""}
+                value={(item.content.type === "text" || item.content.type === "mixed") ? (item.content.text_hr || "") : ""}
                 onChange={(e) => updateTextContent({ text_hr: e.target.value })}
                 placeholder="Enter item text in Croatian..."
                 className="min-h-[80px]"
@@ -850,7 +857,7 @@ function ItemEditor({
         {(contentType === "image" || contentType === "mixed") && (
           <div className="space-y-2">
             <QuestionImageUploader
-              imageUrl={(item.content as any).imageUrl}
+              imageUrl={(item.content.type === "image" || item.content.type === "mixed") ? item.content.imageUrl : undefined}
               onImageUpload={updateImage}
               onImageRemove={removeImage}
             />

@@ -241,19 +241,26 @@ model Quiz {
 }
 
 model Question {
-  id              String   @id @default(uuid())
-  text            String   @db.Text
-  text_sl         String?  @db.Text
-  text_hr         String?  @db.Text
-  quizId          String
-  correctOptionId String?  @unique
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  options         Option[] @relation("QuestionOptions")
-  correctOption   Option?  @relation("CorrectAnswer", fields: [correctOptionId], references: [id])
-  quiz            Quiz     @relation(fields: [quizId], references: [id])
+  id               String       @id @default(uuid())
+  text             String       @db.Text
+  text_sl          String?      @db.Text
+  text_hr          String?      @db.Text
+  imageUrl         String?      @db.VarChar(2048)
+  questionType     QuestionType @default(SINGLE_CHOICE)
+  answersData      Json?
+  migrationVersion Int          @default(1)
+  quizId           String
+  correctOptionId  String?      @unique
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  options          Option[]     @relation("QuestionOptions")
+  correctOption    Option?      @relation("CorrectAnswer", fields: [correctOptionId], references: [id])
+  quiz             Quiz         @relation(fields: [quizId], references: [id])
 
   @@index([quizId])
+  @@index([questionType])
+  @@index([migrationVersion])
+  @@index([quizId, questionType])
   @@map("question")
 }
 
@@ -482,10 +489,35 @@ model ContactSubmission {
   @@map("contact_submission")
 }
 
+model MigrationAudit {
+  id             String   @id @default(uuid())
+  tableName      String   @db.VarChar(100)
+  operation      String   @db.VarChar(50)
+  oldData        Json?
+  newData        Json?
+  migrationPhase Int
+  createdAt      DateTime @default(now())
+  userId         String?
+
+  @@index([tableName, migrationPhase])
+  @@index([createdAt])
+  @@map("migration_audit")
+}
+
 enum Role {
   USER
   ADMIN
   TEACHER
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TEXT_INPUT
+  DROPDOWN
+  ORDERING
+  MATCHING
+  DRAG_DROP_IMAGE
 }
 
 enum MediaType {

@@ -34,6 +34,24 @@ async function getQuizWithSubmissions(quizId: string) {
       questions: {
         select: {
           id: true,
+          text: true,
+          text_sl: true,
+          text_hr: true,
+          questionType: true,
+          answersData: true,
+          createdAt: true,
+          options: {
+            select: {
+              id: true,
+              text: true,
+              text_sl: true,
+              text_hr: true,
+              correct: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "asc",
         },
       },
       submissions: {
@@ -79,6 +97,103 @@ export default async function QuizSubmissionsPage({
     redirect("/admin/quizzes");
   }
 
+  // Create lookup maps for questions, options, ordering/matching/dropdown items
+  const questionsMap = new Map();
+  const optionsMap = new Map();
+  const orderingItemsMap = new Map(); // Map of questionId -> Map of itemId -> item content text
+  const matchingItemsMap = new Map(); // Map of questionId -> { leftItems: Map, rightItems: Map }
+  const dropdownDataMap = new Map(); // Map of questionId -> dropdown configuration
+
+  quiz.questions.forEach((question, index) => {
+    questionsMap.set(question.id, {
+      ...question,
+      displayOrder: index + 1, // For proper ordering in display
+    });
+
+    question.options.forEach((option) => {
+      optionsMap.set(option.id, option);
+    });
+
+    // Handle ORDERING questions - build a map of item IDs to their content
+    if (question.questionType === "ORDERING" && question.answersData) {
+      const orderingData = question.answersData as Record<string, unknown>;
+      if (orderingData.items && Array.isArray(orderingData.items)) {
+        const itemsMap = new Map();
+        orderingData.items.forEach((item: Record<string, unknown>) => {
+          // Get the text content based on item type
+          let contentText = "";
+          const content = item.content as Record<string, unknown>;
+          const contentType = content.type as string;
+
+          if (contentType === "text") {
+            contentText = (content.text as string) || (item.id as string);
+          } else if (contentType === "image") {
+            contentText = (content.altText as string) || "Image";
+          } else if (contentType === "mixed") {
+            contentText = (content.text as string) || "Mixed content";
+          }
+          itemsMap.set(item.id as string, {
+            text: contentText,
+            correctPosition: item.correctPosition as number
+          });
+        });
+        orderingItemsMap.set(question.id, itemsMap);
+      }
+    }
+
+    // Handle MATCHING questions - build maps for left and right items
+    if (question.questionType === "MATCHING" && question.answersData) {
+      const matchingData = question.answersData as Record<string, unknown>;
+      const leftItems = new Map();
+      const rightItems = new Map();
+
+      // Process left items
+      if (matchingData.leftItems && Array.isArray(matchingData.leftItems)) {
+        matchingData.leftItems.forEach((item: Record<string, unknown>) => {
+          const content = item.content as Record<string, unknown>;
+          const contentType = content.type as string;
+          let contentText = "";
+
+          if (contentType === "text") {
+            contentText = (content.text as string) || (item.id as string);
+          } else if (contentType === "image") {
+            contentText = (content.altText as string) || "Image";
+          } else if (contentType === "mixed") {
+            contentText = (content.text as string) || "Mixed content";
+          }
+
+          leftItems.set(item.id as string, contentText);
+        });
+      }
+
+      // Process right items
+      if (matchingData.rightItems && Array.isArray(matchingData.rightItems)) {
+        matchingData.rightItems.forEach((item: Record<string, unknown>) => {
+          const content = item.content as Record<string, unknown>;
+          const contentType = content.type as string;
+          let contentText = "";
+
+          if (contentType === "text") {
+            contentText = (content.text as string) || (item.id as string);
+          } else if (contentType === "image") {
+            contentText = (content.altText as string) || "Image";
+          } else if (contentType === "mixed") {
+            contentText = (content.text as string) || "Mixed content";
+          }
+
+          rightItems.set(item.id as string, contentText);
+        });
+      }
+
+      matchingItemsMap.set(question.id, { leftItems, rightItems });
+    }
+
+    // Handle DROPDOWN questions - store the dropdown configuration
+    if (question.questionType === "DROPDOWN" && question.answersData) {
+      dropdownDataMap.set(question.id, question.answersData);
+    }
+  });
+
   // Calculate statistics
   const totalSubmissions = quiz.submissions.length;
   const averageScore = totalSubmissions > 0
@@ -92,20 +207,246 @@ export default async function QuizSubmissionsPage({
     : 0;
 
   // Format submissions for the data table
-  const formattedSubmissions = quiz.submissions.map((submission) => ({
-    id: submission.id,
-    userName: submission.user.name || "Unknown",
-    userEmail: submission.user.email,
-    score: submission.score,
-    submittedAt: format(submission.createdAt, "PPpp"),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    answers: (submission.answers as any[]).map((answer) => ({
-      questionId: answer.questionId,
-      selectedOptionId: answer.selectedOptionId,
-      correctOptionId: answer.correctOptionId,
-      isCorrect: answer.isCorrect,
-    })) as QuizAnswer[],
-  }));
+  const formattedSubmissions = quiz.submissions.map((submission) => {
+    // Handle the answers structure - it's stored as JSON object, not array
+    const submissionData = submission.answers as Record<string, unknown>;
+    let answersArray: QuizAnswer[] = [];
+
+    if (submissionData) {
+      const scoreDetails = submissionData.scoreDetails as Record<string, unknown> | undefined;
+      const questionResults = scoreDetails?.questionResults as Record<string, unknown>[] | undefined;
+
+      if (submissionData.version === "2.0" && questionResults) {
+        // New format with detailed scoring
+        answersArray = questionResults.map((result: Record<string, unknown>) => {
+          const question = questionsMap.get(result.questionId as string);
+          const selectedAnswerIds = Array.isArray(result.selectedAnswers) ? result.selectedAnswers as string[] : [result.selectedAnswers as string];
+          const correctAnswerIds = Array.isArray(result.correctAnswers) ? result.correctAnswers as string[] : [result.correctAnswers as string];
+
+          // Handle different question types differently
+          let selectedAnswersText: string[];
+          let correctAnswersText: string[];
+
+          if (question?.questionType === "TEXT_INPUT") {
+            // For TEXT_INPUT questions, the answers are direct text values, not option IDs
+            selectedAnswersText = selectedAnswerIds.filter(Boolean);
+            correctAnswersText = correctAnswerIds.filter(Boolean);
+          } else if (question?.questionType === "ORDERING") {
+            // For ORDERING questions, map item IDs to their content text and show positions
+            const itemsMap = orderingItemsMap.get(result.questionId);
+            selectedAnswersText = selectedAnswerIds.map((id: string, index: number) => {
+              const item = itemsMap?.get(id);
+              return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
+            correctAnswersText = correctAnswerIds.map((id: string, index: number) => {
+              const item = itemsMap?.get(id);
+              return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
+          } else if (question?.questionType === "MATCHING") {
+            // For MATCHING questions, format connections as "Left Item → Right Item"
+            const items = matchingItemsMap.get(result.questionId);
+            const leftItems = items?.leftItems || new Map();
+            const rightItems = items?.rightItems || new Map();
+
+            // Selected answers are connection objects
+            selectedAnswersText = selectedAnswerIds.map((answer: unknown) => {
+              if (typeof answer === 'object' && answer !== null && 'leftId' in answer && 'rightId' in answer) {
+                const connection = answer as { leftId: string; rightId: string };
+                const leftText = leftItems.get(connection.leftId) || connection.leftId;
+                const rightText = rightItems.get(connection.rightId) || connection.rightId;
+                return `${leftText} → ${rightText}`;
+              }
+              return String(answer);
+            });
+
+            // Correct answers are also connection objects
+            correctAnswersText = correctAnswerIds.map((answer: unknown) => {
+              if (typeof answer === 'object' && answer !== null && 'leftId' in answer && 'rightId' in answer) {
+                const connection = answer as { leftId: string; rightId: string };
+                const leftText = leftItems.get(connection.leftId) || connection.leftId;
+                const rightText = rightItems.get(connection.rightId) || connection.rightId;
+                return `${leftText} → ${rightText}`;
+              }
+              return String(answer);
+            });
+          } else if (question?.questionType === "DROPDOWN") {
+            // For DROPDOWN questions, format as "dropdown_label: selected_option"
+            const dropdownData = dropdownDataMap.get(result.questionId) as Record<string, unknown> | undefined;
+            const dropdowns = dropdownData?.dropdowns as Array<{
+              id: string;
+              label: string;
+              options: Array<{ id: string; text: string; isCorrect: boolean }>;
+            }> | undefined;
+
+            // Selected answers are objects like { dropdownId: optionId }
+            selectedAnswersText = [];
+            correctAnswersText = [];
+
+            if (typeof selectedAnswerIds[0] === 'object' && selectedAnswerIds[0] !== null) {
+              const selections = selectedAnswerIds[0] as Record<string, string>;
+              dropdowns?.forEach(dropdown => {
+                const selectedOptionId = selections[dropdown.id];
+                const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId);
+                selectedAnswersText.push(`${dropdown.label}: ${selectedOption?.text || selectedOptionId}`);
+              });
+            }
+
+            if (typeof correctAnswerIds[0] === 'object' && correctAnswerIds[0] !== null) {
+              const correctSelections = correctAnswerIds[0] as Record<string, string>;
+              dropdowns?.forEach(dropdown => {
+                const correctOptionId = correctSelections[dropdown.id];
+                const correctOption = dropdown.options.find(opt => opt.id === correctOptionId);
+                correctAnswersText.push(`${dropdown.label}: ${correctOption?.text || correctOptionId || ''}`);
+              });
+            }
+          } else {
+            // For choice questions, look up option text by ID
+            selectedAnswersText = selectedAnswerIds.map((id: string) => {
+              const option = optionsMap.get(id);
+              return option?.text || id;
+            });
+            correctAnswersText = correctAnswerIds.map((id: string) => {
+              const option = optionsMap.get(id);
+              return option?.text || id;
+            });
+          }
+
+          return {
+            questionId: result.questionId as string,
+            questionText: question?.text || `Question ${question?.displayOrder || '?'}`,
+            questionOrder: question?.displayOrder || 0,
+            questionType: question?.questionType || 'UNKNOWN',
+            selectedOptionId: Array.isArray(result.selectedAnswers) ? null : (result.selectedAnswers as string | null),
+            selectedAnswers: selectedAnswerIds,
+            selectedAnswersText,
+            correctAnswers: correctAnswerIds,
+            correctAnswersText,
+            isCorrect: result.isCorrect as boolean,
+            score: result.score as number | undefined,
+            maxScore: result.maxScore as number | undefined,
+          };
+        });
+      } else if (Array.isArray(submissionData)) {
+        // Legacy format (array)
+        answersArray = submissionData.map((answer: Record<string, unknown>) => {
+          const question = questionsMap.get(answer.questionId as string);
+
+          // Handle different question types differently for legacy format
+          let selectedAnswersText: string[];
+          let correctAnswersText: string[];
+
+          if (question?.questionType === "TEXT_INPUT") {
+            // For TEXT_INPUT questions, use the answer values directly
+            selectedAnswersText = [(answer.selectedOptionId as string) || ''];
+            correctAnswersText = [(answer.correctOptionId as string) || ''];
+          } else if (question?.questionType === "ORDERING") {
+            // For ORDERING questions in legacy format - unlikely but handle it
+            const itemsMap = orderingItemsMap.get(answer.questionId as string);
+            const selectedIds = Array.isArray(answer.selectedOptionId) ? answer.selectedOptionId as string[] : [answer.selectedOptionId as string];
+            const correctIds = Array.isArray(answer.correctOptionId) ? answer.correctOptionId as string[] : [answer.correctOptionId as string];
+
+            selectedAnswersText = selectedIds.map((id: string, index: number) => {
+              const item = itemsMap?.get(id);
+              return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
+            correctAnswersText = correctIds.map((id: string, index: number) => {
+              const item = itemsMap?.get(id);
+              return item ? `${index + 1}. ${item.text}` : `${index + 1}. ${id}`;
+            });
+          } else if (question?.questionType === "MATCHING") {
+            // For MATCHING questions in legacy format - unlikely but handle it
+            const items = matchingItemsMap.get(answer.questionId as string);
+            const leftItems = items?.leftItems || new Map();
+            const rightItems = items?.rightItems || new Map();
+
+            const selectedConnections = Array.isArray(answer.selectedOptionId)
+              ? answer.selectedOptionId as unknown[]
+              : [answer.selectedOptionId];
+            const correctConnections = Array.isArray(answer.correctOptionId)
+              ? answer.correctOptionId as unknown[]
+              : [answer.correctOptionId];
+
+            selectedAnswersText = selectedConnections.map((conn: unknown) => {
+              if (typeof conn === 'object' && conn !== null && 'leftId' in conn && 'rightId' in conn) {
+                const connection = conn as { leftId: string; rightId: string };
+                const leftText = leftItems.get(connection.leftId) || connection.leftId;
+                const rightText = rightItems.get(connection.rightId) || connection.rightId;
+                return `${leftText} → ${rightText}`;
+              }
+              return String(conn);
+            });
+
+            correctAnswersText = correctConnections.map((conn: unknown) => {
+              if (typeof conn === 'object' && conn !== null && 'leftId' in conn && 'rightId' in conn) {
+                const connection = conn as { leftId: string; rightId: string };
+                const leftText = leftItems.get(connection.leftId) || connection.leftId;
+                const rightText = rightItems.get(connection.rightId) || connection.rightId;
+                return `${leftText} → ${rightText}`;
+              }
+              return String(conn);
+            });
+          } else if (question?.questionType === "DROPDOWN") {
+            // For DROPDOWN questions in legacy format
+            const dropdownData = dropdownDataMap.get(answer.questionId as string) as Record<string, unknown> | undefined;
+            const dropdowns = dropdownData?.dropdowns as Array<{
+              id: string;
+              label: string;
+              options: Array<{ id: string; text: string; isCorrect: boolean }>;
+            }> | undefined;
+
+            selectedAnswersText = [];
+            correctAnswersText = [];
+
+            if (typeof answer.selectedOptionId === 'object' && answer.selectedOptionId !== null) {
+              const selections = answer.selectedOptionId as Record<string, string>;
+              dropdowns?.forEach(dropdown => {
+                const selectedOptionId = selections[dropdown.id];
+                const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId);
+                selectedAnswersText.push(`${dropdown.label}: ${selectedOption?.text || selectedOptionId}`);
+              });
+            }
+
+            if (typeof answer.correctOptionId === 'object' && answer.correctOptionId !== null) {
+              const correctSelections = answer.correctOptionId as Record<string, string[]>;
+              dropdowns?.forEach(dropdown => {
+                const correctOptionIds = correctSelections[dropdown.id] || [];
+                const correctOptions = dropdown.options.filter(opt => correctOptionIds.includes(opt.id));
+                correctAnswersText.push(`${dropdown.label}: ${correctOptions.map(opt => opt.text).join(', ')}`);
+              });
+            }
+          } else {
+            // For choice questions, look up option text by ID
+            const selectedOption = optionsMap.get(answer.selectedOptionId as string);
+            const correctOption = optionsMap.get(answer.correctOptionId as string);
+            selectedAnswersText = [selectedOption?.text || (answer.selectedOptionId as string)];
+            correctAnswersText = [correctOption?.text || (answer.correctOptionId as string)];
+          }
+
+          return {
+            questionId: answer.questionId as string,
+            questionText: question?.text || `Question ${question?.displayOrder || '?'}`,
+            questionOrder: question?.displayOrder || 0,
+            questionType: question?.questionType || 'UNKNOWN',
+            selectedOptionId: answer.selectedOptionId as string | null,
+            selectedAnswers: [answer.selectedOptionId as string],
+            selectedAnswersText,
+            correctAnswers: [answer.correctOptionId as string],
+            correctAnswersText,
+            isCorrect: answer.isCorrect as boolean,
+          };
+        });
+      }
+    }
+
+    return {
+      id: submission.id,
+      userName: submission.user.name || "Unknown",
+      userEmail: submission.user.email,
+      score: submission.score,
+      submittedAt: format(submission.createdAt, "PPpp"),
+      answers: answersArray,
+    };
+  });
 
   return (
     <div className="flex-col">

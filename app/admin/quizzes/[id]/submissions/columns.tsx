@@ -16,9 +16,17 @@ import { CheckCircle2, XCircle } from "lucide-react";
 
 export interface QuizAnswer {
   questionId: string;
-  selectedOptionId: string;
-  correctOptionId: string;
+  questionText?: string;
+  questionOrder?: number;
+  questionType?: string;
+  selectedOptionId?: string | null; // For single choice questions
+  selectedAnswers?: string[]; // For multiple choice or text input (IDs)
+  selectedAnswersText?: string[]; // Human readable selected answers
+  correctAnswers?: string[]; // All correct answers (IDs)
+  correctAnswersText?: string[]; // Human readable correct answers
   isCorrect: boolean;
+  score?: number;
+  maxScore?: number;
 }
 
 export type SubmissionColumn = {
@@ -83,7 +91,9 @@ export const submissionColumns: ColumnDef<SubmissionColumn>[] = [
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              {answers.map((answer, index) => (
+              {answers
+                .sort((a, b) => (a.questionOrder || 0) - (b.questionOrder || 0))
+                .map((answer) => (
                 <div
                   key={answer.questionId}
                   className="flex items-start gap-3 rounded-lg border p-4"
@@ -95,13 +105,28 @@ export const submissionColumns: ColumnDef<SubmissionColumn>[] = [
                   )}
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      Question {index + 1}
+                      {answer.questionText || `Question ${answer.questionOrder || '?'}`}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {answer.isCorrect 
-                        ? "Correct answer selected"
-                        : "Incorrect answer selected"}
-                    </p>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <p>
+                        {answer.isCorrect
+                          ? "Correct answer"
+                          : "Incorrect answer"}
+                        {answer.score !== undefined && answer.maxScore !== undefined &&
+                          ` (${answer.score}/${answer.maxScore} points)`
+                        }
+                      </p>
+                      {answer.selectedAnswersText && answer.selectedAnswersText.length > 0 && (
+                        <p>
+                          <strong>Answer:</strong> {answer.selectedAnswersText.join(", ")}
+                        </p>
+                      )}
+                      {answer.correctAnswersText && answer.correctAnswersText.length > 0 && (
+                        <p>
+                          <strong>Correct Answer:</strong> {answer.correctAnswersText.join(", ")}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

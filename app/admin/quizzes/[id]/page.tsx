@@ -1,8 +1,9 @@
 import prisma from "@/lib/prisma";
-import { QuizForm } from "@/components/forms/quiz-form";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { MultipleChoiceDataType, TextInputDataType, DropdownDataType, OrderingDataType, MatchingDataType } from "@/lib/schemas/quiz";
+import QuizPageClient from "./quiz-page-client";
 
 export default async function QuizPage({
   params,
@@ -56,7 +57,7 @@ export default async function QuizPage({
                 },
               },
               orderBy: {
-                id: "asc",
+                createdAt: "asc",
               },
             },
           },
@@ -67,25 +68,51 @@ export default async function QuizPage({
     ? {
         id: quiz.id,
         title: quiz.title,
-        description: quiz.description,
+        title_sl: quiz.title_sl ?? undefined,
+        title_hr: quiz.title_hr ?? undefined,
+        description: quiz.description ?? "",
+        description_sl: quiz.description_sl ?? undefined,
+        description_hr: quiz.description_hr ?? undefined,
         teacherId: quiz.teacherId,
-        questions: quiz.questions.map((question) => ({
-          id: question.id,
-          text: question.text,
-          options: question.options.map((option) => ({
-            id: option.id,
-            text: option.text,
-            correct: option.correct,
+        questions: quiz.questions
+          .map((question) => ({
+            id: question.id,
+            text: question.text,
+            text_sl: question.text_sl ?? undefined,
+            text_hr: question.text_hr ?? undefined,
+            imageUrl: question.imageUrl ?? undefined,
+            questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING",
+            options: (question.questionType === "TEXT_INPUT" || question.questionType === "DROPDOWN" || question.questionType === "ORDERING" || question.questionType === "MATCHING") ? [] : question.options.map((option) => ({
+              id: option.id,
+              text: option.text,
+              text_sl: option.text_sl ?? undefined,
+              text_hr: option.text_hr ?? undefined,
+              isCorrect: option.correct,
+            })),
+            multipleChoiceData: question.questionType === "MULTIPLE_CHOICE" && question.answersData
+              ? (question.answersData as MultipleChoiceDataType)
+              : undefined,
+            textInputData: question.questionType === "TEXT_INPUT" && question.answersData
+              ? (question.answersData as TextInputDataType)
+              : undefined,
+            dropdownData: question.questionType === "DROPDOWN" && question.answersData
+              ? (question.answersData as DropdownDataType)
+              : undefined,
+            orderingData: question.questionType === "ORDERING" && question.answersData
+              ? (question.answersData as OrderingDataType)
+              : undefined,
+            matchingData: question.questionType === "MATCHING" && question.answersData
+              ? (question.answersData as MatchingDataType)
+              : undefined,
           })),
-        })),
       }
     : undefined;
 
   return (
-    <div className="flex-col">
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <QuizForm teachers={teachers} initialData={formattedQuiz} />
-      </div>
-    </div>
+    <QuizPageClient
+      teachers={teachers}
+      initialData={formattedQuiz}
+      quizId={id}
+    />
   );
 }

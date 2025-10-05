@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { headers } from "next/headers";
 import { Prisma } from "@prisma/client"; // Import Prisma types
+import { quizSchema } from "@/lib/schemas/quiz"; // Import centralized schema
 
 // ----------------------
 // TypeScript Interfaces
@@ -14,54 +15,162 @@ import { Prisma } from "@prisma/client"; // Import Prisma types
 interface OptionInput {
   id?: string; // Optional for existing options
   text: string;
-  correct: boolean;
+  text_sl?: string;
+  text_hr?: string;
+  isCorrect: boolean; // Changed from 'correct' to match form data
 }
 
 interface QuestionInput {
   id?: string; // Optional for existing questions
   text: string;
-  options: OptionInput[];
+  text_sl?: string;
+  text_hr?: string;
+  imageUrl?: string;
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING" | "DRAG_DROP_IMAGE";
+  options?: OptionInput[]; // Made optional for TEXT_INPUT and DROPDOWN questions
+  multipleChoiceData?: {
+    scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
+    minSelections: number;
+    maxSelections?: number;
+    partialCreditRules?: {
+      correctSelectionPoints: number;
+      incorrectSelectionPenalty: number;
+      minScore: number;
+    };
+  };
+  textInputData?: {
+    inputType?: "text" | "number" | "email" | "url"; // Optional for backward compatibility
+    acceptableAnswers: string[];
+    caseSensitive: boolean;
+    numericTolerance?: number;
+    placeholder?: string;
+    placeholder_sl?: string;
+    placeholder_hr?: string;
+  };
+  dropdownData?: {
+    template: string;
+    template_sl?: string;
+    template_hr?: string;
+    dropdowns: Array<{
+      id: string;
+      label: string;
+      label_sl?: string;
+      label_hr?: string;
+      options: Array<{
+        id: string;
+        text: string;
+        text_sl?: string;
+        text_hr?: string;
+        isCorrect: boolean;
+      }>;
+    }>;
+    scoring?: {
+      pointsPerDropdown: number;
+      requireAllCorrect: boolean;
+      penalizeIncorrect: boolean;
+    };
+  };
+  orderingData?: {
+    instructions: string;
+    instructions_sl?: string;
+    instructions_hr?: string;
+    items: Array<{
+      id: string;
+      content: {
+        type: "text" | "image" | "mixed";
+        text?: string;
+        text_sl?: string;
+        text_hr?: string;
+        imageUrl?: string;
+        altText?: string;
+        altText_sl?: string;
+        altText_hr?: string;
+        suffix?: string;
+        suffix_sl?: string;
+        suffix_hr?: string;
+      };
+      correctPosition: number;
+    }>;
+    allowPartialCredit?: boolean;
+    exactOrderRequired?: boolean;
+  };
+  matchingData?: {
+    instructions: string;
+    instructions_sl?: string;
+    instructions_hr?: string;
+    matchingType: "one-to-one";
+    leftItems: Array<{
+      id: string;
+      position: number;
+      content: {
+        type: "text" | "image" | "mixed";
+        text?: string;
+        text_sl?: string;
+        text_hr?: string;
+        imageUrl?: string;
+        altText?: string;
+        altText_sl?: string;
+        altText_hr?: string;
+        suffix?: string;
+        suffix_sl?: string;
+        suffix_hr?: string;
+      };
+    }>;
+    rightItems: Array<{
+      id: string;
+      position: number;
+      content: {
+        type: "text" | "image" | "mixed";
+        text?: string;
+        text_sl?: string;
+        text_hr?: string;
+        imageUrl?: string;
+        altText?: string;
+        altText_sl?: string;
+        altText_hr?: string;
+        suffix?: string;
+        suffix_sl?: string;
+        suffix_hr?: string;
+      };
+    }>;
+    correctMatches: Array<{
+      leftId: string;
+      rightId: string;
+      explanation?: string;
+      explanation_sl?: string;
+      explanation_hr?: string;
+    }>;
+    distractors?: string[];
+    scoring?: {
+      pointsPerMatch: number;
+      penalizeIncorrect: boolean;
+      penaltyPerIncorrect: number;
+      requireAllMatches: boolean;
+      partialCredit: boolean;
+    };
+    display?: {
+      connectionStyle: "line" | "arrow" | "dashed";
+      connectionColor: string;
+      correctColor: string;
+      incorrectColor: string;
+      showConnectionLabels: boolean;
+      animateConnections: boolean;
+    };
+  };
 }
 
 interface QuizInput {
   title: string;
+  title_sl?: string;
+  title_hr?: string;
   description?: string;
+  description_sl?: string;
+  description_hr?: string;
   teacherId: string;
   questions: QuestionInput[];
 }
 
-// ----------------------
-// Zod Validation Schemas
-// ----------------------
-
-const optionSchema = z.object({
-  id: z.string().uuid().optional(),
-  text: z.string().min(1, "Option text is required"),
-  correct: z.boolean(),
-});
-
-const questionSchema = z.object({
-  id: z.string().uuid().optional(),
-  text: z.string().min(1, "Question text is required"),
-  options: z
-    .array(optionSchema)
-    .min(2, "At least 2 options are required")
-    .refine(
-      (options) => options.filter((opt) => opt.correct).length === 1,
-      {
-        message: "Exactly one option must be marked as correct",
-      }
-    ),
-});
-
-const quizSchema = z.object({
-  title: z.string().min(2, "Title must be at least 2 characters long"),
-  description: z.string().optional(),
-  teacherId: z.string().min(1, "Please select a teacher"),
-  questions: z
-    .array(questionSchema)
-    .min(1, "At least 1 question is required"),
-});
+// Note: Using centralized schema validation from @/lib/schemas/quiz
 
 // ----------------------
 // Helper Functions
@@ -93,39 +202,62 @@ async function createQuestion(
   quizId: string,
   questionData: QuestionInput
 ) {
+  // Prepare answersData for different question types
+  let answersData = undefined;
+  if (questionData.questionType === "MULTIPLE_CHOICE" && questionData.multipleChoiceData) {
+    answersData = questionData.multipleChoiceData;
+  } else if (questionData.questionType === "TEXT_INPUT" && questionData.textInputData) {
+    answersData = questionData.textInputData;
+  } else if (questionData.questionType === "DROPDOWN" && questionData.dropdownData) {
+    answersData = questionData.dropdownData;
+  } else if (questionData.questionType === "ORDERING" && questionData.orderingData) {
+    answersData = questionData.orderingData;
+  } else if (questionData.questionType === "MATCHING" && questionData.matchingData) {
+    answersData = questionData.matchingData;
+  }
+
   // Step 1: Create the question without setting correctOptionId
   const question = await tx.question.create({
     data: {
       text: questionData.text,
+      text_sl: questionData.text_sl,
+      text_hr: questionData.text_hr,
+      imageUrl: questionData.imageUrl,
+      questionType: questionData.questionType,
+      answersData: answersData,
       quizId: quizId,
-      // correctOptionId is optional and will be set later
+      // correctOptionId is optional and will be set later for SINGLE_CHOICE
     },
   });
 
-  // Step 2: Create all options associated with the question
-  const options = await Promise.all(
+  // Step 2: Create all options associated with the question (if any)
+  const options = questionData.options ? await Promise.all(
     questionData.options.map((opt) =>
       tx.option.create({
         data: {
           text: opt.text,
-          correct: opt.correct,
+          text_sl: opt.text_sl,
+          text_hr: opt.text_hr,
+          correct: opt.isCorrect, // Map isCorrect to correct field in database
           questionId: question.id, // Associate with the created question
         },
       })
     )
-  );
+  ) : [];
 
-  // Step 3: Identify the correct option
-  const correctOption = options.find((opt) => opt.correct);
-  if (!correctOption) {
-    throw new Error("No correct option specified for a question.");
+  // Step 3: For SINGLE_CHOICE questions, identify and set the correct option
+  if (questionData.questionType === "SINGLE_CHOICE") {
+    const correctOption = options.find((opt) => opt.correct);
+    if (!correctOption) {
+      throw new Error("No correct option specified for a single choice question.");
+    }
+
+    // Step 4: Update the question with the correctOptionId
+    await tx.question.update({
+      where: { id: question.id },
+      data: { correctOptionId: correctOption.id },
+    });
   }
-
-  // Step 4: Update the question with the correctOptionId
-  await tx.question.update({
-    where: { id: question.id },
-    data: { correctOptionId: correctOption.id },
-  });
 
   // Step 5: Retrieve and return the complete question with relations
   return await tx.question.findUnique({
@@ -149,11 +281,30 @@ async function updateQuestion(
   questionId: string,
   questionData: QuestionInput
 ) {
-  // Step 1: Update the question's text
+  // Prepare answersData for different question types
+  let answersData = undefined;
+  if (questionData.questionType === "MULTIPLE_CHOICE" && questionData.multipleChoiceData) {
+    answersData = questionData.multipleChoiceData;
+  } else if (questionData.questionType === "TEXT_INPUT" && questionData.textInputData) {
+    answersData = questionData.textInputData;
+  } else if (questionData.questionType === "DROPDOWN" && questionData.dropdownData) {
+    answersData = questionData.dropdownData;
+  } else if (questionData.questionType === "ORDERING" && questionData.orderingData) {
+    answersData = questionData.orderingData;
+  } else if (questionData.questionType === "MATCHING" && questionData.matchingData) {
+    answersData = questionData.matchingData;
+  }
+
+  // Step 1: Update the question's text and type
   await tx.question.update({
     where: { id: questionId },
     data: {
       text: questionData.text,
+      text_sl: questionData.text_sl,
+      text_hr: questionData.text_hr,
+      imageUrl: questionData.imageUrl,
+      questionType: questionData.questionType,
+      answersData: answersData,
     },
   });
 
@@ -164,8 +315,9 @@ async function updateQuestion(
   });
 
   const incomingOptionIds = questionData.options
-    .filter((opt) => opt.id)
-    .map((opt) => opt.id as string);
+    ? questionData.options.filter((opt) => opt.id)
+        .map((opt) => opt.id as string)
+    : [];
 
   // b. Delete options that are not present in the incoming data
   const optionsToDelete = existingOptions.filter(
@@ -177,8 +329,8 @@ async function updateQuestion(
     });
   }
 
-  // c. Update existing options and create new ones
-  const updatedOptions = await Promise.all(
+  // c. Update existing options and create new ones (if any)
+  const updatedOptions = questionData.options ? await Promise.all(
     questionData.options.map(async (opt) => {
       if (opt.id) {
         // Update existing option
@@ -186,7 +338,9 @@ async function updateQuestion(
           where: { id: opt.id },
           data: {
             text: opt.text,
-            correct: opt.correct,
+            text_sl: opt.text_sl,
+            text_hr: opt.text_hr,
+            correct: opt.isCorrect, // Map isCorrect to correct field
           },
         });
       } else {
@@ -194,25 +348,35 @@ async function updateQuestion(
         return tx.option.create({
           data: {
             text: opt.text,
-            correct: opt.correct,
+            text_sl: opt.text_sl,
+            text_hr: opt.text_hr,
+            correct: opt.isCorrect, // Map isCorrect to correct field
             questionId: questionId,
           },
         });
       }
     })
-  );
+  ) : [];
 
-  // Step 3: Identify the correct option
-  const correctOption = updatedOptions.find((opt) => opt.correct);
-  if (!correctOption) {
-    throw new Error("No correct option specified for a question.");
+  // Step 3: For SINGLE_CHOICE questions, identify and set the correct option
+  if (questionData.questionType === "SINGLE_CHOICE") {
+    const correctOption = updatedOptions.find((opt) => opt.correct);
+    if (!correctOption) {
+      throw new Error("No correct option specified for a single choice question.");
+    }
+
+    // Step 4: Update the question with the correctOptionId
+    await tx.question.update({
+      where: { id: questionId },
+      data: { correctOptionId: correctOption.id },
+    });
+  } else {
+    // For other question types, clear the correctOptionId
+    await tx.question.update({
+      where: { id: questionId },
+      data: { correctOptionId: null },
+    });
   }
-
-  // Step 4: Update the question with the correctOptionId
-  await tx.question.update({
-    where: { id: questionId },
-    data: { correctOptionId: correctOption.id },
-  });
 
   // Step 5: Retrieve and return the updated question with relations
   return await tx.question.findUnique({
@@ -263,6 +427,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // Step 3: Parse and validate the request body
     const body: QuizInput = await req.json();
+
+    // Debug logging to see what's being sent
+    if (process.env.NODE_ENV === 'development') {
+      console.log("PATCH Quiz Data Debug:", JSON.stringify({
+        questionsCount: body.questions?.length,
+        questions: body.questions?.map((q, i) => ({
+          index: i,
+          questionType: q.questionType,
+          optionsCount: q.options?.length,
+          correctOptions: q.options?.filter(o => o.isCorrect)?.length,
+          options: q.options?.map(o => ({ text: o.text, isCorrect: o.isCorrect }))
+        }))
+      }, null, 2));
+    }
+
     const validatedData = quizSchema.parse(body);
 
     // Step 4: Begin a transaction to update the quiz and its relations
@@ -281,7 +460,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         where: { id: quizId },
         data: {
           title: validatedData.title,
+          title_sl: validatedData.title_sl,
+          title_hr: validatedData.title_hr,
           description: validatedData.description,
+          description_sl: validatedData.description_sl,
+          description_hr: validatedData.description_hr,
           teacherId: validatedData.teacherId,
         },
       });
@@ -512,6 +695,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             options: true,
             correctOption: true,
           },
+          orderBy: {
+            createdAt: 'asc'
+          }
         },
       },
     });
@@ -520,8 +706,66 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return new NextResponse("Quiz not found", { status: 404 });
     }
 
-    // Step 4: Respond with the retrieved quiz data
-    return NextResponse.json(quiz);
+    // Step 4: Transform database data to frontend format
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[QUIZZES_GET] Raw quiz data from database:", JSON.stringify(quiz, null, 2));
+      console.log("[QUIZZES_GET] Questions answersData:", quiz.questions.map(q => ({
+        id: q.id,
+        questionType: q.questionType,
+        answersData: q.answersData
+      })));
+    }
+
+    const transformedQuiz = {
+      ...quiz,
+      questions: quiz.questions.map(question => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[QUIZZES_GET] Transforming question ${question.id} (${question.questionType}):`, {
+            hasAnswersData: !!question.answersData,
+            answersData: question.answersData
+          });
+        }
+
+        return {
+        id: question.id,
+        text: question.text,
+        text_sl: question.text_sl,
+        text_hr: question.text_hr,
+        imageUrl: question.imageUrl,
+        questionType: question.questionType,
+        options: question.options.map(option => ({
+          id: option.id,
+          text: option.text,
+          text_sl: option.text_sl,
+          text_hr: option.text_hr,
+          isCorrect: option.correct, // Map 'correct' to 'isCorrect'
+        })),
+        // Transform answersData back to appropriate typed data based on questionType
+        ...(question.questionType === "MULTIPLE_CHOICE" && question.answersData && {
+          multipleChoiceData: question.answersData
+        }),
+        ...(question.questionType === "TEXT_INPUT" && question.answersData && {
+          textInputData: question.answersData
+        }),
+        ...(question.questionType === "DROPDOWN" && question.answersData && {
+          dropdownData: question.answersData
+        }),
+        ...(question.questionType === "ORDERING" && question.answersData && {
+          orderingData: question.answersData
+        }),
+        ...(question.questionType === "MATCHING" && question.answersData && {
+          matchingData: question.answersData
+        }),
+        };
+      })
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[QUIZZES_GET] Transformed quiz data:", JSON.stringify(transformedQuiz, null, 2));
+    }
+
+    // Step 5: Respond with the transformed quiz data
+    return NextResponse.json(transformedQuiz);
   } catch (error) {
     console.error("[QUIZZES_GET_BY_ID]", error);
     return new NextResponse("Internal error", { status: 500 });

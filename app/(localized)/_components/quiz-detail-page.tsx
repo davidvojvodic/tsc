@@ -5,19 +5,64 @@ import { Container } from "@/components/container";
 import QuizComponent from "@/components/quiz";
 import { SupportedLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
+import type { OrderingConfiguration, MatchingConfiguration } from "@/components/quiz-editor/quiz-editor-layout";
 
 interface Question {
   id: string;
   text: string;
   text_sl?: string | null;
   text_hr?: string | null;
-  options: {
+  imageUrl?: string | null;
+  questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING" | null;
+  options?: {
     id: string;
     text: string;
     text_sl?: string | null;
     text_hr?: string | null;
     isCorrect: boolean;
   }[];
+  multipleChoiceData?: {
+    scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
+    minSelections: number;
+    maxSelections?: number;
+    partialCreditRules?: {
+      correctSelectionPoints: number;
+      incorrectSelectionPenalty: number;
+      minScore: number;
+    };
+  };
+  textInputData?: {
+    acceptableAnswers: string[];
+    caseSensitive: boolean;
+    placeholder?: string;
+    placeholder_sl?: string;
+    placeholder_hr?: string;
+  };
+  dropdownData?: {
+    template: string;
+    template_sl?: string;
+    template_hr?: string;
+    dropdowns: Array<{
+      id: string;
+      label: string;
+      label_sl?: string;
+      label_hr?: string;
+      options: Array<{
+        id: string;
+        text: string;
+        text_sl?: string;
+        text_hr?: string;
+        isCorrect: boolean;
+      }>;
+    }>;
+    scoring?: {
+      pointsPerDropdown: number;
+      requireAllCorrect: boolean;
+      penalizeIncorrect: boolean;
+    };
+  };
+  orderingData?: OrderingConfiguration;
+  matchingData?: MatchingConfiguration;
 }
 
 interface Quiz {
@@ -48,17 +93,24 @@ export function QuizDetailPage({ quiz, language }: QuizDetailPageProps) {
   // Localize questions and options
   const localizedQuestions = quiz.questions.map(question => {
     const questionText = getLocalizedContent(question, "text", language);
-    
-    const localizedOptions = question.options.map(option => ({
+
+    const localizedOptions = question.options?.map(option => ({
       id: option.id,
       text: getLocalizedContent(option, "text", language) || option.text,
       isCorrect: option.isCorrect
-    }));
+    })) || [];
 
     return {
       id: question.id,
       text: questionText || question.text,
-      options: localizedOptions
+      imageUrl: question.imageUrl,
+      questionType: question.questionType || "SINGLE_CHOICE",
+      options: localizedOptions,
+      multipleChoiceData: question.multipleChoiceData ?? undefined,
+      textInputData: question.textInputData ?? undefined,
+      dropdownData: question.dropdownData ?? undefined,
+      orderingData: question.orderingData ?? undefined,
+      matchingData: question.matchingData ?? undefined
     };
   });
 

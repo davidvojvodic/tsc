@@ -15,15 +15,15 @@ interface StreamProps {
 
 const translations = {
   title: {
-    en: "Live System Monitoring",
-    sl: "Spremljanje Sistema v Živo",
-    hr: "Praćenje Sustava Uživo"
+    en: "Live system monitoring",
+    sl: "Spremljanje sistema v živo",
+    hr: "Praćenje sustava uživo",
   },
   description: {
     en: "Watch our water management system in real-time operation.",
     sl: "Oglejte si naš sistem upravljanja vode v realnem času.",
-    hr: "Pogledajte naš sustav upravljanja vodom u stvarnom vremenu."
-  }
+    hr: "Pogledajte naš sustav upravljanja vodom u stvarnom vremenu.",
+  },
 };
 
 export default function LiveStreams({
@@ -81,7 +81,8 @@ export default function LiveStreams({
                 {translations.title[language] || translations.title.en}
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                {translations.description[language] || translations.description.en}
+                {translations.description[language] ||
+                  translations.description.en}
               </p>
             </div>
 
@@ -140,7 +141,6 @@ export default function LiveStreams({
     );
   }
 
-
   return (
     <>
       <section className="py-16 px-4">
@@ -151,7 +151,8 @@ export default function LiveStreams({
               {translations.title[language] || translations.title.en}
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              {translations.description[language] || translations.description.en}
+              {translations.description[language] ||
+                translations.description.en}
             </p>
           </div>
 
@@ -161,7 +162,9 @@ export default function LiveStreams({
               <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-900">
                 <div className="text-center">
                   <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent mx-auto mb-2" />
-                  <p className="text-gray-400 text-sm">Connecting to camera...</p>
+                  <p className="text-gray-400 text-sm">
+                    Connecting to camera...
+                  </p>
                 </div>
               </div>
             )}

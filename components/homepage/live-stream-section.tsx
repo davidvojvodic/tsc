@@ -15,76 +15,78 @@ const translations = {
   title: {
     en: "Live System Monitoring",
     sl: "Spremljanje sistema v živo",
-    hr: "Praćenje sistema uživo"
+    hr: "Praćenje sistema uživo",
   },
   subtitle: {
     en: "Real-Time Camera Feed",
     sl: "Kamera v Realnem Času",
-    hr: "Kamera u Realnom Vremenu"
+    hr: "Kamera u Realnom Vremenu",
   },
   description: {
-    en: "Monitor our WaterWise irrigation system 24/7 through our live camera feed. Watch real-time operations, system status, and see our smart water management technology in action around the clock.",
-    sl: "Spremljajte naš sistem namakanja WaterWise 24/7 preko naše kamere v živo. Oglejte si operacije v realnem času, stanje sistema in vidite našo pametno tehnologijo upravljanja vode v akciji ves dan.",
-    hr: "Pratite naš WaterWise sustav navodnjavanja 24/7 putem naše kamere uživo. Gledajte operacije u realnom vremenu, stanje sustava i vidite našu pametnu tehnologiju upravljanja vodom u akciji cijeli dan."
+    en: "Monitor our Waterwise irrigation system 24/7 through our live camera feed. Watch real-time operations, system status, and see our smart water management technology in action around the clock.",
+    sl: "Spremljajte naš sistem namakanja Waterwise 24/7 preko naše kamere v živo. Oglejte si operacije v realnem času, stanje sistema in vidite našo pametno tehnologijo upravljanja vode v akciji ves dan.",
+    hr: "Pratite naš Waterwise sustav navodnjavanja 24/7 putem naše kamere uživo. Gledajte operacije u realnom vremenu, stanje sustava i vidite našu pametnu tehnologiju upravljanja vodom u akciji cijeli dan.",
   },
   statusIndicator: {
     live: {
       en: "Live",
       sl: "V Živo",
-      hr: "Uživo"
+      hr: "Uživo",
     },
     offline: {
       en: "Offline",
       sl: "Brez Povezave",
-      hr: "Offline"
-    }
+      hr: "Offline",
+    },
   },
   stats: {
     viewers: {
       en: "Current Viewers",
       sl: "Trenutni Gledalci",
-      hr: "Trenutni Gledatelji"
+      hr: "Trenutni Gledatelji",
     },
     uptime: {
       en: "System Uptime",
       sl: "Čas Delovanja",
-      hr: "Vrijeme Rada"
+      hr: "Vrijeme Rada",
     },
     quality: {
       en: "Stream Quality",
       sl: "Kakovost Prenosa",
-      hr: "Kvaliteta Prijenosa"
+      hr: "Kvaliteta Prijenosa",
     },
     fps: {
       en: "FPS",
       sl: "FPS",
-      hr: "FPS"
-    }
+      hr: "FPS",
+    },
   },
   networkStatus: {
     excellent: {
       en: "Excellent",
       sl: "Odlična",
-      hr: "Izvrsna"
+      hr: "Izvrsna",
     },
     good: {
       en: "Good",
       sl: "Dobra",
-      hr: "Dobra"
+      hr: "Dobra",
     },
     poor: {
       en: "Poor",
       sl: "Slaba",
-      hr: "Loša"
-    }
-  }
+      hr: "Loša",
+    },
+  },
 };
 
 export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
   const [isLive, setIsLive] = useState(true);
   const [viewers, setViewers] = useState(0);
   const [uptime, setUptime] = useState("98.7%");
-  const [streamQuality, setStreamQuality] = useState<"excellent" | "good" | "poor">("excellent");
+  const [streamQuality, setStreamQuality] = useState<
+    "excellent" | "good" | "poor"
+  >("excellent");
   const [currentFps, setCurrentFps] = useState(2);
 
   // Simulate viewer count and system stats
@@ -146,7 +148,9 @@ export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
             locale={locale}
             statusIndicator={{
               type: isLive ? "live" : "offline",
-              text: isLive ? translations.statusIndicator.live : translations.statusIndicator.offline
+              text: isLive
+                ? translations.statusIndicator.live
+                : translations.statusIndicator.offline,
             }}
           />
 
@@ -154,7 +158,6 @@ export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
           <div className="relative max-w-5xl mx-auto">
             {/* Glass-morphism container */}
             <div className="relative overflow-hidden rounded-3xl bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm border border-blue-200/30 dark:border-blue-800/30 shadow-2xl p-4">
-
               {/* Stream Stats Header */}
               <div className="flex flex-wrap items-center justify-between mb-6 p-4 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm rounded-2xl border border-blue-200/20 dark:border-blue-800/20">
                 <div className="flex flex-wrap items-center gap-6">
@@ -169,7 +172,9 @@ export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
                       <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
                     )}
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {isLive ? translations.statusIndicator.live[locale] : translations.statusIndicator.offline[locale]}
+                      {isLive
+                        ? translations.statusIndicator.live[locale]
+                        : translations.statusIndicator.offline[locale]}
                     </span>
                   </div>
 
@@ -203,7 +208,12 @@ export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
                     <span className="text-sm text-gray-600 dark:text-gray-400">
                       {translations.stats.quality[locale]}:
                     </span>
-                    <span className={cn("text-sm font-semibold", getQualityColor(streamQuality))}>
+                    <span
+                      className={cn(
+                        "text-sm font-semibold",
+                        getQualityColor(streamQuality)
+                      )}
+                    >
                       {translations.networkStatus[streamQuality][locale]}
                     </span>
                   </div>
@@ -227,9 +237,7 @@ export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
 
               {/* Live Camera Stream */}
               <div className="relative overflow-hidden rounded-2xl">
-                <LiveCameraStream
-                  className="w-full"
-                />
+                <LiveCameraStream className="w-full" />
 
                 {/* Overlay Effects */}
                 <div className="absolute inset-0 pointer-events-none">
@@ -242,14 +250,25 @@ export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
                   {/* Timestamp */}
                   <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
                     <span className="text-white text-xs font-mono">
-                      {new Date().toLocaleTimeString(locale === "en" ? "en-US" : locale === "sl" ? "sl-SI" : "hr-HR")}
+                      {new Date().toLocaleTimeString(
+                        locale === "en"
+                          ? "en-US"
+                          : locale === "sl"
+                            ? "sl-SI"
+                            : "hr-HR"
+                      )}
                     </span>
                   </div>
 
                   {/* Network quality indicator */}
                   <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2">
                     {getSignalIcon(streamQuality)}
-                    <span className={cn("text-xs font-medium", getQualityColor(streamQuality))}>
+                    <span
+                      className={cn(
+                        "text-xs font-medium",
+                        getQualityColor(streamQuality)
+                      )}
+                    >
                       {translations.networkStatus[streamQuality][locale]}
                     </span>
                   </div>
@@ -260,16 +279,40 @@ export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
               <div className="mt-6 p-4 bg-gradient-to-r from-blue-50/50 to-cyan-50/50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-2xl border border-blue-200/20 dark:border-blue-800/20">
                 <div className="text-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {locale === "en" && "Experience our WaterWise system in real-time. This live feed showcases our automated irrigation technology working 24/7."}
-                    {locale === "sl" && "Doživite naš sistem WaterWise v realnem času. Ta prenos v živo prikazuje našo avtomatizirano tehnologijo namakanja, ki deluje 24/7."}
-                    {locale === "hr" && "Doživite naš WaterWise sustav u realnom vremenu. Ovaj prijenos uživo prikazuje našu automatiziranu tehnologiju navodnjavanja koja radi 24/7."}
+                    {locale === "en" &&
+                      "Experience our Waterwise system in real-time. This live feed showcases our automated irrigation technology working 24/7."}
+                    {locale === "sl" &&
+                      "Doživite naš sistem Waterwise v realnem času. Ta prenos v živo prikazuje našo avtomatizirano tehnologijo namakanja, ki deluje 24/7."}
+                    {locale === "hr" &&
+                      "Doživite naš Waterwise sustav u realnom vremenu. Ovaj prijenos uživo prikazuje našu automatiziranu tehnologiju navodnjavanja koja radi 24/7."}
                   </p>
                   <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-500">
-                    <span>📍 {locale === "en" ? "Location: TŠC Facility" : locale === "sl" ? "Lokacija: TŠC Objekt" : "Lokacija: TŠC Objekt"}</span>
+                    <span>
+                      📍{" "}
+                      {locale === "en"
+                        ? "Location: TŠC Facility"
+                        : locale === "sl"
+                          ? "Lokacija: TŠC Objekt"
+                          : "Lokacija: TŠC Objekt"}
+                    </span>
                     <span>•</span>
-                    <span>📡 {locale === "en" ? "Protocol: WebSocket" : locale === "sl" ? "Protokol: WebSocket" : "Protokol: WebSocket"}</span>
+                    <span>
+                      📡{" "}
+                      {locale === "en"
+                        ? "Protocol: WebSocket"
+                        : locale === "sl"
+                          ? "Protokol: WebSocket"
+                          : "Protokol: WebSocket"}
+                    </span>
                     <span>•</span>
-                    <span>🔒 {locale === "en" ? "Secure Connection" : locale === "sl" ? "Varna Povezava" : "Sigurna Veza"}</span>
+                    <span>
+                      🔒{" "}
+                      {locale === "en"
+                        ? "Secure Connection"
+                        : locale === "sl"
+                          ? "Varna Povezava"
+                          : "Sigurna Veza"}
+                    </span>
                   </div>
                 </div>
               </div>

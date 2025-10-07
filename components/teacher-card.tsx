@@ -1,8 +1,9 @@
 // components/teacher-card.tsx
 "use client";
+import Image from "next/image";
 import { useLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Card,
   CardContent,
@@ -42,8 +43,18 @@ export function TeacherCard({
     >
       <div className="p-6">
         <Avatar className="h-24 w-24 mx-auto">
-          <AvatarImage src={teacher.photo?.url} />
-          <AvatarFallback>{teacher.name[0]}</AvatarFallback>
+          {teacher.photo?.url ? (
+            <Image
+              src={teacher.photo.url}
+              alt={teacher.name}
+              fill
+              quality={10}
+              sizes="96px"
+              className="object-cover"
+            />
+          ) : (
+            <AvatarFallback>{teacher.name[0]}</AvatarFallback>
+          )}
         </Avatar>
       </div>
       <CardHeader className="px-6 pb-2 pt-0">

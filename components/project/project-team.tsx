@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { GraduationCap } from "lucide-react";
 import { TeacherDialog } from "../teacher-dialog";
 import { useLanguage } from "@/store/language-context";
@@ -56,10 +57,20 @@ export function ProjectTeam({
                   }}
                 >
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={teacher.photo?.url} />
-                    <AvatarFallback>
-                      {teacher.name[0].toUpperCase()}
-                    </AvatarFallback>
+                    {teacher.photo?.url ? (
+                      <Image
+                        src={teacher.photo.url}
+                        alt={teacher.name}
+                        fill
+                        quality={10}
+                        sizes="48px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <AvatarFallback>
+                        {teacher.name[0].toUpperCase()}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   <div>
                     <div className="font-medium">{teacher.name}</div>

@@ -199,7 +199,7 @@ function GalleryImageThumbnail({
             src={image.url}
             alt={image.alt || "Project image"}
             fill
-            quality={10}
+            quality={50}
             sizes="(max-width: 768px) 50vw, 200px"
             className="object-cover transition-transform group-hover:scale-105"
           />
@@ -263,7 +263,7 @@ function ImageGallery({
                     src={img.url}
                     alt={img.alt || "Project image"}
                     fill
-                    quality={50}
+                    quality={75}
                     sizes="(max-width: 768px) 100vw, 80vw"
                     priority={index === currentImageIndex}
                     className="object-contain transition-opacity duration-300"
@@ -326,7 +326,7 @@ export function PhaseGalleryThumbnail({
                   src={images[0].url}
                   alt={phaseTitle}
                   fill
-                  quality={30}
+                  quality={50}
                   sizes="(max-width: 768px) 50vw, 33vw"
                   className="object-cover"
                   loading="lazy"
@@ -340,7 +340,7 @@ export function PhaseGalleryThumbnail({
                     src={image.url}
                     alt={`${phaseTitle} image ${idx + 2}`}
                     fill
-                    quality={30}
+                    quality={50}
                     sizes="(max-width: 768px) 25vw, 16vw"
                     className="object-cover"
                     loading="lazy"
@@ -389,7 +389,7 @@ export function PhaseGalleryThumbnail({
             src={images[0].url}
             alt={phaseTitle}
             fill
-            quality={30}
+            quality={50}
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover transition-transform group-hover:scale-105"
             loading="lazy"

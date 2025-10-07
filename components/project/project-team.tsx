@@ -62,7 +62,7 @@ export function ProjectTeam({
                         src={teacher.photo.url}
                         alt={teacher.name}
                         fill
-                        quality={10}
+                        quality={60}
                         sizes="48px"
                         className="object-cover"
                       />

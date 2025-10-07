@@ -25,7 +25,7 @@ const getTranslations = (language: SupportedLanguage) => {
     en: {
       about: "About Us",
       projects: "Our Projects",
-      waterwise: "Waterwise",
+      waterwise: "WaterWise",
       resources: "Resources",
       learning: "Online Learning",
       login: "Log In",
@@ -36,7 +36,7 @@ const getTranslations = (language: SupportedLanguage) => {
     sl: {
       about: "O nas",
       projects: "Naši projekti",
-      waterwise: "Waterwise",
+      waterwise: "WaterWise",
       resources: "Gradiva",
       learning: "Spletno učenje",
       login: "Prijava",
@@ -47,7 +47,7 @@ const getTranslations = (language: SupportedLanguage) => {
     hr: {
       about: "O nama",
       projects: "Naši projekti",
-      waterwise: "Waterwise",
+      waterwise: "WaterWise",
       resources: "Materijali",
       learning: "Online učenje",
       login: "Prijava",
@@ -68,7 +68,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
   const basePaths = {
     home: "/",
     projects: "/projects",
-    waterwise: "/projects/Waterwise",
+    waterwise: "/projects/WaterWise",
     materials: "/materials",
     quizzes: "/quizzes",
     account: "/account",
@@ -147,7 +147,7 @@ export async function Navbar() {
             <Link href={homeLink}>
               <Image
                 src="/waterwise.png"
-                alt="Waterwise Logo"
+                alt="WaterWise Logo"
                 width={100}
                 height={40}
                 priority
@@ -207,7 +207,7 @@ export async function Navbar() {
                   <SheetTitle>
                     <Image
                       src="/waterwise.png"
-                      alt="Waterwise Logo"
+                      alt="WaterWise Logo"
                       width={100}
                       height={40}
                       priority

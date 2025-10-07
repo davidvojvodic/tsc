@@ -27,7 +27,7 @@ const privacyContent = {
         
 • Provide and improve our educational services
 • Track your learning progress
-• Send you important updates about the Waterwise project
+• Send you important updates about the WaterWise project
 • Respond to your questions and support requests
 • Ensure the security of our platform`
       },
@@ -83,7 +83,7 @@ Phone: +386 51 227 990`
         
 • Zagotavljanje in izboljševanje naših izobraževalnih storitev
 • Sledenje vašemu učnemu napredku
-• Pošiljanje pomembnih posodobitev o projektu Waterwise
+• Pošiljanje pomembnih posodobitev o projektu WaterWise
 • Odgovarjanje na vaša vprašanja in zahteve za podporo
 • Zagotavljanje varnosti naše platforme`
       },
@@ -139,7 +139,7 @@ Telefon: +386 51 227 990`
         
 • Pružanje i poboljšanje naših obrazovnih usluga
 • Praćenje vašeg napretka u učenju
-• Slanje važnih ažuriranja o projektu Waterwise
+• Slanje važnih ažuriranja o projektu WaterWise
 • Odgovaranje na vaša pitanja i zahtjeve za podršku
 • Osiguravanje sigurnosti naše platforme`
       },

@@ -66,24 +66,24 @@ const statsData = [
 // Content for different languages
 const content = {
   en: {
-    title: "Waterwise",
+    title: "WaterWise",
     subtitle: "Smart irrigation for a sustainable future",
     description:
-      'Waterwise is an Erasmus+ KA2 project (small partnerships) connecting TŠC Maribor and PTŠ Dubrovnik to develop a modular curriculum on smart irrigation systems. The goal is to promote innovative teaching, exchanges, and digital solutions such as a system prototype, web application, and e-textbook. The project also addresses the priority "Common values, civic engagement and participation" and raises awareness about sustainable water resource management.',
+      'WaterWise is an Erasmus+ KA2 project (small partnerships) connecting TŠC Maribor and PTŠ Dubrovnik to develop a modular curriculum on smart irrigation systems. The goal is to promote innovative teaching, exchanges, and digital solutions such as a system prototype, web application, and e-textbook. The project also addresses the priority "Common values, civic engagement and participation" and raises awareness about sustainable water resource management.',
     buttonText: "Learn More",
   },
   sl: {
-    title: "Waterwise",
+    title: "WaterWise",
     subtitle: "Pametno namakanje za trajnostno prihodnost",
     description:
-      "Waterwise je Erasmus+ KA2 projekt (manjša partnerstva), ki povezuje TŠC Maribor in PTŠ Dubrovnik pri razvoju modularnega kurikula o pametnih namakalnih sistemih. Cilj je spodbujati inovativno poučevanje, izmenjave ter digitalne rešitve, kot so prototip sistema, spletna aplikacija in e-učbenik. Hkrati projekt nagovarja prednostno nalogo »Skupne vrednote, državljansko udejstvovanje in udeležba« ter krepi ozaveščenost o trajnostnem ravnanju z vodnimi viri.",
+      "WaterWise je Erasmus+ KA2 projekt (manjša partnerstva), ki povezuje TŠC Maribor in PTŠ Dubrovnik pri razvoju modularnega kurikula o pametnih namakalnih sistemih. Cilj je spodbujati inovativno poučevanje, izmenjave ter digitalne rešitve, kot so prototip sistema, spletna aplikacija in e-učbenik. Hkrati projekt nagovarja prednostno nalogo »Skupne vrednote, državljansko udejstvovanje in udeležba« ter krepi ozaveščenost o trajnostnem ravnanju z vodnimi viri.",
     buttonText: "Več informacij",
   },
   hr: {
-    title: "Waterwise",
+    title: "WaterWise",
     subtitle: "Pametno navodnjavanje za održivu budućnost",
     description:
-      'Waterwise je Erasmus+ KA2 projekt (mala partnerstva) koji povezuje TŠC Maribor i PTŠ Dubrovnik u razvoju modularnog kurikuluma o pametnim sustavima navodnjavanja. Cilj je poticati inovativno poučavanje, razmjene i digitalna rješenja poput prototipa sustava, web aplikacije i e-udžbenika. Projekt također adresira prioritet "Zajedničke vrijednosti, građanski angažman i sudjelovanje" te podiže svijest o održivom upravljanju vodnim resursima.',
+      'WaterWise je Erasmus+ KA2 projekt (mala partnerstva) koji povezuje TŠC Maribor i PTŠ Dubrovnik u razvoju modularnog kurikuluma o pametnim sustavima navodnjavanja. Cilj je poticati inovativno poučavanje, razmjene i digitalna rješenja poput prototipa sustava, web aplikacije i e-udžbenika. Projekt također adresira prioritet "Zajedničke vrijednosti, građanski angažman i sudjelovanje" te podiže svijest o održivom upravljanju vodnim resursima.',
     buttonText: "Saznaj više",
   },
 };

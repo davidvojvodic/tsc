@@ -14,11 +14,11 @@ const termsContent = {
     sections: [
       {
         title: "1. Acceptance of Terms",
-        content: `By accessing and using the Waterwise educational platform, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.`
+        content: `By accessing and using the WaterWise educational platform, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.`
       },
       {
         title: "2. Description of Service",
-        content: `Waterwise is an educational platform developed as part of an Erasmus+ KA2 project connecting TŠC Maribor and PTŠ Dubrovnik. The platform provides:
+        content: `WaterWise is an educational platform developed as part of an Erasmus+ KA2 project connecting TŠC Maribor and PTŠ Dubrovnik. The platform provides:
         
 • Educational materials about smart irrigation systems
 • Interactive quizzes and assessments
@@ -45,22 +45,22 @@ const termsContent = {
       },
       {
         title: "5. Intellectual Property",
-        content: `All content on the Waterwise platform, including text, graphics, logos, and software, is the property of the Erasmus+ Waterwise project partners and is protected by copyright and other intellectual property laws.`
+        content: `All content on the WaterWise platform, including text, graphics, logos, and software, is the property of the Erasmus+ WaterWise project partners and is protected by copyright and other intellectual property laws.`
       },
       {
         title: "6. Educational Use",
-        content: `This platform is designed for educational purposes within the Erasmus+ project framework. Content may be used for non-commercial educational activities with proper attribution to the Waterwise project.`
+        content: `This platform is designed for educational purposes within the Erasmus+ project framework. Content may be used for non-commercial educational activities with proper attribution to the WaterWise project.`
       },
       {
         title: "7. Limitation of Liability",
-        content: `The Waterwise project partners shall not be liable for any direct, indirect, incidental, special, or consequential damages resulting from the use or inability to use the platform.`
+        content: `The WaterWise project partners shall not be liable for any direct, indirect, incidental, special, or consequential damages resulting from the use or inability to use the platform.`
       },
       {
         title: "8. Contact Information",
         content: `For questions about these Terms of Service, please contact:
         
 Mitja Draškovič
-Project Coordinator, Waterwise
+Project Coordinator, WaterWise
 Tehniški šolski center Maribor
 Zolajeva ulica 12, 2000 Maribor
 Email: mitja.draskovic@tscmb.si
@@ -74,11 +74,11 @@ Phone: +386 51 227 990`
     sections: [
       {
         title: "1. Sprejem pogojev",
-        content: `Z dostopom in uporabo izobraževalne platforme Waterwise sprejmete in se strinjate z vezanostjo na pogoje in določbe tega sporazuma. Če se ne strinjate z zgoraj navedenimi pogoji, te storitve ne uporabljajte.`
+        content: `Z dostopom in uporabo izobraževalne platforme WaterWise sprejmete in se strinjate z vezanostjo na pogoje in določbe tega sporazuma. Če se ne strinjate z zgoraj navedenimi pogoji, te storitve ne uporabljajte.`
       },
       {
         title: "2. Opis storitve",
-        content: `Waterwise je izobraževalna platforma, razvita kot del projekta Erasmus+ KA2, ki povezuje TŠC Maribor in PTŠ Dubrovnik. Platforma zagotavlja:
+        content: `WaterWise je izobraževalna platforma, razvita kot del projekta Erasmus+ KA2, ki povezuje TŠC Maribor in PTŠ Dubrovnik. Platforma zagotavlja:
         
 • Izobraževalna gradiva o pametnih namakalnih sistemih
 • Interaktivne kvize in ocenjevanja
@@ -105,22 +105,22 @@ Phone: +386 51 227 990`
       },
       {
         title: "5. Intelektualna lastnina",
-        content: `Vsa vsebina na platformi Waterwise, vključno z besedilom, grafiko, logotipi in programsko opremo, je last partnerjev projekta Erasmus+ Waterwise in je zaščitena z avtorskimi pravicami in drugimi zakoni o intelektualni lastnini.`
+        content: `Vsa vsebina na platformi WaterWise, vključno z besedilom, grafiko, logotipi in programsko opremo, je last partnerjev projekta Erasmus+ WaterWise in je zaščitena z avtorskimi pravicami in drugimi zakoni o intelektualni lastnini.`
       },
       {
         title: "6. Izobraževalna uporaba",
-        content: `Ta platforma je namenjena izobraževalnim namenom v okviru projekta Erasmus+. Vsebina se lahko uporablja za nekomercialne izobraževalne dejavnosti z ustreznim pripisovanjem projektu Waterwise.`
+        content: `Ta platforma je namenjena izobraževalnim namenom v okviru projekta Erasmus+. Vsebina se lahko uporablja za nekomercialne izobraževalne dejavnosti z ustreznim pripisovanjem projektu WaterWise.`
       },
       {
         title: "7. Omejitev odgovornosti",
-        content: `Partnerji projekta Waterwise ne odgovarjajo za kakršno koli neposredno, posredno, naključno, posebno ali posledično škodo, ki izhaja iz uporabe ali nezmožnosti uporabe platforme.`
+        content: `Partnerji projekta WaterWise ne odgovarjajo za kakršno koli neposredno, posredno, naključno, posebno ali posledično škodo, ki izhaja iz uporabe ali nezmožnosti uporabe platforme.`
       },
       {
         title: "8. Kontaktne informacije",
         content: `Za vprašanja o teh Pogojih uporabe se obrnite na:
         
 Mitja Draškovič
-Koordinator projekta Waterwise
+Koordinator projekta WaterWise
 Tehniški šolski center Maribor
 Zolajeva ulica 12, 2000 Maribor
 E-pošta: mitja.draskovic@tscmb.si
@@ -134,11 +134,11 @@ Telefon: +386 51 227 990`
     sections: [
       {
         title: "1. Prihvaćanje uvjeta",
-        content: `Pristupanjem i korištenjem obrazovne platforme Waterwise prihvaćate i slažete se biti vezani uvjetima i odredbama ovog sporazuma. Ako se ne slažete s navedenim, molimo ne koristite ovu uslugu.`
+        content: `Pristupanjem i korištenjem obrazovne platforme WaterWise prihvaćate i slažete se biti vezani uvjetima i odredbama ovog sporazuma. Ako se ne slažete s navedenim, molimo ne koristite ovu uslugu.`
       },
       {
         title: "2. Opis usluge",
-        content: `Waterwise je obrazovna platforma razvijena kao dio Erasmus+ KA2 projekta koji povezuje TŠC Maribor i PTŠ Dubrovnik. Platforma pruža:
+        content: `WaterWise je obrazovna platforma razvijena kao dio Erasmus+ KA2 projekta koji povezuje TŠC Maribor i PTŠ Dubrovnik. Platforma pruža:
         
 • Obrazovne materijale o pametnim sustavima navodnjavanja
 • Interaktivne kvizove i procjene
@@ -165,22 +165,22 @@ Telefon: +386 51 227 990`
       },
       {
         title: "5. Intelektualno vlasništvo",
-        content: `Sav sadržaj na Waterwise platformi, uključujući tekst, grafiku, logotipove i softver, vlasništvo je partnera Erasmus+ Waterwise projekta i zaštićen je autorskim pravima i drugim zakonima o intelektualnom vlasništvu.`
+        content: `Sav sadržaj na WaterWise platformi, uključujući tekst, grafiku, logotipove i softver, vlasništvo je partnera Erasmus+ WaterWise projekta i zaštićen je autorskim pravima i drugim zakonima o intelektualnom vlasništvu.`
       },
       {
         title: "6. Obrazovna uporaba",
-        content: `Ova platforma je namijenjena obrazovnim svrhama u okviru Erasmus+ projekta. Sadržaj se može koristiti za nekomercijalne obrazovne aktivnosti uz odgovarajuće pripisivanje Waterwise projektu.`
+        content: `Ova platforma je namijenjena obrazovnim svrhama u okviru Erasmus+ projekta. Sadržaj se može koristiti za nekomercijalne obrazovne aktivnosti uz odgovarajuće pripisivanje WaterWise projektu.`
       },
       {
         title: "7. Ograničenje odgovornosti",
-        content: `Partneri Waterwise projekta neće biti odgovorni za bilo kakvu izravnu, neizravnu, slučajnu, posebnu ili posljedičnu štetu koja proizlazi iz korištenja ili nemogućnosti korištenja platforme.`
+        content: `Partneri WaterWise projekta neće biti odgovorni za bilo kakvu izravnu, neizravnu, slučajnu, posebnu ili posljedičnu štetu koja proizlazi iz korištenja ili nemogućnosti korištenja platforme.`
       },
       {
         title: "8. Kontaktne informacije",
         content: `Za pitanja o ovim Uvjetima korištenja, kontaktirajte:
         
 Mitja Draškovič
-Koordinator projekta Waterwise
+Koordinator projekta WaterWise
 Tehniški šolski center Maribor
 Zolajeva ulica 12, 2000 Maribor
 E-mail: mitja.draskovic@tscmb.si

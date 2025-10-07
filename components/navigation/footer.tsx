@@ -13,7 +13,7 @@ const getTranslations = (language: SupportedLanguage) => {
     en: {
       about: "About Us",
       projects: "Our Projects",
-      waterwise: "Waterwise",
+      waterwise: "WaterWise",
       resources: "Resources",
       learning: "Online Learning",
       studyMaterials: "Study Materials",
@@ -23,10 +23,10 @@ const getTranslations = (language: SupportedLanguage) => {
       cookies: "Cookie Policy",
       quickLinks: "Quick Links",
       resourcesHeading: "Resources",
-      copyright: "© 2024 Waterwise. All rights reserved.",
+      copyright: "© 2024 WaterWise. All rights reserved.",
       address:
         "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
-      coordinator: "Mitja Draškovič, Waterwise project coordinator",
+      coordinator: "Mitja Draškovič, WaterWise project coordinator",
       contactUs: "Contact",
       home: "Home",
       followUs: "Follow Us",
@@ -38,7 +38,7 @@ const getTranslations = (language: SupportedLanguage) => {
     sl: {
       about: "O nas",
       projects: "Naši projekti",
-      waterwise: "Waterwise",
+      waterwise: "WaterWise",
       resources: "Gradiva",
       learning: "Spletno učenje",
       studyMaterials: "Učna gradiva",
@@ -48,10 +48,10 @@ const getTranslations = (language: SupportedLanguage) => {
       cookies: "Politika piškotkov",
       quickLinks: "Hitre povezave",
       resourcesHeading: "Viri",
-      copyright: "© 2024 Waterwise. Vse pravice pridržane.",
+      copyright: "© 2024 WaterWise. Vse pravice pridržane.",
       address:
         "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
-      coordinator: "Mitja Draškovič, koordinator projekta Waterwise",
+      coordinator: "Mitja Draškovič, koordinator projekta WaterWise",
       contactUs: "Kontakt",
       home: "Domov",
       followUs: "Sledite nam",
@@ -63,7 +63,7 @@ const getTranslations = (language: SupportedLanguage) => {
     hr: {
       about: "O nama",
       projects: "Naši projekti",
-      waterwise: "Waterwise",
+      waterwise: "WaterWise",
       resources: "Materijali",
       learning: "Online učenje",
       studyMaterials: "Nastavni materijali",
@@ -73,10 +73,10 @@ const getTranslations = (language: SupportedLanguage) => {
       cookies: "Politika kolačića",
       quickLinks: "Brze poveznice",
       resourcesHeading: "Resursi",
-      copyright: "© 2024 Waterwise. Sva prava pridržana.",
+      copyright: "© 2024 WaterWise. Sva prava pridržana.",
       address:
         "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
-      coordinator: "Mitja Draškovič, koordinator projekta Waterwise",
+      coordinator: "Mitja Draškovič, koordinator projekta WaterWise",
       contactUs: "Kontakt",
       home: "Početna",
       followUs: "Pratite nas",
@@ -98,7 +98,7 @@ const getNavigationLinks = (language: SupportedLanguage) => {
   const basePaths = {
     home: "/",
     projects: "/projects",
-    waterwise: "/projects/Waterwise",
+    waterwise: "/projects/WaterWise",
     materials: "/materials",
     quizzes: "/quizzes",
     privacy: "/privacy",
@@ -194,7 +194,7 @@ export async function Footer() {
               <Link href={homeLink} className="inline-block">
                 <Image
                   src="/waterwise.png"
-                  alt="Waterwise Logo"
+                  alt="WaterWise Logo"
                   width={120}
                   height={48}
                   className="dark:invert"

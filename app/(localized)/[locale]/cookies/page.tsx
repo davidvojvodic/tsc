@@ -18,7 +18,7 @@ const cookiesContent = {
       },
       {
         title: "2. How We Use Cookies",
-        content: `The Waterwise platform uses cookies to:
+        content: `The WaterWise platform uses cookies to:
         
 • Remember your login status and preferences
 • Track your learning progress and quiz results
@@ -59,7 +59,7 @@ These third parties have their own cookie policies which we encourage you to rev
 • You can delete existing cookies from your device
 • You can set your browser to notify you when cookies are being used
 
-Please note that disabling certain cookies may affect the functionality of the Waterwise platform.`
+Please note that disabling certain cookies may affect the functionality of the WaterWise platform.`
       },
       {
         title: "6. Data Retention",
@@ -91,7 +91,7 @@ Phone: +386 51 227 990`
       },
       {
         title: "2. Kako uporabljamo piškotke",
-        content: `Platforma Waterwise uporablja piškotke za:
+        content: `Platforma WaterWise uporablja piškotke za:
         
 • Pomnjenje vašega statusa prijave in preferenc
 • Sledenje vašemu učnemu napredku in rezultatom kvizov
@@ -132,7 +132,7 @@ Te tretje osebe imajo svoje politike piškotkov, ki jih priporočamo, da pregled
 • Obstoječe piškotke lahko izbrišete iz vaše naprave
 • Svoj brskalnik lahko nastavite, da vas obvesti, ko se uporabljajo piškotki
 
-Opozarjamo, da lahko onemogočanje določenih piškotkov vpliva na funkcionalnost platforme Waterwise.`
+Opozarjamo, da lahko onemogočanje določenih piškotkov vpliva na funkcionalnost platforme WaterWise.`
       },
       {
         title: "6. Hramnjenje podatkov",
@@ -164,7 +164,7 @@ Telefon: +386 51 227 990`
       },
       {
         title: "2. Kako koristimo kolačiće",
-        content: `Waterwise platforma koristi kolačiće za:
+        content: `WaterWise platforma koristi kolačiće za:
         
 • Pamćenje vašeg statusa prijave i preferencija
 • Praćenje vašeg napretka u učenju i rezultata kvizova
@@ -205,7 +205,7 @@ Ove treće strane imaju svoje vlastite politike kolačića koje preporučujemo d
 • Možete obrisati postojeće kolačiće s vašeg uređaja
 • Možete postaviti preglednik da vas obavijesti kada se kolačići koriste
 
-Molimo imajte na umu da onemogućavanje određenih kolačića može utjecati na funkcionalnost Waterwise platforme.`
+Molimo imajte na umu da onemogućavanje određenih kolačića može utjecati na funkcionalnost WaterWise platforme.`
       },
       {
         title: "6. Čuvanje podataka",

@@ -23,9 +23,9 @@ const translations = {
     hr: "Kamera u Realnom Vremenu",
   },
   description: {
-    en: "Monitor our Waterwise irrigation system 24/7 through our live camera feed. Watch real-time operations, system status, and see our smart water management technology in action around the clock.",
-    sl: "Spremljajte naš sistem namakanja Waterwise 24/7 preko naše kamere v živo. Oglejte si operacije v realnem času, stanje sistema in vidite našo pametno tehnologijo upravljanja vode v akciji ves dan.",
-    hr: "Pratite naš Waterwise sustav navodnjavanja 24/7 putem naše kamere uživo. Gledajte operacije u realnom vremenu, stanje sustava i vidite našu pametnu tehnologiju upravljanja vodom u akciji cijeli dan.",
+    en: "Monitor our WaterWise irrigation system 24/7 through our live camera feed. Watch real-time operations, system status, and see our smart water management technology in action around the clock.",
+    sl: "Spremljajte naš sistem namakanja WaterWise 24/7 preko naše kamere v živo. Oglejte si operacije v realnem času, stanje sistema in vidite našo pametno tehnologijo upravljanja vode v akciji ves dan.",
+    hr: "Pratite naš WaterWise sustav navodnjavanja 24/7 putem naše kamere uživo. Gledajte operacije u realnom vremenu, stanje sustava i vidite našu pametnu tehnologiju upravljanja vodom u akciji cijeli dan.",
   },
   statusIndicator: {
     live: {
@@ -280,11 +280,11 @@ export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
                 <div className="text-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     {locale === "en" &&
-                      "Experience our Waterwise system in real-time. This live feed showcases our automated irrigation technology working 24/7."}
+                      "Experience our WaterWise system in real-time. This live feed showcases our automated irrigation technology working 24/7."}
                     {locale === "sl" &&
-                      "Doživite naš sistem Waterwise v realnem času. Ta prenos v živo prikazuje našo avtomatizirano tehnologijo namakanja, ki deluje 24/7."}
+                      "Doživite naš sistem WaterWise v realnem času. Ta prenos v živo prikazuje našo avtomatizirano tehnologijo namakanja, ki deluje 24/7."}
                     {locale === "hr" &&
-                      "Doživite naš Waterwise sustav u realnom vremenu. Ovaj prijenos uživo prikazuje našu automatiziranu tehnologiju navodnjavanja koja radi 24/7."}
+                      "Doživite naš WaterWise sustav u realnom vremenu. Ovaj prijenos uživo prikazuje našu automatiziranu tehnologiju navodnjavanja koja radi 24/7."}
                   </p>
                   <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-500">
                     <span>

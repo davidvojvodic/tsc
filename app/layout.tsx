@@ -9,7 +9,7 @@ import { CookieConsent } from "@/components/cookie-consent";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "KA2 Waterwise",
+  title: "KA2 WaterWise",
   description:
     "Interactive learning platform for technical specifications and water management systems",
   icons: {

@@ -33,7 +33,7 @@ const schoolContent = {
         
       In addition to secondary education, TŠC Maribor also includes a higher vocational college offering Mechanical Engineering and Automotive Service Management programs.
         
-      The school participates in the Erasmus+ KA1 program, enabling students to participate in international exchanges and gain valuable experience abroad. TŠC Maribor has successfully obtained the Erasmus+ KA2 Waterwise project, aimed at raising awareness and implementing smart solutions in sustainable water management. The school also participates in the zMIGAJ! project, which promotes physical activity and sports among students and emphasizes the importance of a healthy lifestyle.
+      The school participates in the Erasmus+ KA1 program, enabling students to participate in international exchanges and gain valuable experience abroad. TŠC Maribor has successfully obtained the Erasmus+ KA2 WaterWise project, aimed at raising awareness and implementing smart solutions in sustainable water management. The school also participates in the zMIGAJ! project, which promotes physical activity and sports among students and emphasizes the importance of a healthy lifestyle.
         
       With modern equipped classrooms, workshops, and laboratories, TŠC Maribor ensures quality education adapted to contemporary needs.`,
       imageUrl: "/sola.jpg",
@@ -58,7 +58,7 @@ const schoolContent = {
       
       Poleg srednje šole TŠC Maribor vključuje tudi višjo strokovno šolo, ki ponuja študijska programa Strojništvo in Avtoservisni menedžment. 
       
-      Šola sodeluje v programu Erasmus+ KA1, ki dijakom in študentom omogoča mednarodne izmenjave ter pridobivanje dragocenih izkušenj v tujini. TŠC Maribor je uspešno pridobil projekt Erasmus+ KA2 Waterwise, ki je namenjen ozaveščanju in uvajanju pametnih rešitev na področju trajnostnega ravnanja z vodo. Prav tako šola sodeluje v projektu zMIGAJ!, ki spodbuja telesno aktivnost in šport med dijaki ter poudarja pomen zdravega življenjskega sloga.
+      Šola sodeluje v programu Erasmus+ KA1, ki dijakom in študentom omogoča mednarodne izmenjave ter pridobivanje dragocenih izkušenj v tujini. TŠC Maribor je uspešno pridobil projekt Erasmus+ KA2 WaterWise, ki je namenjen ozaveščanju in uvajanju pametnih rešitev na področju trajnostnega ravnanja z vodo. Prav tako šola sodeluje v projektu zMIGAJ!, ki spodbuja telesno aktivnost in šport med dijaki ter poudarja pomen zdravega življenjskega sloga.
       
       S sodobno opremljenimi učilnicami, delavnicami in laboratoriji TŠC Maribor zagotavlja kakovostno izobraževanje, prilagojeno potrebam sodobnega časa.`,
       imageUrl: "/sola.jpg",
@@ -83,7 +83,7 @@ const schoolContent = {
       
       Osim srednje škole, TŠC Maribor uključuje i višu stručnu školu koja nudi studijske programe Strojarstvo i Autoservisni menadžment.
       
-      Škola sudjeluje u programu Erasmus+ KA1, koji učenicima i studentima omogućuje međunarodne razmjene i stjecanje dragocjenih iskustava u inozemstvu. TŠC Maribor je uspješno dobio projekt Erasmus+ KA2 Waterwise, usmjeren na podizanje svijesti i implementaciju pametnih rješenja u održivom upravljanju vodama. Škola također sudjeluje u projektu zMIGAJ!, koji promiče tjelesnu aktivnost i sport među učenicima te naglašava važnost zdravog načina života.
+      Škola sudjeluje u programu Erasmus+ KA1, koji učenicima i studentima omogućuje međunarodne razmjene i stjecanje dragocjenih iskustava u inozemstvu. TŠC Maribor je uspješno dobio projekt Erasmus+ KA2 WaterWise, usmjeren na podizanje svijesti i implementaciju pametnih rješenja u održivom upravljanju vodama. Škola također sudjeluje u projektu zMIGAJ!, koji promiče tjelesnu aktivnost i sport među učenicima te naglašava važnost zdravog načina života.
       
       Sa suvremeno opremljenim učionicama, radionicama i laboratorijima, TŠC Maribor osigurava kvalitetno obrazovanje prilagođeno suvremenim potrebama.`,
       imageUrl: "/sola.jpg",

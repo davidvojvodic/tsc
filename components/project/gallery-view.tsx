@@ -4,7 +4,13 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Expand, Image as ImageIcon } from "lucide-react";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogVisuallyHidden } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+  DialogVisuallyHidden,
+} from "@/components/ui/dialog";
 import {
   Carousel,
   CarouselApi,
@@ -193,9 +199,8 @@ function GalleryImageThumbnail({
             src={image.url}
             alt={image.alt || "Project image"}
             fill
-            quality={50}
+            quality={10}
             className="object-cover transition-transform group-hover:scale-105"
-            style={{ imageRendering: 'auto' }}
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <Expand className="w-6 h-6 text-white" />
@@ -261,7 +266,6 @@ function ImageGallery({
                     sizes="(max-width: 768px) 100vw, 80vw"
                     priority={index === currentImageIndex}
                     className="object-contain transition-opacity duration-300"
-                    style={{ imageRendering: 'auto' }}
                     loading={index === currentImageIndex ? "eager" : "lazy"}
                     onLoad={() =>
                       index === currentImageIndex && setIsLoaded(true)
@@ -321,10 +325,9 @@ export function PhaseGalleryThumbnail({
                   src={images[0].url}
                   alt={phaseTitle}
                   fill
-                  quality={50}
+                  quality={30}
                   sizes="(max-width: 768px) 50vw, 33vw"
                   className="object-cover"
-                  style={{ imageRendering: 'auto' }}
                   loading="lazy"
                 />
               </div>
@@ -336,10 +339,9 @@ export function PhaseGalleryThumbnail({
                     src={image.url}
                     alt={`${phaseTitle} image ${idx + 2}`}
                     fill
-                    quality={50}
+                    quality={30}
                     sizes="(max-width: 768px) 25vw, 16vw"
                     className="object-cover"
-                    style={{ imageRendering: 'auto' }}
                     loading="lazy"
                   />
                   {/* If there are more images than we're showing, add a +X overlay on the last visible image */}
@@ -386,10 +388,9 @@ export function PhaseGalleryThumbnail({
             src={images[0].url}
             alt={phaseTitle}
             fill
-            quality={50}
+            quality={30}
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover transition-transform group-hover:scale-105"
-            style={{ imageRendering: 'auto' }}
             loading="lazy"
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

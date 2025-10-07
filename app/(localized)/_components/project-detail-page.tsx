@@ -658,7 +658,6 @@ export function ProjectDetailPage({
                                                           quality={50}
                                                           sizes="(max-width: 768px) 100vw, 400px"
                                                           className="object-cover transition-transform group-hover:scale-105"
-                                                          style={{ imageRendering: 'auto' }}
                                                           loading="lazy"
                                                         />
                                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -688,7 +687,6 @@ export function ProjectDetailPage({
                                                           quality={50}
                                                           sizes="(max-width: 768px) 100vw, 80vw"
                                                           className="object-contain"
-                                                          style={{ imageRendering: 'auto' }}
                                                         />
                                                       </div>
                                                     </DialogContent>
@@ -720,7 +718,6 @@ export function ProjectDetailPage({
                                                                 quality={50}
                                                                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                                                 className="object-cover transition-transform group-hover:scale-105"
-                                                                style={{ imageRendering: 'auto' }}
                                                                 loading="lazy"
                                                               />
                                                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -771,7 +768,6 @@ export function ProjectDetailPage({
                                                                           quality={50}
                                                                           sizes="(max-width: 768px) 100vw, 90vw"
                                                                           className="object-contain"
-                                                                          style={{ imageRendering: 'auto' }}
                                                                         />
                                                                       </div>
                                                                     </CarouselItem>

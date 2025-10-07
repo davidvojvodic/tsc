@@ -54,7 +54,6 @@ export function ImageWithFallback({
         {...props}
         src={src}
         alt={alt}
-        style={{ imageRendering: 'auto', ...props.style }}
         onError={() => setError(true)}
         onLoad={() => setIsLoading(false)}
       />

@@ -48,8 +48,8 @@ export function TeacherCard({
               src={teacher.photo.url}
               alt={teacher.name}
               fill
-              quality={60}
-              sizes="96px"
+              quality={70}
+              sizes="288px"
               className="object-cover"
             />
           ) : (

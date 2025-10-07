@@ -1,18 +1,24 @@
 // app/(admin)/page.tsx
 import prisma from "@/lib/prisma";
 import { Heading } from "@/components/ui/heading";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import {
   Users,
-  FileText,
+  FolderKanban,
   BookOpen,
   GraduationCap,
   BrainCircuit,
-  Newspaper,
+  Mail,
   ArrowRight,
 } from "lucide-react";
 import { headers } from "next/headers";
@@ -22,28 +28,30 @@ async function getStats(teacherId?: string) {
   const [
     totalUsers,
     totalTeachers,
-    totalPosts,
-    totalPages,
+    totalProjects,
+    publishedMaterials,
     totalQuizzes,
-    publishedPosts,
+    unreadContacts,
     recentSubmissions,
-    quizStats
+    quizStats,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.teacher.count(),
-    prisma.post.count(),
-    prisma.page.count(),
-    teacherId 
+    prisma.project.count(),
+    prisma.material.count({ where: { published: true } }),
+    teacherId
       ? prisma.quiz.count({ where: { teacherId } })
       : prisma.quiz.count(),
-    prisma.post.count({ where: { published: true } }),
+    prisma.contactSubmission.count({ where: { status: "unread" } }),
     // Get recent quiz submissions
     prisma.quizSubmission.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
-      where: teacherId ? {
-        quiz: { teacherId }
-      } : undefined,
+      where: teacherId
+        ? {
+            quiz: { teacherId },
+          }
+        : undefined,
       include: {
         user: {
           select: {
@@ -61,9 +69,11 @@ async function getStats(teacherId?: string) {
     // Get quiz statistics
     prisma.quizSubmission.groupBy({
       by: ["quizId"],
-      where: teacherId ? {
-        quiz: { teacherId }
-      } : undefined,
+      where: teacherId
+        ? {
+            quiz: { teacherId },
+          }
+        : undefined,
       _avg: {
         score: true,
       },
@@ -74,17 +84,23 @@ async function getStats(teacherId?: string) {
   ]);
 
   // Calculate average submission score across all quizzes
-  const totalSubmissions = quizStats.reduce((acc, stat) => acc + stat._count.id, 0);
-  const averageScore = quizStats.reduce((acc, stat) => 
-    acc + (stat._avg.score || 0) * stat._count.id, 0) / (totalSubmissions || 1);
+  const totalSubmissions = quizStats.reduce(
+    (acc, stat) => acc + stat._count.id,
+    0
+  );
+  const averageScore =
+    quizStats.reduce(
+      (acc, stat) => acc + (stat._avg.score || 0) * stat._count.id,
+      0
+    ) / (totalSubmissions || 1);
 
   return {
     totalUsers,
     totalTeachers,
-    totalPosts,
-    totalPages,
+    totalProjects,
+    publishedMaterials,
     totalQuizzes,
-    publishedPosts,
+    unreadContacts,
     recentSubmissions,
     quizStats: {
       totalSubmissions,
@@ -117,7 +133,7 @@ async function getUserWithRole() {
 
 export default async function AdminDashboard() {
   const user = await getUserWithRole();
-  
+
   if (!user) {
     return <div>Unauthorized</div>;
   }
@@ -126,7 +142,7 @@ export default async function AdminDashboard() {
   const stats = await getStats();
 
   const cards = [];
-  
+
   if (user.role === "ADMIN") {
     cards.push(
       {
@@ -142,26 +158,26 @@ export default async function AdminDashboard() {
         color: "text-yellow-500",
       },
       {
-        label: "Total Posts",
-        number: stats.totalPosts,
-        icon: FileText,
-        color: "text-pink-700",
+        label: "Total Projects",
+        number: stats.totalProjects,
+        icon: FolderKanban,
+        color: "text-cyan-500",
       },
       {
-        label: "Published Posts",
-        number: stats.publishedPosts,
-        icon: Newspaper,
+        label: "Published Materials",
+        number: stats.publishedMaterials,
+        icon: BookOpen,
         color: "text-emerald-500",
       },
       {
-        label: "Pages",
-        number: stats.totalPages,
-        icon: BookOpen,
+        label: "Unread Messages",
+        number: stats.unreadContacts,
+        icon: Mail,
         color: "text-orange-500",
       }
     );
   }
-  
+
   // Both admin and teacher can see quizzes
   cards.push({
     label: user.role === "ADMIN" ? "All Quizzes" : "My Quizzes",
@@ -174,9 +190,10 @@ export default async function AdminDashboard() {
     <div className="space-y-8 p-8">
       <Heading
         title={user.role === "ADMIN" ? "Admin Dashboard" : "Teacher Dashboard"}
-        description={user.role === "ADMIN" 
-          ? "Overview of your site's statistics" 
-          : "Overview of your quiz performance and submissions"
+        description={
+          user.role === "ADMIN"
+            ? "Overview of your site's statistics"
+            : "Overview of your quiz performance and submissions"
         }
       />
 
@@ -210,14 +227,17 @@ export default async function AdminDashboard() {
               <div className="text-sm font-medium">Average Score</div>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <Progress value={stats.quizStats.averageScore} className="h-2" />
+                  <Progress
+                    value={stats.quizStats.averageScore}
+                    className="h-2"
+                  />
                 </div>
                 <div className="text-sm tabular-nums text-muted-foreground">
                   {stats.quizStats.averageScore.toFixed(1)}%
                 </div>
               </div>
             </div>
-            
+
             <div>
               <div className="text-sm font-medium">Total Submissions</div>
               <div className="text-2xl font-bold">
@@ -253,8 +273,8 @@ export default async function AdminDashboard() {
               {stats.recentSubmissions.map((submission) => (
                 <div key={submission.id} className="flex items-center">
                   <Avatar className="h-9 w-9">
-                  <AvatarImage src={user?.image || undefined} />
-                  <AvatarFallback>
+                    <AvatarImage src={user?.image || undefined} />
+                    <AvatarFallback>
                       {submission.user.name?.[0] || submission.user.email[0]}
                     </AvatarFallback>
                   </Avatar>

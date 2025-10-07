@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
   Users,
   LayoutDashboard,
-  FileText,
   FolderTree,
   ImageIcon,
   GraduationCap,
@@ -35,14 +34,6 @@ export const routes = [
     href: "/admin/users",
     color: "text-violet-500",
     isActive: true,
-    allowedRoles: ["ADMIN"] as Role[],
-  },
-  {
-    label: "Posts",
-    icon: FileText,
-    href: "/admin/posts",
-    color: "text-pink-700",
-    isActive: false,
     allowedRoles: ["ADMIN"] as Role[],
   },
   {

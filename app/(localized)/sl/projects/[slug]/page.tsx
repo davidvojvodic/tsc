@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { ProjectDetailPage } from "../../../_components/project-detail-page";
+import { getLocalizedContent } from "@/lib/language-utils";
 
 async function getProject(slug: string) {
   const project = await prisma.project.findUnique({
@@ -9,17 +10,39 @@ async function getProject(slug: string) {
       published: true,
     },
     include: {
-      heroImage: true,
+      heroImage: {
+        select: {
+          url: true,
+          alt: true,
+          alt_sl: true,
+          alt_hr: true,
+        },
+      },
       gallery: {
         include: {
-          media: true,
+          media: {
+            select: {
+              id: true,
+              url: true,
+              alt: true,
+              alt_sl: true,
+              alt_hr: true,
+            },
+          },
         },
       },
       teachers: {
         include: {
           teacher: {
             include: {
-              photo: true,
+              photo: {
+                select: {
+                  url: true,
+                  alt: true,
+                  alt_sl: true,
+                  alt_hr: true,
+                },
+              },
             },
           },
         },
@@ -45,6 +68,9 @@ async function getProject(slug: string) {
                     select: {
                       id: true,
                       url: true,
+                      alt: true,
+                      alt_sl: true,
+                      alt_hr: true,
                     },
                   },
                 },
@@ -100,6 +126,7 @@ export default async function ProjectPage({
     gallery: project.gallery.map((g) => ({
       id: g.media.id,
       url: g.media.url,
+      alt: getLocalizedContent(g.media, "alt", "sl"),
     })),
     teachers: project.teachers.map((t) => ({
       id: t.teacher.id,

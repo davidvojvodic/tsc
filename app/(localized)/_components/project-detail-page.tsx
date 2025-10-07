@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ImageWithFallback } from "@/components/image-with-fallback";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, ArrowLeft, Calendar, Expand } from "lucide-react";
@@ -55,10 +56,14 @@ interface Project {
   published: boolean;
   heroImage: {
     url: string;
+    alt: string | null;
+    alt_sl: string | null;
+    alt_hr: string | null;
   } | null;
   gallery: {
     id: string;
     url: string;
+    alt: string | null;
   }[];
   teachers: {
     id: string;
@@ -73,6 +78,9 @@ interface Project {
     displayOrder: number;
     photo: {
       url: string;
+      alt: string | null;
+      alt_sl: string | null;
+      alt_hr: string | null;
     } | null;
   }[];
   quizzes: {
@@ -112,6 +120,9 @@ interface Project {
         media: {
           id: string;
           url: string;
+          alt: string | null;
+          alt_sl: string | null;
+          alt_hr: string | null;
         };
       }[];
       materials?: {
@@ -361,13 +372,14 @@ export function ProjectDetailPage({
           {/* Hero image section */}
           <div className="relative h-[40vh] md:h-[50vh] w-full">
             {project.heroImage ? (
-              <Image
+              <ImageWithFallback
                 src={project.heroImage.url}
-                alt={projectName || project.name}
+                alt={getLocalizedContent(project.heroImage, "alt", language) || projectName || project.name}
                 fill
+                quality={50}
                 className="object-cover"
                 priority
-                sizes="(max-width: 768px) 100vw, 1200px"
+                sizes="100vw"
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-muted flex items-center justify-center">
@@ -638,12 +650,15 @@ export function ProjectDetailPage({
                                                               .media.url
                                                           }
                                                           alt={
+                                                            getLocalizedContent(activity.images[0].media, "alt", language) ||
                                                             activityTitle ||
                                                             activity.title
                                                           }
                                                           fill
+                                                          quality={50}
                                                           sizes="(max-width: 768px) 100vw, 400px"
                                                           className="object-cover transition-transform group-hover:scale-105"
+                                                          style={{ imageRendering: 'auto' }}
                                                           loading="lazy"
                                                         />
                                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -665,12 +680,15 @@ export function ProjectDetailPage({
                                                               .media.url
                                                           }
                                                           alt={
+                                                            getLocalizedContent(activity.images[0].media, "alt", language) ||
                                                             activityTitle ||
                                                             activity.title
                                                           }
                                                           fill
+                                                          quality={50}
                                                           sizes="(max-width: 768px) 100vw, 80vw"
                                                           className="object-contain"
+                                                          style={{ imageRendering: 'auto' }}
                                                         />
                                                       </div>
                                                     </DialogContent>
@@ -694,10 +712,15 @@ export function ProjectDetailPage({
                                                                   imageRel.media
                                                                     .url
                                                                 }
-                                                                alt={`${activityTitle || activity.title} - Image ${imgIndex + 1}`}
+                                                                alt={
+                                                                  getLocalizedContent(imageRel.media, "alt", language) ||
+                                                                  `${activityTitle || activity.title} - Image ${imgIndex + 1}`
+                                                                }
                                                                 fill
+                                                                quality={50}
                                                                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                                                 className="object-cover transition-transform group-hover:scale-105"
+                                                                style={{ imageRendering: 'auto' }}
                                                                 loading="lazy"
                                                               />
                                                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -740,12 +763,15 @@ export function ProjectDetailPage({
                                                                               .url
                                                                           }
                                                                           alt={
+                                                                            getLocalizedContent(img.media, "alt", language) ||
                                                                             activityTitle ||
                                                                             activity.title
                                                                           }
                                                                           fill
+                                                                          quality={50}
                                                                           sizes="(max-width: 768px) 100vw, 90vw"
                                                                           className="object-contain"
+                                                                          style={{ imageRendering: 'auto' }}
                                                                         />
                                                                       </div>
                                                                     </CarouselItem>

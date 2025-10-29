@@ -12,7 +12,7 @@ import { AlertCircle, CheckCircle } from "lucide-react";
 
 interface Option {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
   isCorrect: boolean;
@@ -31,7 +31,7 @@ interface MultipleChoiceData {
 
 interface MultipleChoiceQuestionProps {
   questionId: string;
-  text: string;
+  text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
   options: Option[];

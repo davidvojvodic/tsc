@@ -35,7 +35,7 @@ import type { OrderingItem, OrderingConfiguration } from "@/components/quiz-edit
 
 interface Option {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
   isCorrect: boolean;
@@ -82,7 +82,7 @@ interface DropdownField {
 
 interface DropdownOption {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;
@@ -90,7 +90,7 @@ interface DropdownOption {
 
 interface Question {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
   questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING";
@@ -103,7 +103,7 @@ interface Question {
 
 interface Quiz {
   id: string;
-  title: string;
+  title: string | null;
   title_sl?: string | null;
   title_hr?: string | null;
   description: string | null;

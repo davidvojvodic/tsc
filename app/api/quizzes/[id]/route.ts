@@ -14,7 +14,7 @@ import { quizSchema } from "@/lib/schemas/quiz"; // Import centralized schema
 
 interface OptionInput {
   id?: string; // Optional for existing options
-  text: string;
+  text?: string | null;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean; // Changed from 'correct' to match form data
@@ -22,7 +22,7 @@ interface OptionInput {
 
 interface QuestionInput {
   id?: string; // Optional for existing questions
-  text: string;
+  text?: string | null;
   text_sl?: string;
   text_hr?: string;
   imageUrl?: string;
@@ -58,7 +58,7 @@ interface QuestionInput {
       label_hr?: string;
       options: Array<{
         id: string;
-        text: string;
+        text?: string | null;
         text_sl?: string;
         text_hr?: string;
         isCorrect: boolean;

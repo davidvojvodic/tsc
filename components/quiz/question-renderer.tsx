@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 
 interface Option {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
   isCorrect: boolean;
@@ -41,7 +41,7 @@ interface TextInputData {
 
 interface DropdownOption {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;
@@ -158,7 +158,7 @@ interface MatchingConfiguration {
 
 interface Question {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
   imageUrl?: string | null;

@@ -7,7 +7,7 @@ import { QuizCellAction } from "./cell-action";
 
 export type QuizColumn = {
   id: string;
-  title: string;
+  title: string | null;
   description: string | null;
   teacher: {
     id: string;

@@ -23,7 +23,7 @@ interface TextInputData {
 
 interface TextInputQuestionProps {
   questionId: string;
-  text: string;
+  text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
   imageUrl?: string | null;

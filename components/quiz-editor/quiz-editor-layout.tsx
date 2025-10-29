@@ -11,7 +11,7 @@ export interface Teacher {
 
 export interface QuizData {
   id?: string;
-  title: string;
+  title: string | null;
   title_sl?: string;
   title_hr?: string;
   description?: string;
@@ -23,7 +23,7 @@ export interface QuizData {
 
 export interface Question {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string;
   text_hr?: string;
   imageUrl?: string;
@@ -39,7 +39,7 @@ export interface Question {
 
 export interface Option {
   id?: string;
-  text: string;
+  text: string | null;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;
@@ -87,7 +87,7 @@ export interface DropdownField {
 
 export interface DropdownOption {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;

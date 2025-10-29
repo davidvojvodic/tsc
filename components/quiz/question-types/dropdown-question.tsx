@@ -10,7 +10,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 
 interface DropdownOption {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;
@@ -38,7 +38,7 @@ interface DropdownConfiguration {
 
 interface DropdownQuestionProps {
   questionId: string;
-  text: string;
+  text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
   dropdownData: DropdownConfiguration;

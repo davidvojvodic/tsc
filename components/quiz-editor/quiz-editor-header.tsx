@@ -107,7 +107,7 @@ export function QuizEditorHeader({ teachers, onSave, onCancel }: QuizEditorHeade
                 <Label htmlFor="title">Quiz Title</Label>
                 <Input
                   id="title"
-                  value={quiz.title}
+                  value={quiz.title || ""}
                   onChange={(e) => updateQuiz({ title: e.target.value })}
                   placeholder="Enter quiz title..."
                 />

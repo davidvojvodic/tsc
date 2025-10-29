@@ -17,7 +17,7 @@ export function QuizEditorWizard({ teachers, onSave, onCancel }: QuizEditorWizar
   const { quiz, saveQuiz } = useQuizEditor();
 
   const validateStep1 = (): boolean => {
-    return quiz.title.trim() !== '' && quiz.teacherId !== '';
+    return (quiz.title?.trim() || '') !== '' && quiz.teacherId !== '';
   };
 
   const handleNext = () => {

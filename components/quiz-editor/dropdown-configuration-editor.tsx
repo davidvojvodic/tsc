@@ -14,7 +14,7 @@ import { Language } from "./quiz-editor-provider";
 
 interface DropdownOption {
   id: string;
-  text: string;
+  text: string | null;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;

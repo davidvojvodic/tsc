@@ -85,7 +85,7 @@ interface Project {
   }[];
   quizzes: {
     id: string;
-    title: string;
+    title: string | null;
     title_sl?: string | null;
     title_hr?: string | null;
     description: string | null;

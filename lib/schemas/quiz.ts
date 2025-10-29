@@ -4,7 +4,7 @@ import * as z from "zod";
 // Base option schema for multilingual support
 const optionSchema = z.object({
   id: z.string().optional(), // For existing options during updates
-  text: z.string(),
+  text: z.string().optional(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
   isCorrect: z.boolean().default(false),
@@ -186,7 +186,7 @@ const matchingDataSchema = z.object({
 // Question schema with support for both single and multiple choice
 const questionSchema = z.object({
   id: z.string().optional(), // For existing questions during updates
-  text: z.string(),
+  text: z.string().optional(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
   imageUrl: z.string().url().optional(),
@@ -399,14 +399,22 @@ const questionSchema = z.object({
 });
 
 export const quizSchema = z.object({
-  title: z.string().min(2, "Title must be at least 2 characters long"),
-  title_sl: z.string().optional(),
-  title_hr: z.string().optional(),
+  title: z.string().min(2, "Title must be at least 2 characters long").optional(),
+  title_sl: z.string().min(2, "Title must be at least 2 characters long").optional(),
+  title_hr: z.string().min(2, "Title must be at least 2 characters long").optional(),
   description: z.string().optional(),
   description_sl: z.string().optional(),
   description_hr: z.string().optional(),
   teacherId: z.string().min(1, "Please select a teacher"),
   questions: z.array(questionSchema).min(1, "At least 1 question is required"),
+}).refine((data) => {
+  // At least one title in any language is required
+  const hasTitle = (data.title && data.title.trim().length >= 2) ||
+                   (data.title_sl && data.title_sl.trim().length >= 2) ||
+                   (data.title_hr && data.title_hr.trim().length >= 2);
+  return hasTitle;
+}, {
+  message: "Quiz title is required in at least one language",
 });
 
 // Schema for quiz submissions - supports all question types

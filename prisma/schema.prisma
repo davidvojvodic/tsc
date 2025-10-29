@@ -220,7 +220,7 @@ model Teacher {
 
 model Quiz {
   id             String           @id @default(uuid())
-  title          String           @db.VarChar(255)
+  title          String?          @db.VarChar(255)
   title_sl       String?          @db.VarChar(255)
   title_hr       String?          @db.VarChar(255)
   description    String?          @db.Text
@@ -242,7 +242,7 @@ model Quiz {
 
 model Question {
   id               String       @id @default(uuid())
-  text             String       @db.Text
+  text             String?      @db.Text
   text_sl          String?      @db.Text
   text_hr          String?      @db.Text
   imageUrl         String?      @db.VarChar(2048)
@@ -266,7 +266,7 @@ model Question {
 
 model Option {
   id                    String    @id @default(uuid())
-  text                  String    @db.Text
+  text                  String?   @db.Text
   text_sl               String?   @db.Text
   text_hr               String?   @db.Text
   questionId            String

@@ -32,8 +32,13 @@ export function QuizDetailsStep({ teachers, onNext, onCancel }: QuizDetailsStepP
   const validateAndProceed = () => {
     const errors: string[] = [];
 
-    if (!quiz.title.trim()) {
-      errors.push("Quiz title is required");
+    // Check if at least one language has a title
+    const hasTitle = (quiz.title && quiz.title.trim().length > 0) ||
+                     (quiz.title_sl && quiz.title_sl.trim().length > 0) ||
+                     (quiz.title_hr && quiz.title_hr.trim().length > 0);
+
+    if (!hasTitle) {
+      errors.push("Quiz title is required in at least one language");
     }
 
     if (!quiz.teacherId) {
@@ -108,15 +113,16 @@ export function QuizDetailsStep({ teachers, onNext, onCancel }: QuizDetailsStepP
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="title" className="text-sm font-medium">
-                    Quiz Title <span className="text-red-500">*</span>
+                    Quiz Title (English)
                   </Label>
                   <Input
                     id="title"
-                    value={quiz.title}
+                    value={quiz.title || ""}
                     onChange={(e) => updateQuiz({ title: e.target.value })}
                     placeholder="Enter quiz title..."
                     className={validationErrors.some(e => e.includes("title")) ? "border-red-500" : ""}
                   />
+                  <p className="text-xs text-muted-foreground">At least one language is required</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="teacher" className="text-sm font-medium">
@@ -160,7 +166,9 @@ export function QuizDetailsStep({ teachers, onNext, onCancel }: QuizDetailsStepP
                   value={quiz.title_sl || ""}
                   onChange={(e) => updateQuiz({ title_sl: e.target.value })}
                   placeholder="Vnesite naslov kviza..."
+                  className={validationErrors.some(e => e.includes("title")) ? "border-red-500" : ""}
                 />
+                <p className="text-xs text-muted-foreground">Vsaj en jezik je obvezen</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description-sl" className="text-sm font-medium">Description (Slovenian)</Label>
@@ -183,7 +191,9 @@ export function QuizDetailsStep({ teachers, onNext, onCancel }: QuizDetailsStepP
                   value={quiz.title_hr || ""}
                   onChange={(e) => updateQuiz({ title_hr: e.target.value })}
                   placeholder="Unesite naslov kviza..."
+                  className={validationErrors.some(e => e.includes("title")) ? "border-red-500" : ""}
                 />
+                <p className="text-xs text-muted-foreground">Potreban je barem jedan jezik</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description-hr" className="text-sm font-medium">Description (Croatian)</Label>

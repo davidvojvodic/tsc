@@ -178,8 +178,8 @@ export default function TeacherCarousel({ teachers }: TeacherCarouselProps) {
                 );
               })}
             </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
+            <CarouselPrevious className="hidden md:inline-flex" />
+            <CarouselNext className="hidden md:inline-flex" />
           </Carousel>
         </div>
       </div>

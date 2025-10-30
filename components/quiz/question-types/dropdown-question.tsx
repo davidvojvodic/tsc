@@ -10,7 +10,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 
 interface DropdownOption {
   id: string;
-  text: string | null;
+  text?: string;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;
@@ -18,14 +18,14 @@ interface DropdownOption {
 
 interface DropdownField {
   id: string;
-  label: string;
+  label?: string;
   label_sl?: string;
   label_hr?: string;
   options: DropdownOption[];
 }
 
 interface DropdownConfiguration {
-  template: string;
+  template?: string;
   template_sl?: string;
   template_hr?: string;
   dropdowns: DropdownField[];
@@ -83,7 +83,7 @@ export function DropdownQuestion({
   };
 
   const getTemplate = () => {
-    return getLocalizedContent(dropdownData, "template", language) || dropdownData.template;
+    return getLocalizedContent(dropdownData, "template", language) || dropdownData.template || "";
   };
 
   const renderTemplateWithDropdowns = () => {
@@ -119,7 +119,7 @@ export function DropdownQuestion({
                 `}
               >
                 <SelectValue
-                  placeholder={getLocalizedContent(dropdown, "label", language) || dropdown.label}
+                  placeholder={getLocalizedContent(dropdown, "label", language) || dropdown.label || "Select"}
                 />
               </SelectTrigger>
               <SelectContent>

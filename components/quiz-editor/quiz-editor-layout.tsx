@@ -66,7 +66,7 @@ export interface TextInputConfiguration {
 }
 
 export interface DropdownConfiguration {
-  template: string;
+  template?: string;
   template_sl?: string;
   template_hr?: string;
   dropdowns: DropdownField[];
@@ -79,7 +79,7 @@ export interface DropdownConfiguration {
 
 export interface DropdownField {
   id: string;
-  label: string;
+  label?: string;
   label_sl?: string;
   label_hr?: string;
   options: DropdownOption[];
@@ -87,7 +87,7 @@ export interface DropdownField {
 
 export interface DropdownOption {
   id: string;
-  text: string | null;
+  text?: string;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;
@@ -96,7 +96,7 @@ export interface DropdownOption {
 // Ordering content types - simplified to text only
 export type OrderingTextContent = {
   type: "text";
-  text: string;
+  text?: string;
   text_sl?: string;
   text_hr?: string;
 };
@@ -121,7 +121,7 @@ export interface OrderingConfiguration {
 // Matching content types - supports text, image, and mixed
 export type MatchingTextContent = {
   type: "text";
-  text: string;
+  text?: string;
   text_sl?: string;
   text_hr?: string;
 };

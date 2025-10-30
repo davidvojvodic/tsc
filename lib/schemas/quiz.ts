@@ -45,19 +45,35 @@ const textInputDataSchema = z.object({
 // Dropdown option schema for dropdown questions
 const dropdownOptionSchema = z.object({
   id: z.string().min(1, "Option ID required"),
-  text: z.string().min(1, "Option text required"),
+  text: z.string().optional(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
   isCorrect: z.boolean(),
+}).refine((data) => {
+  // At least one of the text fields must have content
+  const hasText = (data.text && data.text.trim().length > 0) ||
+                 (data.text_sl && data.text_sl.trim().length > 0) ||
+                 (data.text_hr && data.text_hr.trim().length > 0);
+  return hasText;
+}, {
+  message: "Dropdown option must have text in at least one language",
 });
 
 // Individual dropdown field schema
 const dropdownFieldSchema = z.object({
   id: z.string().min(1, "Dropdown ID required"),
-  label: z.string().min(1, "Label required"),
+  label: z.string().optional(),
   label_sl: z.string().optional(),
   label_hr: z.string().optional(),
   options: z.array(dropdownOptionSchema).min(2, "At least 2 options required"),
+}).refine((data) => {
+  // At least one of the label fields must have content
+  const hasLabel = (data.label && data.label.trim().length > 0) ||
+                   (data.label_sl && data.label_sl.trim().length > 0) ||
+                   (data.label_hr && data.label_hr.trim().length > 0);
+  return hasLabel;
+}, {
+  message: "Dropdown field must have a label in at least one language",
 });
 
 // Dropdown scoring configuration
@@ -69,17 +85,25 @@ const dropdownScoringSchema = z.object({
 
 // Dropdown specific data schema
 const dropdownDataSchema = z.object({
-  template: z.string().min(1, "Template text required"),
+  template: z.string().optional(),
   template_sl: z.string().optional(),
   template_hr: z.string().optional(),
   dropdowns: z.array(dropdownFieldSchema).min(1, "At least 1 dropdown required").max(10, "Maximum 10 dropdowns allowed"),
   scoring: dropdownScoringSchema.optional(),
+}).refine((data) => {
+  // At least one of the template fields must have content
+  const hasTemplate = (data.template && data.template.trim().length > 0) ||
+                      (data.template_sl && data.template_sl.trim().length > 0) ||
+                      (data.template_hr && data.template_hr.trim().length > 0);
+  return hasTemplate;
+}, {
+  message: "Dropdown question must have a template in at least one language",
 });
 
 // Ordering content schemas - simplified to text only
 const orderingTextContentSchema = z.object({
   type: z.literal("text"),
-  text: z.string().min(1, "Text content required"),
+  text: z.string().optional(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
 });
@@ -89,22 +113,40 @@ const orderingItemSchema = z.object({
   id: z.string().min(1, "Item ID required"),
   content: orderingTextContentSchema,
   correctPosition: z.number().int().positive(),
+}).refine((data) => {
+  if (data.content.type === "text") {
+    const hasText = (data.content.text && data.content.text.trim().length > 0) ||
+                   (data.content.text_sl && data.content.text_sl.trim().length > 0) ||
+                   (data.content.text_hr && data.content.text_hr.trim().length > 0);
+    return hasText;
+  }
+  return true;
+}, {
+  message: "Ordering item must have text in at least one language",
 });
 
 // Ordering specific data schema
 const orderingDataSchema = z.object({
-  instructions: z.string().min(1, "Instructions required"),
+  instructions: z.string().optional(),
   instructions_sl: z.string().optional(),
   instructions_hr: z.string().optional(),
   items: z.array(orderingItemSchema).min(2, "At least 2 items required").max(10, "Maximum 10 items allowed"),
   allowPartialCredit: z.boolean().default(false),
   exactOrderRequired: z.boolean().default(true),
+}).refine((data) => {
+  // At least one of the instructions fields must have content
+  const hasInstructions = (data.instructions && data.instructions.trim().length > 0) ||
+                          (data.instructions_sl && data.instructions_sl.trim().length > 0) ||
+                          (data.instructions_hr && data.instructions_hr.trim().length > 0);
+  return hasInstructions;
+}, {
+  message: "Ordering question must have instructions in at least one language",
 });
 
 // Matching content schemas - supports text, image, and mixed
 const matchingTextContentSchema = z.object({
   type: z.literal("text"),
-  text: z.string().min(1, "Text content required"),
+  text: z.string().optional(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
 });
@@ -139,6 +181,16 @@ const matchingItemSchema = z.object({
   id: z.string().min(1, "Item ID required"),
   position: z.number().int().positive(),
   content: matchingItemContentSchema,
+}).refine((data) => {
+  if (data.content.type === "text") {
+    const hasText = (data.content.text && data.content.text.trim().length > 0) ||
+                   (data.content.text_sl && data.content.text_sl.trim().length > 0) ||
+                   (data.content.text_hr && data.content.text_hr.trim().length > 0);
+    return hasText;
+  }
+  return true;
+}, {
+  message: "Matching item must have text in at least one language",
 });
 
 // Correct match schema
@@ -171,7 +223,7 @@ const matchingDisplaySchema = z.object({
 
 // Matching specific data schema
 const matchingDataSchema = z.object({
-  instructions: z.string().min(1, "Instructions required"),
+  instructions: z.string().optional(),
   instructions_sl: z.string().optional(),
   instructions_hr: z.string().optional(),
   matchingType: z.literal("one-to-one").default("one-to-one"),
@@ -181,6 +233,13 @@ const matchingDataSchema = z.object({
   distractors: z.array(z.string()).optional(),
   scoring: matchingScoringSchema.optional(),
   display: matchingDisplaySchema.optional(),
+}).refine((data) => {
+  const hasInstructions = (data.instructions && data.instructions.trim().length > 0) ||
+                          (data.instructions_sl && data.instructions_sl.trim().length > 0) ||
+                          (data.instructions_hr && data.instructions_hr.trim().length > 0);
+  return hasInstructions;
+}, {
+  message: "Matching question must have instructions in at least one language",
 });
 
 // Question schema with support for both single and multiple choice
@@ -287,21 +346,23 @@ const questionSchema = z.object({
     // Validate template contains all dropdown placeholders
     const { template, dropdowns } = data.dropdownData;
 
-    for (const dropdown of dropdowns) {
-      const placeholder = `{${dropdown.id}}`;
-      if (!template.includes(placeholder)) {
+    if (template) {
+      for (const dropdown of dropdowns) {
+        const placeholder = `{${dropdown.id}}`;
+        if (!template.includes(placeholder)) {
+          return false;
+        }
+      }
+
+      // Check for orphaned placeholders
+      const placeholderRegex = /\{([^}]+)\}/g;
+      const templatePlaceholders = [...template.matchAll(placeholderRegex)].map(match => match[1]);
+      const dropdownIds = dropdowns.map(d => d.id);
+
+      const orphanedPlaceholders = templatePlaceholders.filter(p => !dropdownIds.includes(p));
+      if (orphanedPlaceholders.length > 0) {
         return false;
       }
-    }
-
-    // Check for orphaned placeholders
-    const placeholderRegex = /\{([^}]+)\}/g;
-    const templatePlaceholders = [...template.matchAll(placeholderRegex)].map(match => match[1]);
-    const dropdownIds = dropdowns.map(d => d.id);
-
-    const orphanedPlaceholders = templatePlaceholders.filter(p => !dropdownIds.includes(p));
-    if (orphanedPlaceholders.length > 0) {
-      return false;
     }
 
     return true;

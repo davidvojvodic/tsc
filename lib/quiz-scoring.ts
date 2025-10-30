@@ -277,7 +277,7 @@ function scoreDropdownQuestion(
       dropdownId: dropdown.id,
       isCorrect,
       selectedOption: selectedOption?.text || "No selection",
-      correctOptions: correctOptions.map(opt => opt.text)
+      correctOptions: correctOptions.map(opt => opt.text || "")
     });
   }
 
@@ -305,7 +305,7 @@ function scoreDropdownQuestion(
   for (const dropdown of dropdowns) {
     correctAnswers[dropdown.id] = dropdown.options
       .filter(opt => opt.isCorrect)
-      .map(opt => opt.text);
+      .map(opt => opt.text || "");
   }
 
   return {
@@ -504,7 +504,7 @@ function getItemDisplayText(item: OrderingDataType['items'][0]): string {
   const content = item.content;
 
   // Text only content
-  const text = content.text;
+  const text = content.text || "";
   return text.length > 30 ? text.substring(0, 30) + "..." : text;
 }
 
@@ -954,10 +954,7 @@ export function validateDropdownConfig(
     return { isValid: false, errors };
   }
 
-  // Check template
-  if (!dropdownData.template || !dropdownData.template.trim()) {
-    errors.push("Template text is required");
-  }
+  // Template validation removed - Zod schema validates at least one language
 
   // Check dropdowns
   if (!dropdownData.dropdowns || dropdownData.dropdowns.length === 0) {
@@ -969,9 +966,7 @@ export function validateDropdownConfig(
         errors.push("Dropdown ID is required");
       }
 
-      if (!dropdown.label || !dropdown.label.trim()) {
-        errors.push(`Dropdown ${dropdown.id} must have a label`);
-      }
+      // Label validation removed - Zod schema validates at least one language
 
       // Check options
       if (!dropdown.options || dropdown.options.length < 2) {
@@ -987,29 +982,29 @@ export function validateDropdownConfig(
           if (!option.id || !option.id.trim()) {
             errors.push(`All options in dropdown ${dropdown.id} must have an ID`);
           }
-          if (!option.text || !option.text.trim()) {
-            errors.push(`All options in dropdown ${dropdown.id} must have text`);
-          }
+          // Text validation removed - Zod schema validates at least one language
         }
       }
     }
 
     // Validate template contains all dropdown placeholders
     const { template, dropdowns } = dropdownData;
-    for (const dropdown of dropdowns) {
-      const placeholder = `{${dropdown.id}}`;
-      if (!template.includes(placeholder)) {
-        errors.push(`Template missing placeholder: ${placeholder}`);
+    if (template) {
+      for (const dropdown of dropdowns) {
+        const placeholder = `{${dropdown.id}}`;
+        if (!template.includes(placeholder)) {
+          errors.push(`Template missing placeholder: ${placeholder}`);
+        }
       }
-    }
 
-    // Check for orphaned placeholders
-    const placeholderRegex = /\{([^}]+)\}/g;
-    const templatePlaceholders = [...template.matchAll(placeholderRegex)].map(match => match[1]);
-    const dropdownIds = dropdowns.map(d => d.id);
-    const orphanedPlaceholders = templatePlaceholders.filter(p => !dropdownIds.includes(p));
-    if (orphanedPlaceholders.length > 0) {
-      errors.push(`Orphaned placeholders: ${orphanedPlaceholders.join(', ')}`);
+      // Check for orphaned placeholders
+      const placeholderRegex = /\{([^}]+)\}/g;
+      const templatePlaceholders = [...template.matchAll(placeholderRegex)].map(match => match[1]);
+      const dropdownIds = dropdowns.map(d => d.id);
+      const orphanedPlaceholders = templatePlaceholders.filter(p => !dropdownIds.includes(p));
+      if (orphanedPlaceholders.length > 0) {
+        errors.push(`Orphaned placeholders: ${orphanedPlaceholders.join(', ')}`);
+      }
     }
   }
 

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 // Types based on TICKET-007 spec
 type MatchingTextContent = {
   type: "text";
-  text: string;
+  text?: string;
   text_sl?: string;
   text_hr?: string;
 };

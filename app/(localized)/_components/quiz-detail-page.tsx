@@ -103,8 +103,8 @@ export function QuizDetailPage({ quiz, language }: QuizDetailPageProps) {
     return {
       id: question.id,
       text: questionText || question.text,
-      imageUrl: question.imageUrl,
-      questionType: question.questionType || "SINGLE_CHOICE",
+      imageUrl: question.imageUrl ?? undefined,
+      questionType: (question.questionType || "SINGLE_CHOICE") as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING",
       options: localizedOptions,
       multipleChoiceData: question.multipleChoiceData ?? undefined,
       textInputData: question.textInputData ?? undefined,
@@ -115,16 +115,20 @@ export function QuizDetailPage({ quiz, language }: QuizDetailPageProps) {
   });
 
   const localizedQuiz = {
-    ...quiz,
+    id: quiz.id,
     title: quizTitle || quiz.title,
+    title_sl: quiz.title_sl,
+    title_hr: quiz.title_hr,
     description: quizDescription || quiz.description,
+    description_sl: quiz.description_sl,
+    description_hr: quiz.description_hr,
     questions: localizedQuestions
   };
 
   return (
     <Container>
       <div className="py-16 md:py-24">
-        <QuizComponent quiz={localizedQuiz} language={language} />
+        <QuizComponent quiz={localizedQuiz as unknown as Parameters<typeof QuizComponent>[0]['quiz']} language={language} />
       </div>
     </Container>
   );

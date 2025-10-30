@@ -46,17 +46,17 @@ interface QuestionInput {
     placeholder_hr?: string;
   };
   dropdownData?: {
-    template: string;
+    template?: string;
     template_sl?: string;
     template_hr?: string;
     dropdowns: Array<{
       id: string;
-      label: string;
+      label?: string;
       label_sl?: string;
       label_hr?: string;
       options: Array<{
         id: string;
-        text?: string | null;
+        text?: string;
         text_sl?: string;
         text_hr?: string;
         isCorrect: boolean;
@@ -69,7 +69,7 @@ interface QuestionInput {
     };
   };
   orderingData?: {
-    instructions: string;
+    instructions?: string;
     instructions_sl?: string;
     instructions_hr?: string;
     items: Array<{
@@ -93,7 +93,7 @@ interface QuestionInput {
     exactOrderRequired?: boolean;
   };
   matchingData?: {
-    instructions: string;
+    instructions?: string;
     instructions_sl?: string;
     instructions_hr?: string;
     matchingType: "one-to-one";

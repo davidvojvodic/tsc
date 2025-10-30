@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { MultipleChoiceDataType, TextInputDataType, DropdownDataType, OrderingDataType, MatchingDataType } from "@/lib/schemas/quiz";
+import { QuizData } from "@/components/quiz-editor/quiz-editor-layout";
 import QuizPageClient from "./quiz-page-client";
 
 export default async function QuizPage({
@@ -102,10 +103,10 @@ export default async function QuizPage({
               ? (question.answersData as OrderingDataType)
               : undefined,
             matchingData: question.questionType === "MATCHING" && question.answersData
-              ? (question.answersData as MatchingDataType)
+              ? (question.answersData as unknown as MatchingDataType)
               : undefined,
           })),
-      }
+      } as QuizData
     : undefined;
 
   return (

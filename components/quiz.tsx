@@ -61,7 +61,7 @@ interface TextInputData {
 }
 
 interface DropdownConfiguration {
-  template: string;
+  template?: string;
   template_sl?: string;
   template_hr?: string;
   dropdowns: DropdownField[];
@@ -74,7 +74,7 @@ interface DropdownConfiguration {
 
 interface DropdownField {
   id: string;
-  label: string;
+  label?: string;
   label_sl?: string;
   label_hr?: string;
   options: DropdownOption[];
@@ -82,7 +82,7 @@ interface DropdownField {
 
 interface DropdownOption {
   id: string;
-  text: string | null;
+  text?: string;
   text_sl?: string;
   text_hr?: string;
   isCorrect: boolean;

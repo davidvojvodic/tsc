@@ -4,9 +4,9 @@ import * as z from "zod";
 // Base option schema for multilingual support
 const optionSchema = z.object({
   id: z.string().optional(), // For existing options during updates
-  text: z.string().optional(),
-  text_sl: z.string().optional(),
-  text_hr: z.string().optional(),
+  text: z.string().nullable().optional(),
+  text_sl: z.string().nullable().optional(),
+  text_hr: z.string().nullable().optional(),
   isCorrect: z.boolean().default(false),
 }).refine((data) => {
   // At least one of the text fields must have content
@@ -245,9 +245,9 @@ const matchingDataSchema = z.object({
 // Question schema with support for both single and multiple choice
 const questionSchema = z.object({
   id: z.string().optional(), // For existing questions during updates
-  text: z.string().optional(),
-  text_sl: z.string().optional(),
-  text_hr: z.string().optional(),
+  text: z.string().nullable().optional(),
+  text_sl: z.string().nullable().optional(),
+  text_hr: z.string().nullable().optional(),
   imageUrl: z.string().url().optional(),
   questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT", "DROPDOWN", "ORDERING", "MATCHING"]).default("SINGLE_CHOICE"),
   options: z.array(optionSchema).optional(),
@@ -460,12 +460,12 @@ const questionSchema = z.object({
 });
 
 export const quizSchema = z.object({
-  title: z.string().min(2, "Title must be at least 2 characters long").optional(),
-  title_sl: z.string().min(2, "Title must be at least 2 characters long").optional(),
-  title_hr: z.string().min(2, "Title must be at least 2 characters long").optional(),
-  description: z.string().optional(),
-  description_sl: z.string().optional(),
-  description_hr: z.string().optional(),
+  title: z.string().min(2, "Title must be at least 2 characters long").nullable().optional(),
+  title_sl: z.string().min(2, "Title must be at least 2 characters long").nullable().optional(),
+  title_hr: z.string().min(2, "Title must be at least 2 characters long").nullable().optional(),
+  description: z.string().nullable().optional(),
+  description_sl: z.string().nullable().optional(),
+  description_hr: z.string().nullable().optional(),
   teacherId: z.string().min(1, "Please select a teacher"),
   questions: z.array(questionSchema).min(1, "At least 1 question is required"),
 }).refine((data) => {

@@ -187,6 +187,7 @@ function SingleChoiceEditor({
                         <FormControl>
                           <Input
                             {...field}
+                            value={field.value ?? ""}
                             disabled={isLoading}
                             placeholder={`Option ${optionIndex + 1} in English`}
                           />
@@ -206,6 +207,7 @@ function SingleChoiceEditor({
                           <FormControl>
                             <Input
                               {...field}
+                              value={field.value ?? ""}
                               disabled={isLoading}
                               placeholder={`Možnost ${optionIndex + 1} v slovenščini`}
                             />
@@ -224,6 +226,7 @@ function SingleChoiceEditor({
                           <FormControl>
                             <Input
                               {...field}
+                              value={field.value ?? ""}
                               disabled={isLoading}
                               placeholder={`Opcija ${optionIndex + 1} na hrvatskom`}
                             />
@@ -408,9 +411,10 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
                     <FormLabel>Title (English)</FormLabel>
                     <FormControl>
                       <Input
+                        {...field}
+                        value={field.value ?? ""}
                         disabled={isLoading}
                         placeholder="Enter quiz title in English"
-                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -427,9 +431,10 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
                       <FormLabel>Title (Slovenian)</FormLabel>
                       <FormControl>
                         <Input
+                          {...field}
+                          value={field.value ?? ""}
                           disabled={isLoading}
                           placeholder="Vnesi naslov kviza v slovenščini"
-                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -445,9 +450,10 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
                       <FormLabel>Title (Croatian)</FormLabel>
                       <FormControl>
                         <Input
+                          {...field}
+                          value={field.value ?? ""}
                           disabled={isLoading}
                           placeholder="Unesite naslov kviza na hrvatskom"
-                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -464,10 +470,11 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
                     <FormLabel>Description (English, Optional)</FormLabel>
                     <FormControl>
                       <Textarea
+                        {...field}
+                        value={field.value ?? ""}
                         disabled={isLoading}
                         placeholder="Enter quiz description in English"
                         className="resize-none"
-                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -484,10 +491,11 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
                       <FormLabel>Description (Slovenian, Optional)</FormLabel>
                       <FormControl>
                         <Textarea
+                          {...field}
+                          value={field.value ?? ""}
                           disabled={isLoading}
                           placeholder="Vnesi opis kviza v slovenščini"
                           className="resize-none"
-                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -503,10 +511,11 @@ export function QuizForm({ teachers, initialData }: QuizFormProps) {
                       <FormLabel>Description (Croatian, Optional)</FormLabel>
                       <FormControl>
                         <Textarea
+                          {...field}
+                          value={field.value ?? ""}
                           disabled={isLoading}
                           placeholder="Unesite opis kviza na hrvatskom"
                           className="resize-none"
-                          {...field}
                         />
                       </FormControl>
                       <FormMessage />

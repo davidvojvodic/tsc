@@ -29,12 +29,16 @@ export function validateQuestion(question: Question): ValidationResult {
   let totalRequirements = 0;
   let metRequirements = 0;
 
-  // Check question text
+  // Check question text - at least one language must be filled
   totalRequirements++;
-  if (!question.text || !question.text.trim()) {
+  const hasQuestionText = (question.text !== null && question.text.trim().length > 0) ||
+                          (question.text_sl !== null && question.text_sl.trim().length > 0) ||
+                          (question.text_hr !== null && question.text_hr.trim().length > 0);
+
+  if (!hasQuestionText) {
     result.errors.push({
       field: "text",
-      message: "Question text is required"
+      message: "Question text is required in at least one language"
     });
     result.missingFields.push("Question text");
   } else {
@@ -219,12 +223,17 @@ function validateDropdownQuestion(
         result.missingFields.push(`Dropdown ${index + 1} options`);
         allDropdownsValid = false;
       } else {
-        // Check for empty option texts
-        const emptyOptions = dropdown.options.filter(opt => !opt.text || !opt.text.trim());
+        // Check for empty option texts - at least one language must be filled
+        const emptyOptions = dropdown.options.filter(opt => {
+          const hasText = (opt.text !== null && opt.text !== undefined && opt.text.trim().length > 0) ||
+                          (opt.text_sl !== null && opt.text_sl !== undefined && opt.text_sl.trim().length > 0) ||
+                          (opt.text_hr !== null && opt.text_hr !== undefined && opt.text_hr.trim().length > 0);
+          return !hasText;
+        });
         if (emptyOptions.length > 0) {
           result.errors.push({
             field: `dropdownData.dropdowns.${index}.options`,
-            message: `Dropdown ${index + 1} has empty option texts`
+            message: `Dropdown ${index + 1} has empty option texts in all languages`
           });
           allDropdownsValid = false;
         } else {
@@ -404,10 +413,13 @@ function validateOrderingQuestion(
         allItemsValid = false;
       } else {
         if (item.content.type === "text") {
-          if (!item.content.text || !item.content.text.trim()) {
+          const hasText = (item.content.text !== null && item.content.text !== undefined && item.content.text.trim().length > 0) ||
+                          (item.content.text_sl !== null && item.content.text_sl !== undefined && item.content.text_sl.trim().length > 0) ||
+                          (item.content.text_hr !== null && item.content.text_hr !== undefined && item.content.text_hr.trim().length > 0);
+          if (!hasText) {
             result.errors.push({
               field: `orderingData.items.${index}.content.text`,
-              message: `Item ${index + 1} text is required`
+              message: `Item ${index + 1} text is required in at least one language`
             });
             allItemsValid = false;
           } else {
@@ -535,10 +547,13 @@ function validateMatchingQuestion(
         allLeftItemsValid = false;
       } else {
         if (item.content.type === "text") {
-          if (!item.content.text || !item.content.text.trim()) {
+          const hasText = (item.content.text !== null && item.content.text !== undefined && item.content.text.trim().length > 0) ||
+                          (item.content.text_sl !== null && item.content.text_sl !== undefined && item.content.text_sl.trim().length > 0) ||
+                          (item.content.text_hr !== null && item.content.text_hr !== undefined && item.content.text_hr.trim().length > 0);
+          if (!hasText) {
             result.errors.push({
               field: `matchingData.leftItems.${index}.content.text`,
-              message: `Left item ${index + 1} text is required`
+              message: `Left item ${index + 1} text is required in at least one language`
             });
             allLeftItemsValid = false;
           } else {
@@ -605,13 +620,16 @@ function validateMatchingQuestion(
         allRightItemsValid = false;
       } else {
         if (item.content.type === "text") {
-          if (!item.content.text || !item.content.text.trim()) {
+          const hasText = (item.content.text !== null && item.content.text !== undefined && item.content.text.trim().length > 0) ||
+                          (item.content.text_sl !== null && item.content.text_sl !== undefined && item.content.text_sl.trim().length > 0) ||
+                          (item.content.text_hr !== null && item.content.text_hr !== undefined && item.content.text_hr.trim().length > 0);
+          if (!hasText) {
             result.errors.push({
               field: `matchingData.rightItems.${index}.content.text`,
-              message: `Right item ${index + 1} text is required`
+              message: `Right item ${index + 1} text is required in at least one language`
             });
             allRightItemsValid = false;
-          } else {
+          } else{
             metRequirements++;
           }
         }
@@ -688,13 +706,17 @@ function validateChoiceQuestion(
   } else {
     metRequirements++;
 
-    // Check for empty option texts
+    // Check for empty option texts - at least one language must be filled
     let allOptionsValid = true;
     question.options.forEach((option, index) => {
-      if (!option.text || !option.text.trim()) {
+      const hasOptionText = (option.text !== null && option.text.trim().length > 0) ||
+                            (option.text_sl !== null && option.text_sl.trim().length > 0) ||
+                            (option.text_hr !== null && option.text_hr.trim().length > 0);
+
+      if (!hasOptionText) {
         result.errors.push({
           field: `options.${index}.text`,
-          message: `Option ${index + 1} text is required`
+          message: `Option ${index + 1} text is required in at least one language`
         });
         result.missingFields.push(`Option ${index + 1} text`);
         allOptionsValid = false;

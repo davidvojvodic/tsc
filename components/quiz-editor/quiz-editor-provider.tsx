@@ -60,25 +60,25 @@ function generateId(): string {
 function createDefaultQuestion(): Question {
   return {
     id: generateId(),
-    text: "",
-    text_sl: "",
-    text_hr: "",
+    text: null,
+    text_sl: null,
+    text_hr: null,
     questionType: "SINGLE_CHOICE",
     options: [
-      { id: generateId(), text: "", text_sl: "", text_hr: "", isCorrect: true },
-      { id: generateId(), text: "", text_sl: "", text_hr: "", isCorrect: false },
+      { id: generateId(), text: null, text_sl: null, text_hr: null, isCorrect: true },
+      { id: generateId(), text: null, text_sl: null, text_hr: null, isCorrect: false },
     ],
   };
 }
 
 function getDefaultQuiz(): QuizData {
   return {
-    title: "",
-    title_sl: "",
-    title_hr: "",
-    description: "",
-    description_sl: "",
-    description_hr: "",
+    title: null,
+    title_sl: null,
+    title_hr: null,
+    description: null,
+    description_sl: null,
+    description_hr: null,
     teacherId: "",
     questions: [createDefaultQuestion()],
   };

@@ -127,13 +127,8 @@ export default function QuizPageClient({
         const result = await response.json();
         toast.success(`Quiz ${quizId === "new" ? "created" : "saved"} successfully!`);
 
-        if (quizId === "new") {
-          // Redirect to the edit page for the newly created quiz
-          router.push(`/admin/quizzes/${result.id}`);
-        } else {
-          // Refresh the page to get updated data
-          router.refresh();
-        }
+        // Redirect to the quizzes list page after saving
+        router.push("/admin/quizzes");
       } catch (error) {
         console.error(`Failed to ${quizId === "new" ? "create" : "save"} quiz:`, error);
         toast.error(

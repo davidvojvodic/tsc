@@ -27,9 +27,10 @@ export const QuestionListItem = memo(function QuestionListItem({
   onClick
 }: QuestionListItemProps) {
   const previewText = useMemo(() => {
-    const text = question.text || "Untitled Question";
+    // Check all languages for question text
+    const text = question.text || question.text_sl || question.text_hr || "Untitled Question";
     return text.length > 50 ? `${text.substring(0, 50)}...` : text;
-  }, [question.text]);
+  }, [question.text, question.text_sl, question.text_hr]);
 
   const completionStatus = useMemo((): QuestionCompletionStatus => {
     // Use the centralized validation function to determine status
@@ -105,6 +106,8 @@ export const QuestionListItem = memo(function QuestionListItem({
   return (
     prevProps.question.id === nextProps.question.id &&
     prevProps.question.text === nextProps.question.text &&
+    prevProps.question.text_sl === nextProps.question.text_sl &&
+    prevProps.question.text_hr === nextProps.question.text_hr &&
     prevProps.question.questionType === nextProps.question.questionType &&
     prevProps.question.options.length === nextProps.question.options.length &&
     (prevProps.question.textInputData?.acceptableAnswers?.length || 0) ===

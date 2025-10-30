@@ -17,7 +17,11 @@ export function QuizEditorWizard({ teachers, onSave, onCancel }: QuizEditorWizar
   const { quiz, saveQuiz } = useQuizEditor();
 
   const validateStep1 = (): boolean => {
-    return (quiz.title?.trim() || '') !== '' && quiz.teacherId !== '';
+    // Check if at least one language has a title
+    const hasTitle = (quiz.title !== null && quiz.title.trim().length > 0) ||
+                     (quiz.title_sl !== null && quiz.title_sl.trim().length > 0) ||
+                     (quiz.title_hr !== null && quiz.title_hr.trim().length > 0);
+    return hasTitle && quiz.teacherId !== '';
   };
 
   const handleNext = () => {

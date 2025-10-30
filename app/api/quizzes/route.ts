@@ -14,15 +14,15 @@ import { quizSchema } from "@/lib/schemas/quiz"; // Import centralized schema
 
 interface OptionInput {
   text?: string | null;
-  text_sl?: string;
-  text_hr?: string;
+  text_sl?: string | null;
+  text_hr?: string | null;
   isCorrect: boolean; // Changed from 'correct' to match form data
 }
 
 interface QuestionInput {
   text?: string | null;
-  text_sl?: string;
-  text_hr?: string;
+  text_sl?: string | null;
+  text_hr?: string | null;
   imageUrl?: string;
   questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING" | "DRAG_DROP_IMAGE";
   options?: OptionInput[]; // Made optional for TEXT_INPUT and DROPDOWN questions
@@ -158,12 +158,12 @@ interface QuestionInput {
 }
 
 interface QuizInput {
-  title: string;
-  title_sl?: string;
-  title_hr?: string;
-  description?: string;
-  description_sl?: string;
-  description_hr?: string;
+  title: string | null;
+  title_sl?: string | null;
+  title_hr?: string | null;
+  description?: string | null;
+  description_sl?: string | null;
+  description_hr?: string | null;
   teacherId: string;
   questions: QuestionInput[];
 }

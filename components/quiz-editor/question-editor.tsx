@@ -86,26 +86,43 @@ export function QuestionEditor({
           onLanguageChange={setCurrentLanguage}
           hasContent={{
             en: (() => {
-              const validation = validateQuestion({ ...question, text: question.text });
-              // For matching questions, check if errors array is empty and completion percentage is high
+              // Check if at least one language has question text
+              const hasAnyText = (question.text !== null && question.text.trim().length > 0) ||
+                                 (question.text_sl !== null && question.text_sl.trim().length > 0) ||
+                                 (question.text_hr !== null && question.text_hr.trim().length > 0);
+              if (!hasAnyText) return false;
+
+              const validation = validateQuestion({ ...question, text: question.text || question.text_sl || question.text_hr });
               if (question.questionType === "MATCHING") {
                 return validation.errors.length === 0 && validation.completionPercentage >= 90;
               }
               return validation.status === "complete";
             })(),
             sl: (() => {
-              const validation = validateQuestion({ ...question, text: question.text_sl || question.text });
+              // Check if at least one language has question text
+              const hasAnyText = (question.text !== null && question.text.trim().length > 0) ||
+                                 (question.text_sl !== null && question.text_sl.trim().length > 0) ||
+                                 (question.text_hr !== null && question.text_hr.trim().length > 0);
+              if (!hasAnyText) return false;
+
+              const validation = validateQuestion({ ...question, text: question.text_sl || question.text || question.text_hr });
               if (question.questionType === "MATCHING") {
-                return validation.errors.length === 0 && validation.completionPercentage >= 90 && !!question.text_sl;
+                return validation.errors.length === 0 && validation.completionPercentage >= 90;
               }
-              return validation.status === "complete" && !!question.text_sl;
+              return validation.status === "complete";
             })(),
             hr: (() => {
-              const validation = validateQuestion({ ...question, text: question.text_hr || question.text });
+              // Check if at least one language has question text
+              const hasAnyText = (question.text !== null && question.text.trim().length > 0) ||
+                                 (question.text_sl !== null && question.text_sl.trim().length > 0) ||
+                                 (question.text_hr !== null && question.text_hr.trim().length > 0);
+              if (!hasAnyText) return false;
+
+              const validation = validateQuestion({ ...question, text: question.text_hr || question.text || question.text_sl });
               if (question.questionType === "MATCHING") {
-                return validation.errors.length === 0 && validation.completionPercentage >= 90 && !!question.text_hr;
+                return validation.errors.length === 0 && validation.completionPercentage >= 90;
               }
-              return validation.status === "complete" && !!question.text_hr;
+              return validation.status === "complete";
             })()
           }}
         />

@@ -2,14 +2,14 @@
 
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Question, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration } from "./quiz-editor-layout";
+import { Question, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration, MultipleChoiceConfiguration } from "./quiz-editor-layout";
 import { Language } from "./quiz-editor-provider";
 import { QuestionImageUploader } from "./question-image-uploader";
 
 interface QuestionContentProps {
   question: Question;
   language: Language;
-  onChange: (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration | undefined) => void;
+  onChange: (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration | MultipleChoiceConfiguration | undefined) => void;
 }
 
 export function QuestionContent({

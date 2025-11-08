@@ -3,6 +3,7 @@
 import { QuizEditorProvider } from "./quiz-editor-provider";
 import { QuizEditorErrorBoundary } from "./quiz-editor-error-boundary";
 import { QuizEditorWizard } from "./quiz-editor-wizard";
+import { GroupedValidationErrors } from "@/lib/validation-utils";
 
 export interface Teacher {
   id: string;
@@ -37,11 +38,32 @@ export interface Question {
   order?: number;
 }
 
+// Option content types - supports text and mixed (text + image)
+export type OptionTextContent = {
+  type: "text";
+  text?: string;
+  text_sl?: string;
+  text_hr?: string;
+};
+
+export type OptionMixedContent = {
+  type: "mixed";
+  text?: string;
+  text_sl?: string;
+  text_hr?: string;
+  imageUrl?: string;
+};
+
+export type OptionContent = OptionTextContent | OptionMixedContent;
+
 export interface Option {
   id?: string;
-  text: string | null;
-  text_sl: string | null;
-  text_hr: string | null;
+  // Legacy text fields (for backward compatibility with existing quizzes)
+  text?: string | null;
+  text_sl?: string | null;
+  text_hr?: string | null;
+  // New content system (optional - if present, takes precedence over legacy text fields)
+  content?: OptionContent;
   isCorrect: boolean;
   order?: number;
 }
@@ -93,7 +115,7 @@ export interface DropdownOption {
   isCorrect: boolean;
 }
 
-// Ordering content types - simplified to text only
+// Ordering content types - supports text and mixed (text + image)
 export type OrderingTextContent = {
   type: "text";
   text?: string;
@@ -101,7 +123,15 @@ export type OrderingTextContent = {
   text_hr?: string;
 };
 
-export type OrderingItemContent = OrderingTextContent;
+export type OrderingMixedContent = {
+  type: "mixed";
+  text?: string;
+  text_sl?: string;
+  text_hr?: string;
+  imageUrl?: string;
+};
+
+export type OrderingItemContent = OrderingTextContent | OrderingMixedContent;
 
 export interface OrderingItem {
   id: string;
@@ -193,6 +223,7 @@ interface QuizEditorLayoutProps {
   onAutoSave: (data: Partial<QuizData>) => Promise<void>;
   onCancel?: () => void;
   teachers: Teacher[];
+  validationErrors?: GroupedValidationErrors | null;
 }
 
 export function QuizEditorLayout({
@@ -200,7 +231,8 @@ export function QuizEditorLayout({
   onSave,
   onAutoSave,
   onCancel,
-  teachers
+  teachers,
+  validationErrors
 }: QuizEditorLayoutProps) {
 
   return (
@@ -213,6 +245,7 @@ export function QuizEditorLayout({
           teachers={teachers}
           onSave={onSave}
           onCancel={onCancel}
+          validationErrors={validationErrors}
         />
 
       </QuizEditorProvider>

@@ -14,19 +14,22 @@ import { QuestionActions } from "./question-actions";
 import { EmptyState } from "./empty-state";
 import { AutoSaveIndicator } from "./autosave-indicator";
 import { ScoringMethodSelector } from "./scoring-method-selector";
-import { Teacher, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration } from "./quiz-editor-layout";
+import { Teacher, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration, MultipleChoiceConfiguration } from "./quiz-editor-layout";
 import { validateQuestion } from "@/lib/quiz-validation";
+import { GroupedValidationErrors, questionHasErrors } from "@/lib/validation-utils";
 
 interface QuestionEditorProps {
   questionIndex: number;
   teachers: Teacher[];
   onQuestionChange: (index: number) => void;
+  validationErrors?: GroupedValidationErrors | null;
 }
 
 export function QuestionEditor({
   questionIndex,
   teachers,
-  onQuestionChange
+  onQuestionChange,
+  validationErrors
 }: QuestionEditorProps) {
   const {
     questions,
@@ -38,6 +41,7 @@ export function QuestionEditor({
 
 
   const question = questions[questionIndex];
+  const hasErrors = questionHasErrors(validationErrors ?? null, questionIndex);
 
   if (!question) {
     return <EmptyState />;
@@ -55,12 +59,12 @@ export function QuestionEditor({
     }
   };
 
-  const handleQuestionUpdate = (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration) => {
+  const handleQuestionUpdate = (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration | MultipleChoiceConfiguration | undefined) => {
     updateQuestion(questionIndex, { [field]: value });
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={`flex flex-col h-full ${hasErrors ? 'border-2 border-red-500' : ''}`}>
       {/* Header with Language Tabs */}
       <div className="border-b border-gray-200 bg-white px-4 md:px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">

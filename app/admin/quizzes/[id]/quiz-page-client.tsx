@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { QuizEditorV2 } from "@/components/quiz-editor/quiz-editor-v2";
 import { QuizData, Teacher } from "@/components/quiz-editor/quiz-editor-layout";
+import { quizSchema } from "@/lib/schemas/quiz";
+import { parseValidationErrors, GroupedValidationErrors } from "@/lib/validation-utils";
+import { ZodError } from "zod";
 
 interface QuizPageClientProps {
   teachers: Teacher[];
@@ -19,11 +22,31 @@ export default function QuizPageClient({
 }: QuizPageClientProps) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<GroupedValidationErrors | null>(null);
 
   const handleSave = useCallback(
     async (data: QuizData) => {
       try {
         setIsSaving(true);
+
+        // Step 1: Validate the quiz data BEFORE sending to server
+        const validationResult = quizSchema.safeParse(data);
+
+        if (!validationResult.success) {
+          // Parse and group validation errors
+          const errors = parseValidationErrors(validationResult.error);
+          setValidationErrors(errors);
+
+          // Show toast notification
+          toast.error(`Validation failed: ${errors.totalErrorCount} error${errors.totalErrorCount > 1 ? "s" : ""} found. Please fix them before saving.`);
+
+          // Stop the save process
+          setIsSaving(false);
+          return;
+        }
+
+        // Clear any previous validation errors if validation passed
+        setValidationErrors(null);
 
         // Helper function to check if ID is a real UUID vs generated ID
         const isRealUUID = (id: string | undefined): id is string => {
@@ -76,6 +99,8 @@ export default function QuizPageClient({
                 text_sl: option.text_sl,
                 text_hr: option.text_hr,
                 isCorrect: option.isCorrect,
+                // IMPORTANT: Include content object with imageUrl for image support
+                content: option.content,
               }))
             }),
             ...(question.questionType === "MULTIPLE_CHOICE" && question.multipleChoiceData && {
@@ -97,9 +122,14 @@ export default function QuizPageClient({
           }),
         };
 
+        console.log('[SAVE QUIZ] ===== SAVE PROCESS STARTING =====');
+        console.log('[SAVE QUIZ] Quiz ID:', quizId);
+        console.log('[SAVE QUIZ] Is New Quiz:', quizId === "new");
+        console.log('[SAVE QUIZ] Prepared save data:', JSON.stringify(saveData, null, 2));
 
         let response;
         if (quizId === "new") {
+          console.log('[SAVE QUIZ] Creating new quiz via POST /api/quizzes');
           // Create new quiz via POST to /api/quizzes
           response = await fetch("/api/quizzes", {
             method: "POST",
@@ -109,6 +139,7 @@ export default function QuizPageClient({
             body: JSON.stringify(saveData),
           });
         } else {
+          console.log(`[SAVE QUIZ] Updating existing quiz via PATCH /api/quizzes/${quizId}`);
           // Update existing quiz via PATCH to /api/quizzes/[id]
           response = await fetch(`/api/quizzes/${quizId}`, {
             method: "PATCH",
@@ -119,18 +150,41 @@ export default function QuizPageClient({
           });
         }
 
+        console.log('[SAVE QUIZ] Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+
         if (!response.ok) {
-          const errorData = await response.json();
+          const errorText = await response.text();
+          console.error('[SAVE QUIZ] Server returned error:', errorText);
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText };
+          }
+          console.error('[SAVE QUIZ] Parsed error data:', errorData);
           throw new Error(errorData.error || `Failed to ${quizId === "new" ? "create" : "save"} quiz`);
         }
 
         const result = await response.json();
+        console.log('[SAVE QUIZ] ===== SUCCESS! =====');
+        console.log('[SAVE QUIZ] Server response:', result);
         toast.success(`Quiz ${quizId === "new" ? "created" : "saved"} successfully!`);
 
         // Redirect to the quizzes list page after saving
         router.push("/admin/quizzes");
       } catch (error) {
-        console.error(`Failed to ${quizId === "new" ? "create" : "save"} quiz:`, error);
+        console.error('[SAVE QUIZ] ===== ERROR =====');
+        console.error(`[SAVE QUIZ] Failed to ${quizId === "new" ? "create" : "save"} quiz:`, error);
+        if (error instanceof Error) {
+          console.error('[SAVE QUIZ] Error name:', error.name);
+          console.error('[SAVE QUIZ] Error message:', error.message);
+          console.error('[SAVE QUIZ] Error stack:', error.stack);
+        }
         toast.error(
           error instanceof Error ? error.message : `Failed to ${quizId === "new" ? "create" : "save"} quiz`
         );
@@ -153,6 +207,7 @@ export default function QuizPageClient({
         initialData={initialData}
         onSave={handleSave}
         onCancel={handleCancel}
+        validationErrors={validationErrors}
       />
     </div>
   );

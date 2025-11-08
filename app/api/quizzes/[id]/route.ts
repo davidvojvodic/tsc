@@ -7,18 +7,15 @@ import { z } from "zod";
 import { headers } from "next/headers";
 import { Prisma } from "@prisma/client"; // Import Prisma types
 import { quizSchema } from "@/lib/schemas/quiz"; // Import centralized schema
+import { appOptionToPrismaInput, prismaOptionToApp } from "@/lib/option-transformers"; // Import option transformers
+import type { Option } from "@/components/quiz-editor/quiz-editor-layout"; // Import Option type
 
 // ----------------------
 // TypeScript Interfaces
 // ----------------------
 
-interface OptionInput {
-  id?: string; // Optional for existing options
-  text?: string | null;
-  text_sl?: string | null;
-  text_hr?: string | null;
-  isCorrect: boolean; // Changed from 'correct' to match form data
-}
+// Using the application Option type which supports both legacy text fields and new content system
+type OptionInput = Option;
 
 interface QuestionInput {
   id?: string; // Optional for existing questions
@@ -58,9 +55,18 @@ interface QuestionInput {
       label_hr?: string;
       options: Array<{
         id: string;
-        text?: string;
-        text_sl?: string;
-        text_hr?: string;
+        // Legacy text fields (for backward compatibility)
+        text?: string | null;
+        text_sl?: string | null;
+        text_hr?: string | null;
+        // New content system
+        content?: {
+          type: "text" | "mixed";
+          text?: string;
+          text_sl?: string;
+          text_hr?: string;
+          imageUrl?: string;
+        };
         isCorrect: boolean;
       }>;
     }>;
@@ -77,17 +83,11 @@ interface QuestionInput {
     items: Array<{
       id: string;
       content: {
-        type: "text" | "image" | "mixed";
+        type: "text" | "mixed";
         text?: string;
         text_sl?: string;
         text_hr?: string;
         imageUrl?: string;
-        altText?: string;
-        altText_sl?: string;
-        altText_hr?: string;
-        suffix?: string;
-        suffix_sl?: string;
-        suffix_hr?: string;
       };
       correctPosition: number;
     }>;
@@ -232,17 +232,27 @@ async function createQuestion(
 
   // Step 2: Create all options associated with the question (if any)
   const options = questionData.options ? await Promise.all(
-    questionData.options.map((opt) =>
-      tx.option.create({
+    questionData.options.map((opt) => {
+      // Transform application Option to Prisma input using transformer
+      const prismaInput = appOptionToPrismaInput(opt);
+      return tx.option.create({
         data: {
-          text: opt.text,
-          text_sl: opt.text_sl,
-          text_hr: opt.text_hr,
-          correct: opt.isCorrect, // Map isCorrect to correct field in database
+          text: prismaInput.text,
+          text_sl: prismaInput.text_sl,
+          text_hr: prismaInput.text_hr,
+          imageUrl: prismaInput.imageUrl,
+          altText: prismaInput.altText,
+          altText_sl: prismaInput.altText_sl,
+          altText_hr: prismaInput.altText_hr,
+          contentType: prismaInput.contentType,
+          imageSuffix: prismaInput.imageSuffix,
+          imageSuffix_sl: prismaInput.imageSuffix_sl,
+          imageSuffix_hr: prismaInput.imageSuffix_hr,
+          correct: prismaInput.correct,
           questionId: question.id, // Associate with the created question
         },
-      })
-    )
+      });
+    })
   ) : [];
 
   // Step 3: For SINGLE_CHOICE questions, identify and set the correct option
@@ -332,25 +342,44 @@ async function updateQuestion(
   // c. Update existing options and create new ones (if any)
   const updatedOptions = questionData.options ? await Promise.all(
     questionData.options.map(async (opt) => {
+      // Transform application Option to Prisma input using transformer
+      const prismaInput = appOptionToPrismaInput(opt);
+
       if (opt.id) {
         // Update existing option
         return tx.option.update({
           where: { id: opt.id },
           data: {
-            text: opt.text,
-            text_sl: opt.text_sl,
-            text_hr: opt.text_hr,
-            correct: opt.isCorrect, // Map isCorrect to correct field
+            text: prismaInput.text,
+            text_sl: prismaInput.text_sl,
+            text_hr: prismaInput.text_hr,
+            imageUrl: prismaInput.imageUrl,
+            altText: prismaInput.altText,
+            altText_sl: prismaInput.altText_sl,
+            altText_hr: prismaInput.altText_hr,
+            contentType: prismaInput.contentType,
+            imageSuffix: prismaInput.imageSuffix,
+            imageSuffix_sl: prismaInput.imageSuffix_sl,
+            imageSuffix_hr: prismaInput.imageSuffix_hr,
+            correct: prismaInput.correct,
           },
         });
       } else {
         // Create new option
         return tx.option.create({
           data: {
-            text: opt.text,
-            text_sl: opt.text_sl,
-            text_hr: opt.text_hr,
-            correct: opt.isCorrect, // Map isCorrect to correct field
+            text: prismaInput.text,
+            text_sl: prismaInput.text_sl,
+            text_hr: prismaInput.text_hr,
+            imageUrl: prismaInput.imageUrl,
+            altText: prismaInput.altText,
+            altText_sl: prismaInput.altText_sl,
+            altText_hr: prismaInput.altText_hr,
+            contentType: prismaInput.contentType,
+            imageSuffix: prismaInput.imageSuffix,
+            imageSuffix_sl: prismaInput.imageSuffix_sl,
+            imageSuffix_hr: prismaInput.imageSuffix_hr,
+            correct: prismaInput.correct,
             questionId: questionId,
           },
         });
@@ -437,7 +466,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           questionType: q.questionType,
           optionsCount: q.options?.length,
           correctOptions: q.options?.filter(o => o.isCorrect)?.length,
-          options: q.options?.map(o => ({ text: o.text, isCorrect: o.isCorrect }))
+          options: q.options?.map(o => ({ text: o.text, isCorrect: o.isCorrect })),
+          // DEBUG: Show dropdown and ordering data
+          dropdownData: q.dropdownData ? {
+            dropdownsCount: q.dropdownData.dropdowns?.length,
+            dropdowns: q.dropdownData.dropdowns?.map(d => ({
+              id: d.id,
+              optionsCount: d.options?.length,
+              options: d.options?.map(opt => ({
+                contentType: opt.content?.type,
+                hasImage: !!opt.content?.imageUrl,
+                imageUrl: opt.content?.imageUrl
+              }))
+            }))
+          } : undefined,
+          orderingData: q.orderingData ? {
+            itemsCount: q.orderingData.items?.length,
+            items: q.orderingData.items?.map(item => ({
+              id: item.id,
+              contentType: item.content?.type,
+              hasImage: !!item.content?.imageUrl,
+              imageUrl: item.content?.imageUrl
+            }))
+          } : undefined
         }))
       }, null, 2));
     }
@@ -733,13 +784,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         text_hr: question.text_hr,
         imageUrl: question.imageUrl,
         questionType: question.questionType,
-        options: question.options.map(option => ({
-          id: option.id,
-          text: option.text,
-          text_sl: option.text_sl,
-          text_hr: option.text_hr,
-          isCorrect: option.correct, // Map 'correct' to 'isCorrect'
-        })),
+        // Use transformer to convert Prisma options to application options
+        options: question.options.map(option => prismaOptionToApp(option)),
         // Transform answersData back to appropriate typed data based on questionType
         ...(question.questionType === "MULTIPLE_CHOICE" && question.answersData && {
           multipleChoiceData: question.answersData

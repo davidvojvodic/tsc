@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { GripVertical, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
-import Image from "next/image";
+import { ImageWithFallback } from "@/components/image-with-fallback";
 import type { OrderingItem, OrderingConfiguration } from "@/components/quiz-editor/quiz-editor-layout";
 
 interface OrderingQuestionProps {
@@ -159,9 +159,28 @@ export function OrderingQuestion({
   const renderItemContent = (item: OrderingItem) => {
     const { content } = item;
 
-    // Text only content
+    // MIXED type: show image + text
+    if (content.type === "mixed" && content.imageUrl) {
+      const textContent = getLocalizedContent(content, "text", language);
+      return (
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="relative h-12 w-12 flex-shrink-0 rounded overflow-hidden border">
+            <ImageWithFallback
+              src={content.imageUrl}
+              alt={textContent || "Ordering item"}
+              width={48}
+              height={48}
+              className="object-cover"
+            />
+          </div>
+          {textContent && <span className="flex-1 text-sm">{textContent}</span>}
+        </div>
+      );
+    }
+
+    // TEXT type: show text only
     const textContent = getLocalizedContent(content, "text", language);
-    return <span>{textContent}</span>;
+    return <span className="text-sm">{textContent}</span>;
   };
 
   const progressCount = orderedItems.length;
@@ -253,7 +272,7 @@ export function OrderingQuestion({
                         </div>
 
                         {/* Item content */}
-                        <div className="flex-1 text-sm">
+                        <div className="flex-1 min-w-0">
                           {renderItemContent(item)}
                         </div>
 

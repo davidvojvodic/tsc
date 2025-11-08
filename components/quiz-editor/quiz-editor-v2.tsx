@@ -3,19 +3,22 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { QuizEditorLayout, QuizData, Teacher } from "./quiz-editor-layout";
+import { GroupedValidationErrors } from "@/lib/validation-utils";
 
 interface QuizEditorV2Props {
   teachers: Teacher[];
   initialData?: QuizData;
   onSave?: (data: QuizData) => Promise<void>;
   onCancel?: () => void;
+  validationErrors?: GroupedValidationErrors | null;
 }
 
 export function QuizEditorV2({
   teachers,
   initialData,
   onSave,
-  onCancel
+  onCancel,
+  validationErrors
 }: QuizEditorV2Props) {
   const [isSaving, setIsSaving] = useState(false);
 
@@ -51,6 +54,7 @@ export function QuizEditorV2({
         onAutoSave={handleAutoSave}
         onCancel={onCancel}
         teachers={teachers}
+        validationErrors={validationErrors}
       />
     </div>
   );

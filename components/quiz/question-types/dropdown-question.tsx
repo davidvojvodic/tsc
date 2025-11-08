@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageDropdown } from "@/components/ui/image-dropdown";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getLocalizedContent } from "@/lib/language-utils";
@@ -10,9 +11,18 @@ import { CheckCircle2, XCircle } from "lucide-react";
 
 interface DropdownOption {
   id: string;
+  // Legacy text fields (for backward compatibility)
   text?: string;
   text_sl?: string;
   text_hr?: string;
+  // New content system
+  content?: {
+    type: "text" | "mixed";
+    text?: string;
+    text_sl?: string;
+    text_hr?: string;
+    imageUrl?: string;
+  };
   isCorrect: boolean;
 }
 
@@ -86,6 +96,11 @@ export function DropdownQuestion({
     return getLocalizedContent(dropdownData, "template", language) || dropdownData.template || "";
   };
 
+  // Helper to check if dropdown has image options
+  const hasImageOptions = (dropdown: DropdownField) => {
+    return dropdown.options.some(opt => opt.content?.type === "mixed");
+  };
+
   const renderTemplateWithDropdowns = () => {
     const template = getTemplate();
     const parts = template.split(/(\{[^}]+\})/);
@@ -104,32 +119,58 @@ export function DropdownQuestion({
         const result = results.find(r => r.dropdownId === dropdownId);
         const isCorrect = result?.isCorrect;
         const hasResult = showResults && result;
+        const useImageDropdown = hasImageOptions(dropdown);
+
+        // Determine variant based on results
+        const variant = hasResult ? (isCorrect ? "success" : "error") : "default";
 
         return (
           <span key={index} className="inline-flex items-center gap-2 mx-1">
-            <Select
-              value={selections[dropdownId] || ""}
-              onValueChange={(value) => handleSelectionChange(dropdownId, value)}
-              disabled={disabled}
-            >
-              <SelectTrigger
-                className={`
-                  inline-flex min-w-[120px] h-8 px-2 py-1 text-sm
-                  ${hasResult ? (isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50') : ''}
-                `}
+            {useImageDropdown ? (
+              // Use ImageDropdown for options with images
+              <ImageDropdown
+                options={dropdown.options}
+                value={selections[dropdownId] || ""}
+                onValueChange={(value) => handleSelectionChange(dropdownId, value)}
+                placeholder={getLocalizedContent(dropdown, "label", language) || dropdown.label || "Select"}
+                disabled={disabled}
+                variant={variant}
+                language={language}
+                className="inline-flex min-w-[180px]"
+              />
+            ) : (
+              // Use native Select for text-only options
+              <Select
+                value={selections[dropdownId] || ""}
+                onValueChange={(value) => handleSelectionChange(dropdownId, value)}
+                disabled={disabled}
               >
-                <SelectValue
-                  placeholder={getLocalizedContent(dropdown, "label", language) || dropdown.label || "Select"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdown.options.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    {getLocalizedContent(option, "text", language) || option.text}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <SelectTrigger
+                  className={`
+                    inline-flex min-w-[120px] h-8 px-2 py-1 text-sm
+                    ${hasResult ? (isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50') : ''}
+                  `}
+                >
+                  <SelectValue
+                    placeholder={getLocalizedContent(dropdown, "label", language) || dropdown.label || "Select"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdown.options.map((option) => {
+                    // Get text from content or legacy fields
+                    const optionText = option.content
+                      ? getLocalizedContent(option.content, "text", language)
+                      : getLocalizedContent(option, "text", language) || option.text;
+
+                    return (
+                      <SelectItem key={option.id} value={option.id}>
+                        {optionText}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            )}
 
             {hasResult && (
               <span className="inline-flex">

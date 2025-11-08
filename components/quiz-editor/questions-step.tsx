@@ -6,6 +6,7 @@ import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { QuestionSidebar } from "./question-sidebar";
 import { QuestionEditor } from "./question-editor";
 import { AutoSaveIndicator } from "./autosave-indicator";
+import { ValidationErrorPanel } from "./validation-error-panel";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -13,21 +14,27 @@ import {
 } from "@/components/ui/resizable";
 import { Teacher, QuizData } from "./quiz-editor-layout";
 import { useQuizEditor } from "./quiz-editor-provider";
+import { GroupedValidationErrors } from "@/lib/validation-utils";
 
 interface QuestionsStepProps {
   teachers: Teacher[];
   onBack: () => void;
   onSave: (data: QuizData) => Promise<void>;
   onCancel?: () => void;
+  validationErrors?: GroupedValidationErrors | null;
 }
 
-export function QuestionsStep({ teachers, onBack, onSave, onCancel }: QuestionsStepProps) {
+export function QuestionsStep({ teachers, onBack, onSave, onCancel, validationErrors }: QuestionsStepProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const { quiz } = useQuizEditor();
 
   const handleQuestionSelect = useCallback((index: number) => {
     setCurrentQuestionIndex(index);
+  }, []);
+
+  const handleErrorClick = useCallback((questionIndex: number) => {
+    setCurrentQuestionIndex(questionIndex);
   }, []);
 
   const handleSave = async () => {
@@ -82,6 +89,12 @@ export function QuestionsStep({ teachers, onBack, onSave, onCancel }: QuestionsS
         </div>
       </div>
 
+      {/* Validation Error Panel */}
+      <ValidationErrorPanel
+        errors={validationErrors ?? null}
+        onErrorClick={handleErrorClick}
+      />
+
       {/* Main Editor Area */}
       <div className="flex-1 overflow-hidden">
         {/* Mobile: Stack vertically, Desktop: Side by side */}
@@ -91,6 +104,7 @@ export function QuestionsStep({ teachers, onBack, onSave, onCancel }: QuestionsS
             questionIndex={currentQuestionIndex}
             teachers={teachers}
             onQuestionChange={handleQuestionSelect}
+            validationErrors={validationErrors}
           />
         </div>
 
@@ -102,6 +116,7 @@ export function QuestionsStep({ teachers, onBack, onSave, onCancel }: QuestionsS
               <QuestionSidebar
                 currentIndex={currentQuestionIndex}
                 onQuestionSelect={handleQuestionSelect}
+                validationErrors={validationErrors}
               />
             </ResizablePanel>
 
@@ -113,6 +128,7 @@ export function QuestionsStep({ teachers, onBack, onSave, onCancel }: QuestionsS
                 questionIndex={currentQuestionIndex}
                 teachers={teachers}
                 onQuestionChange={handleQuestionSelect}
+                validationErrors={validationErrors}
               />
             </ResizablePanel>
           </ResizablePanelGroup>

@@ -709,9 +709,9 @@ function validateChoiceQuestion(
     // Check for empty option texts - at least one language must be filled
     let allOptionsValid = true;
     question.options.forEach((option, index) => {
-      const hasOptionText = (option.text !== null && option.text.trim().length > 0) ||
-                            (option.text_sl !== null && option.text_sl.trim().length > 0) ||
-                            (option.text_hr !== null && option.text_hr.trim().length > 0);
+      const hasOptionText = (option.text && option.text.trim().length > 0) ||
+                            (option.text_sl && option.text_sl.trim().length > 0) ||
+                            (option.text_hr && option.text_hr.trim().length > 0);
 
       if (!hasOptionText) {
         result.errors.push({

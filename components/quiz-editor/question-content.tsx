@@ -46,9 +46,19 @@ export function QuestionContent({
         <Select
           value={question.questionType}
           onValueChange={(value) => {
+            console.log('[QUESTION TYPE CHANGE]', { from: question.questionType, to: value });
 
             onChange("questionType", value);
-            // Clear options for TEXT_INPUT questions and set default textInputData
+
+            // IMPORTANT: Clear ALL type-specific data to prevent validation errors
+            // This ensures old data doesn't interfere with the new question type
+            onChange("textInputData", undefined);
+            onChange("dropdownData", undefined);
+            onChange("orderingData", undefined);
+            onChange("matchingData", undefined);
+            onChange("multipleChoiceData", undefined);
+
+            // Set up data for the NEW question type
             if (value === "TEXT_INPUT") {
               const defaultTextInputData = {
                 acceptableAnswers: [""],
@@ -61,9 +71,7 @@ export function QuestionContent({
               onChange("options", []);
               onChange("textInputData", defaultTextInputData);
             }
-
-            // Clear options for DROPDOWN questions and set default dropdownData
-            if (value === "DROPDOWN") {
+            else if (value === "DROPDOWN") {
               const defaultDropdownData = {
                 template: "",
                 template_sl: "",
@@ -79,9 +87,7 @@ export function QuestionContent({
               onChange("options", []);
               onChange("dropdownData", defaultDropdownData);
             }
-
-            // Clear options for ORDERING questions and set default orderingData
-            if (value === "ORDERING") {
+            else if (value === "ORDERING") {
               const defaultOrderingData: OrderingConfiguration = {
                 instructions: "Arrange the following items in the correct order:",
                 instructions_sl: "",
@@ -94,9 +100,7 @@ export function QuestionContent({
               onChange("options", []);
               onChange("orderingData", defaultOrderingData);
             }
-
-            // Clear options for MATCHING questions and set default matchingData
-            if (value === "MATCHING") {
+            else if (value === "MATCHING") {
               const defaultMatchingData: MatchingConfiguration = {
                 instructions: "Match the items on the left with the corresponding items on the right:",
                 instructions_sl: "",
@@ -126,6 +130,24 @@ export function QuestionContent({
               onChange("options", []);
               onChange("matchingData", defaultMatchingData);
             }
+            else if (value === "SINGLE_CHOICE" || value === "MULTIPLE_CHOICE") {
+              // For choice questions, initialize with empty options if needed
+              if (!question.options || question.options.length === 0) {
+                onChange("options", []);
+              }
+
+              // Initialize multipleChoiceData for MULTIPLE_CHOICE
+              if (value === "MULTIPLE_CHOICE") {
+                const defaultMultipleChoiceData = {
+                  scoringMethod: "ALL_OR_NOTHING" as const,
+                  minSelections: 1,
+                  maxSelections: undefined,
+                };
+                onChange("multipleChoiceData", defaultMultipleChoiceData);
+              }
+            }
+
+            console.log('[QUESTION TYPE CHANGE] Cleared old data and set new defaults');
           }}
         >
           <SelectTrigger>

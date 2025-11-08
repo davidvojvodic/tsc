@@ -5,20 +5,22 @@ import { Button } from "@/components/ui/button";
 import { useQuizEditor } from "./quiz-editor-provider";
 import { QuestionListItem } from "./question-list-item";
 import { ProgressIndicator } from "./progress-indicator";
+import { GroupedValidationErrors, questionHasErrors } from "@/lib/validation-utils";
 
 interface QuestionSidebarProps {
   currentIndex: number;
   onQuestionSelect: (index: number) => void;
+  validationErrors?: GroupedValidationErrors | null;
 }
 
 export function QuestionSidebar({
   currentIndex,
-  onQuestionSelect
+  onQuestionSelect,
+  validationErrors
 }: QuestionSidebarProps) {
   const {
     questions,
-    addQuestion,
-    validationErrors
+    addQuestion
   } = useQuizEditor();
 
   const handleAddQuestion = () => {
@@ -55,7 +57,7 @@ export function QuestionSidebar({
               index={index}
               isActive={index === currentIndex}
               isDragging={false} // Will be implemented with drag-and-drop
-              hasErrors={validationErrors[question.id]?.length > 0}
+              hasErrors={questionHasErrors(validationErrors ?? null, index)}
               onClick={() => onQuestionSelect(index)}
             />
           ))}

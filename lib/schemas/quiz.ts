@@ -1,21 +1,96 @@
 // lib/schemas/quiz.ts
 import * as z from "zod";
 
-// Base option schema for multilingual support
+// Shared image URL validation function
+// Allows both traditional URLs with extensions AND UploadThing URLs
+const validateImageUrl = (url: string | undefined): boolean => {
+  if (!url) return true; // Optional field
+
+  try {
+    const urlObj = new URL(url);
+
+    // Only allow http and https protocols
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      return false;
+    }
+
+    // Allow UploadThing URLs (utfs.io domain) without extension check
+    if (urlObj.hostname === 'utfs.io') {
+      return true;
+    }
+
+    // For other domains, validate file extension
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico'];
+    const pathname = urlObj.pathname.toLowerCase();
+    return validExtensions.some(ext => pathname.endsWith(ext));
+  } catch {
+    return false;
+  }
+};
+
+// Option content schemas - supports text and mixed (text + image)
+const optionTextContentSchema = z.object({
+  type: z.literal("text"),
+  text: z.string().optional(),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+});
+
+const optionMixedContentSchema = z.object({
+  type: z.literal("mixed"),
+  text: z.string().optional(),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+  imageUrl: z.string().url().optional().refine(
+    validateImageUrl,
+    { message: "Image URL must be a valid image (supports UploadThing and standard image URLs with extensions)" }
+  ),
+});
+
+const optionContentSchema = z.discriminatedUnion("type", [
+  optionTextContentSchema,
+  optionMixedContentSchema,
+]);
+
+// Base option schema for multilingual support with backward compatibility
 const optionSchema = z.object({
   id: z.string().optional(), // For existing options during updates
+  // Legacy text fields (for backward compatibility)
   text: z.string().nullable().optional(),
   text_sl: z.string().nullable().optional(),
   text_hr: z.string().nullable().optional(),
+  // New content system (optional - if present, takes precedence)
+  content: optionContentSchema.optional(),
   isCorrect: z.boolean().default(false),
 }).refine((data) => {
-  // At least one of the text fields must have content
-  const hasText = (data.text && data.text.trim().length > 0) ||
-                 (data.text_sl && data.text_sl.trim().length > 0) ||
-                 (data.text_hr && data.text_hr.trim().length > 0);
-  return hasText;
+  // Must have EITHER legacy text fields OR new content object
+  const hasLegacyText = (data.text && data.text.trim().length > 0) ||
+                        (data.text_sl && data.text_sl.trim().length > 0) ||
+                        (data.text_hr && data.text_hr.trim().length > 0);
+
+  const hasContent = data.content !== undefined;
+
+  // If content exists, validate it has text (for text/mixed types)
+  if (data.content && data.content.type === "text") {
+    const hasContentText = (data.content.text && data.content.text.trim().length > 0) ||
+                           (data.content.text_sl && data.content.text_sl.trim().length > 0) ||
+                           (data.content.text_hr && data.content.text_hr.trim().length > 0);
+    return hasContentText;
+  }
+
+  if (data.content && data.content.type === "mixed") {
+    // Mixed type needs BOTH text AND imageUrl (consistency with dropdown options)
+    const hasContentText = (data.content.text && data.content.text.trim().length > 0) ||
+                           (data.content.text_sl && data.content.text_sl.trim().length > 0) ||
+                           (data.content.text_hr && data.content.text_hr.trim().length > 0);
+    const hasImage = data.content.imageUrl && data.content.imageUrl.trim().length > 0;
+    return hasContentText && hasImage; // FIXED: Changed || to && for consistency
+  }
+
+  // At least legacy text OR content must be present
+  return hasLegacyText || hasContent;
 }, {
-  message: "Option must have text in at least one language",
+  message: "Option must have text in at least one language or valid content",
 });
 
 // Partial credit rules for multiple choice scoring
@@ -42,21 +117,45 @@ const textInputDataSchema = z.object({
   placeholder_hr: z.string().optional(),
 });
 
-// Dropdown option schema for dropdown questions
+// Dropdown option schema for dropdown questions - supports TEXT and MIXED content
 const dropdownOptionSchema = z.object({
   id: z.string().min(1, "Option ID required"),
-  text: z.string().optional(),
-  text_sl: z.string().optional(),
-  text_hr: z.string().optional(),
+  // Legacy text fields (for backward compatibility)
+  text: z.string().nullable().optional(),
+  text_sl: z.string().nullable().optional(),
+  text_hr: z.string().nullable().optional(),
+  // New content system (optional - if present, takes precedence)
+  content: optionContentSchema.optional(),
   isCorrect: z.boolean(),
 }).refine((data) => {
-  // At least one of the text fields must have content
-  const hasText = (data.text && data.text.trim().length > 0) ||
-                 (data.text_sl && data.text_sl.trim().length > 0) ||
-                 (data.text_hr && data.text_hr.trim().length > 0);
-  return hasText;
+  // Must have EITHER legacy text fields OR new content object
+  const hasLegacyText = (data.text && data.text.trim().length > 0) ||
+                        (data.text_sl && data.text_sl.trim().length > 0) ||
+                        (data.text_hr && data.text_hr.trim().length > 0);
+
+  const hasContent = data.content !== undefined;
+
+  // If content exists, validate it has text (for text/mixed types)
+  if (data.content && data.content.type === "text") {
+    const hasContentText = (data.content.text && data.content.text.trim().length > 0) ||
+                           (data.content.text_sl && data.content.text_sl.trim().length > 0) ||
+                           (data.content.text_hr && data.content.text_hr.trim().length > 0);
+    return hasContentText;
+  }
+
+  if (data.content && data.content.type === "mixed") {
+    // Mixed type needs BOTH text AND imageUrl
+    const hasContentText = (data.content.text && data.content.text.trim().length > 0) ||
+                           (data.content.text_sl && data.content.text_sl.trim().length > 0) ||
+                           (data.content.text_hr && data.content.text_hr.trim().length > 0);
+    const hasImage = data.content.imageUrl && data.content.imageUrl.trim().length > 0;
+    return hasContentText && hasImage;
+  }
+
+  // At least legacy text OR content must be present
+  return hasLegacyText || hasContent;
 }, {
-  message: "Dropdown option must have text in at least one language",
+  message: "Dropdown option must have text in at least one language or valid content (MIXED type requires both text and image)",
 });
 
 // Individual dropdown field schema
@@ -100,7 +199,7 @@ const dropdownDataSchema = z.object({
   message: "Dropdown question must have a template in at least one language",
 });
 
-// Ordering content schemas - simplified to text only
+// Ordering content schemas - supports text and mixed (text + image)
 const orderingTextContentSchema = z.object({
   type: z.literal("text"),
   text: z.string().optional(),
@@ -108,10 +207,26 @@ const orderingTextContentSchema = z.object({
   text_hr: z.string().optional(),
 });
 
-// Ordering item schema - text only
+const orderingMixedContentSchema = z.object({
+  type: z.literal("mixed"),
+  text: z.string().optional(),
+  text_sl: z.string().optional(),
+  text_hr: z.string().optional(),
+  imageUrl: z.string().url().optional().refine(
+    validateImageUrl,
+    { message: "Image URL must be a valid image (supports UploadThing and standard image URLs with extensions)" }
+  ),
+});
+
+const orderingItemContentSchema = z.discriminatedUnion("type", [
+  orderingTextContentSchema,
+  orderingMixedContentSchema,
+]);
+
+// Ordering item schema - supports text and mixed content
 const orderingItemSchema = z.object({
   id: z.string().min(1, "Item ID required"),
-  content: orderingTextContentSchema,
+  content: orderingItemContentSchema,
   correctPosition: z.number().int().positive(),
 }).refine((data) => {
   if (data.content.type === "text") {
@@ -120,9 +235,19 @@ const orderingItemSchema = z.object({
                    (data.content.text_hr && data.content.text_hr.trim().length > 0);
     return hasText;
   }
+
+  if (data.content.type === "mixed") {
+    // Mixed type needs BOTH text AND imageUrl
+    const hasText = (data.content.text && data.content.text.trim().length > 0) ||
+                   (data.content.text_sl && data.content.text_sl.trim().length > 0) ||
+                   (data.content.text_hr && data.content.text_hr.trim().length > 0);
+    const hasImage = data.content.imageUrl && data.content.imageUrl.trim().length > 0;
+    return hasText && hasImage; // Requires BOTH
+  }
+
   return true;
 }, {
-  message: "Ordering item must have text in at least one language",
+  message: "Ordering item must have text in at least one language (MIXED type requires both text and image)",
 });
 
 // Ordering specific data schema
@@ -153,10 +278,13 @@ const matchingTextContentSchema = z.object({
 
 const matchingImageContentSchema = z.object({
   type: z.literal("image"),
-  imageUrl: z.string().url().min(1, "Image URL required"),
-  altText: z.string().optional(),
-  altText_sl: z.string().optional(),
-  altText_hr: z.string().optional(),
+  imageUrl: z.string().url().min(1, "Image URL required").refine(
+    (url) => validateImageUrl(url),
+    { message: "Image URL must be a valid image (supports UploadThing and standard image URLs with extensions)" }
+  ),
+  altText: z.string().max(250, "Alt text must be 250 characters or less").optional(),
+  altText_sl: z.string().max(250, "Alt text must be 250 characters or less").optional(),
+  altText_hr: z.string().max(250, "Alt text must be 250 characters or less").optional(),
 });
 
 const matchingMixedContentSchema = z.object({
@@ -164,7 +292,10 @@ const matchingMixedContentSchema = z.object({
   text: z.string().optional(),
   text_sl: z.string().optional(),
   text_hr: z.string().optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url().optional().refine(
+    validateImageUrl,
+    { message: "Image URL must be a valid image (supports UploadThing and standard image URLs with extensions)" }
+  ),
   suffix: z.string().optional(),
   suffix_sl: z.string().optional(),
   suffix_hr: z.string().optional(),
@@ -248,7 +379,10 @@ const questionSchema = z.object({
   text: z.string().nullable().optional(),
   text_sl: z.string().nullable().optional(),
   text_hr: z.string().nullable().optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url().optional().refine(
+    validateImageUrl,
+    { message: "Image URL must be a valid image (supports UploadThing and standard image URLs with extensions)" }
+  ),
   questionType: z.enum(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TEXT_INPUT", "DROPDOWN", "ORDERING", "MATCHING"]).default("SINGLE_CHOICE"),
   options: z.array(optionSchema).optional(),
   multipleChoiceData: multipleChoiceDataSchema.optional(),
@@ -498,6 +632,9 @@ export const quizSubmissionSchema = z.object({
 export type QuizSchemaType = z.infer<typeof quizSchema>;
 export type QuestionSchemaType = z.infer<typeof questionSchema>;
 export type OptionSchemaType = z.infer<typeof optionSchema>;
+export type OptionTextContentType = z.infer<typeof optionTextContentSchema>;
+export type OptionMixedContentType = z.infer<typeof optionMixedContentSchema>;
+export type OptionContentType = z.infer<typeof optionContentSchema>;
 export type MultipleChoiceDataType = z.infer<typeof multipleChoiceDataSchema>;
 export type TextInputDataType = z.infer<typeof textInputDataSchema>;
 export type DropdownDataType = z.infer<typeof dropdownDataSchema>;
@@ -507,6 +644,9 @@ export type DropdownScoringType = z.infer<typeof dropdownScoringSchema>;
 export type PartialCreditRulesType = z.infer<typeof partialCreditRulesSchema>;
 export type OrderingDataType = z.infer<typeof orderingDataSchema>;
 export type OrderingItemType = z.infer<typeof orderingItemSchema>;
+export type OrderingTextContentType = z.infer<typeof orderingTextContentSchema>;
+export type OrderingMixedContentType = z.infer<typeof orderingMixedContentSchema>;
+export type OrderingItemContentType = z.infer<typeof orderingItemContentSchema>;
 export type MatchingDataType = z.infer<typeof matchingDataSchema>;
 export type MatchingItemType = z.infer<typeof matchingItemSchema>;
 export type CorrectMatchType = z.infer<typeof correctMatchSchema>;

@@ -3,6 +3,7 @@
 import React from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { ImageWithFallback } from "@/components/image-with-fallback";
 import { MultipleChoiceQuestion } from "./question-types/multiple-choice-question";
 import { TextInputQuestion } from "./question-types/text-input-question";
 import { DropdownQuestion } from "./question-types/dropdown-question";
@@ -11,6 +12,7 @@ import { MatchingQuestion } from "./question-types/matching-question";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { cn } from "@/lib/utils";
+import type { OrderingItem, OrderingConfiguration, OrderingItemContent } from "@/components/quiz-editor/quiz-editor-layout";
 
 interface Option {
   id: string;
@@ -18,6 +20,13 @@ interface Option {
   text_sl?: string | null;
   text_hr?: string | null;
   isCorrect: boolean;
+  content?: {
+    type: "text" | "mixed";
+    text?: string;
+    text_sl?: string;
+    text_hr?: string;
+    imageUrl?: string;
+  };
 }
 
 interface MultipleChoiceData {
@@ -64,47 +73,6 @@ interface DropdownConfiguration {
     pointsPerDropdown: number;
     requireAllCorrect: boolean;
     penalizeIncorrect: boolean;
-  };
-}
-
-// Ordering content types - matching backend schema
-type OrderingTextContent = {
-  type: "text";
-  text?: string;
-  text_sl?: string;
-  text_hr?: string;
-};
-
-type OrderingImageContent = {
-  type: "image";
-  imageUrl: string;
-  altText: string;
-  altText_sl?: string;
-  altText_hr?: string;
-};
-
-type OrderingItemContent = OrderingTextContent;
-
-interface OrderingItem {
-  id: string;
-  correctPosition: number;
-  content: OrderingItemContent;
-}
-
-interface OrderingConfiguration {
-  instructions?: string;
-  instructions_sl?: string;
-  instructions_hr?: string;
-  items: OrderingItem[];
-  scoring?: {
-    exactOrder?: boolean;
-    partialCredit?: boolean;
-    penaltyPerMisplacement?: number;
-    adjacencyBonus?: boolean;
-  };
-  validation?: {
-    requireAllItems?: boolean;
-    allowPartialSubmission?: boolean;
   };
 }
 
@@ -355,31 +323,62 @@ export function QuestionRenderer({
         disabled={disabled}
         className="space-y-3"
       >
-        {question.options?.map((option) => (
-          <div
-            key={option.id}
-            className={cn(
-              "flex items-center space-x-2 rounded-lg border p-4 transition-colors",
-              !disabled && "cursor-pointer hover:bg-muted/50",
-              disabled && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            <RadioGroupItem
-              value={option.id}
-              id={option.id}
-              disabled={disabled}
-            />
-            <Label
-              htmlFor={option.id}
+        {question.options?.map((option) => {
+          // Check if option has image content
+          const hasImageContent = option.content?.type === "mixed" && option.content?.imageUrl;
+          const imageUrl = hasImageContent ? option.content?.imageUrl : undefined;
+          const optionText = option.content?.type === "text" || option.content?.type === "mixed"
+            ? getLocalizedContent(option.content, "text", language)
+            : getLocalizedContent(option, "text", language);
+
+          return (
+            <div
+              key={option.id}
               className={cn(
-                "flex-1 cursor-pointer",
-                disabled && "cursor-not-allowed"
+                "flex items-start space-x-3 rounded-lg border p-4 transition-colors",
+                !disabled && "cursor-pointer hover:bg-muted/50",
+                disabled && "opacity-50 cursor-not-allowed"
               )}
             >
-              {getLocalizedContent(option, "text", language)}
-            </Label>
-          </div>
-        ))}
+              <RadioGroupItem
+                value={option.id}
+                id={option.id}
+                disabled={disabled}
+                className="mt-0.5"
+              />
+
+              <div className="flex-1 space-y-2">
+                {/* Image content (for mixed type) */}
+                {hasImageContent && imageUrl && (
+                  <div className="relative w-full max-w-sm">
+                    <ImageWithFallback
+                      src={imageUrl}
+                      alt={optionText || "Option image"}
+                      width={400}
+                      height={300}
+                      className="rounded-md w-full h-auto object-contain"
+                      loading="lazy"
+                      showPlaceholder={true}
+                    />
+                  </div>
+                )}
+
+                {/* Text content */}
+                {optionText && (
+                  <Label
+                    htmlFor={option.id}
+                    className={cn(
+                      "block text-sm leading-relaxed",
+                      !disabled && "cursor-pointer"
+                    )}
+                  >
+                    {optionText}
+                  </Label>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </RadioGroup>
     </div>
   );

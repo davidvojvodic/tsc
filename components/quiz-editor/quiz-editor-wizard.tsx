@@ -5,14 +5,16 @@ import { QuizDetailsStep } from "./quiz-details-step";
 import { QuestionsStep } from "./questions-step";
 import { useQuizEditor } from "./quiz-editor-provider";
 import { Teacher, QuizData } from "./quiz-editor-layout";
+import { GroupedValidationErrors } from "@/lib/validation-utils";
 
 interface QuizEditorWizardProps {
   teachers: Teacher[];
   onSave: (data: QuizData) => Promise<void>;
   onCancel?: () => void;
+  validationErrors?: GroupedValidationErrors | null;
 }
 
-export function QuizEditorWizard({ teachers, onSave, onCancel }: QuizEditorWizardProps) {
+export function QuizEditorWizard({ teachers, onSave, onCancel, validationErrors }: QuizEditorWizardProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const { quiz, saveQuiz } = useQuizEditor();
 
@@ -96,6 +98,7 @@ export function QuizEditorWizard({ teachers, onSave, onCancel }: QuizEditorWizar
             onBack={handleBack}
             onSave={onSave}
             onCancel={onCancel}
+            validationErrors={validationErrors}
           />
         )}
       </div>

@@ -14,7 +14,7 @@ import { QuestionActions } from "./question-actions";
 import { EmptyState } from "./empty-state";
 import { AutoSaveIndicator } from "./autosave-indicator";
 import { ScoringMethodSelector } from "./scoring-method-selector";
-import { Teacher, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration } from "./quiz-editor-layout";
+import { Teacher, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration, MultipleChoiceConfiguration } from "./quiz-editor-layout";
 import { validateQuestion } from "@/lib/quiz-validation";
 import { GroupedValidationErrors, questionHasErrors } from "@/lib/validation-utils";
 
@@ -59,7 +59,7 @@ export function QuestionEditor({
     }
   };
 
-  const handleQuestionUpdate = (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration) => {
+  const handleQuestionUpdate = (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration | MultipleChoiceConfiguration | undefined) => {
     updateQuestion(questionIndex, { [field]: value });
   };
 

@@ -9,7 +9,7 @@ import { QuestionImageUploader } from "./question-image-uploader";
 interface QuestionContentProps {
   question: Question;
   language: Language;
-  onChange: (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration) => void;
+  onChange: (field: string, value: string | Option[] | TextInputConfiguration | DropdownConfiguration | OrderingConfiguration | MatchingConfiguration | undefined) => void;
 }
 
 export function QuestionContent({

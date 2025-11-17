@@ -20,6 +20,13 @@ interface Question {
     text_sl?: string | null;
     text_hr?: string | null;
     isCorrect: boolean;
+    content?: {
+      type: "text" | "mixed";
+      text?: string;
+      text_sl?: string;
+      text_hr?: string;
+      imageUrl?: string;
+    };
   }[];
   multipleChoiceData?: {
     scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
@@ -97,7 +104,8 @@ export function QuizDetailPage({ quiz, language }: QuizDetailPageProps) {
     const localizedOptions = question.options?.map(option => ({
       id: option.id,
       text: getLocalizedContent(option, "text", language) || option.text,
-      isCorrect: option.isCorrect
+      isCorrect: option.isCorrect,
+      content: option.content // CRITICAL: Preserve content object with image data
     })) || [];
 
     return {

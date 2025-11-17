@@ -49,10 +49,32 @@ export default async function QuizPage({
         text_hr: question.text_hr,
         imageUrl: question.imageUrl,
         questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING",
-        options: question.options?.map(option => ({
-          ...option,
-          isCorrect: option.correct // Map 'correct' to 'isCorrect'
-        })) || [],
+        options: question.options?.map(option => {
+          const contentType = (option.contentType as "text" | "mixed") || "text";
+          const contentObj = contentType === "mixed" && option.imageUrl
+            ? {
+                type: "mixed" as const,
+                text: option.text || "",
+                text_sl: option.text_sl || "",
+                text_hr: option.text_hr || "",
+                imageUrl: option.imageUrl,
+              }
+            : {
+                type: "text" as const,
+                text: option.text || "",
+                text_sl: option.text_sl || "",
+                text_hr: option.text_hr || "",
+              };
+
+          return {
+            id: option.id,
+            text: option.text,
+            text_sl: option.text_sl,
+            text_hr: option.text_hr,
+            isCorrect: option.correct,
+            content: contentObj,
+          };
+        }) || [],
         // Transform answersData to multipleChoiceData for multiple choice questions
         multipleChoiceData: question.questionType === "MULTIPLE_CHOICE" && question.answersData
           ? question.answersData as {

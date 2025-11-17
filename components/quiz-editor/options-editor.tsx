@@ -1,14 +1,17 @@
 "use client";
 
-// import { useState } from "react"; // Removed unused import
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Question, Option } from "./quiz-editor-layout";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Question, Option, OptionContent } from "./quiz-editor-layout";
 import { Language } from "./quiz-editor-provider";
 import { cn } from "@/lib/utils";
+import { OptionImageUploader } from "./option-image-uploader";
+import { getOptionContentType } from "@/lib/option-content-utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface OptionsEditorProps {
   question: Question;
@@ -21,6 +24,8 @@ export function OptionsEditor({
   language,
   onChange
 }: OptionsEditorProps) {
+  const { toast } = useToast();
+
   const getTextFieldName = (baseField: string) => {
     if (language === "sl") return `${baseField}_sl`;
     if (language === "hr") return `${baseField}_hr`;
@@ -40,10 +45,18 @@ export function OptionsEditor({
 
   const addOption = () => {
     const newOption: Option = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: undefined,
+      // Initialize legacy fields as empty strings (not null) for better compatibility
       text: "",
       text_sl: "",
       text_hr: "",
+      // New content system
+      content: {
+        type: "text",
+        text: "",
+        text_sl: "",
+        text_hr: "",
+      },
       isCorrect: false
     };
 
@@ -58,15 +71,15 @@ export function OptionsEditor({
     onChange("options", newOptions);
   };
 
-  const updateOption = (optionIndex: number, field: keyof Option, value: string | boolean) => {
+  const updateOption = (optionIndex: number, updates: Partial<Option>) => {
     const newOptions = [...question.options];
     newOptions[optionIndex] = {
       ...newOptions[optionIndex],
-      [field]: value
+      ...updates
     };
 
     // For single choice, ensure only one option is correct
-    if (field === "isCorrect" && value && question.questionType === "SINGLE_CHOICE") {
+    if (updates.isCorrect && question.questionType === "SINGLE_CHOICE") {
       newOptions.forEach((option, index) => {
         if (index !== optionIndex) {
           option.isCorrect = false;
@@ -75,6 +88,76 @@ export function OptionsEditor({
     }
 
     onChange("options", newOptions);
+  };
+
+  const switchContentType = (optionIndex: number, newType: "text" | "mixed") => {
+    const option = question.options[optionIndex];
+    let newContent: OptionContent;
+
+    switch (newType) {
+      case "text":
+        // Convert to text content, preserve existing text if any
+        newContent = {
+          type: "text",
+          text: option.content?.type === "text" ? option.content.text :
+                option.content?.type === "mixed" ? option.content.text :
+                option.text || "",
+          text_sl: option.content?.type === "text" ? option.content.text_sl :
+                   option.content?.type === "mixed" ? option.content.text_sl :
+                   option.text_sl || "",
+          text_hr: option.content?.type === "text" ? option.content.text_hr :
+                   option.content?.type === "mixed" ? option.content.text_hr :
+                   option.text_hr || "",
+        };
+        break;
+
+      case "mixed":
+        // Convert to mixed content, preserve both text and image if available
+        newContent = {
+          type: "mixed",
+          text: option.content?.type === "text" ? option.content.text :
+                option.content?.type === "mixed" ? option.content.text :
+                option.text || "",
+          text_sl: option.content?.type === "text" ? option.content.text_sl :
+                   option.content?.type === "mixed" ? option.content.text_sl :
+                   option.text_sl || "",
+          text_hr: option.content?.type === "text" ? option.content.text_hr :
+                   option.content?.type === "mixed" ? option.content.text_hr :
+                   option.text_hr || "",
+          imageUrl: option.content?.type === "mixed" ? option.content.imageUrl : undefined,
+        };
+        break;
+    }
+
+    // Sync legacy fields when switching content type
+    const updates: Partial<Option> = {
+      content: newContent,
+      text: newContent.text || "",
+      text_sl: newContent.text_sl || "",
+      text_hr: newContent.text_hr || "",
+    };
+
+    updateOption(optionIndex, updates);
+  };
+
+  const updateOptionContent = (optionIndex: number, field: string, value: string) => {
+    const option = question.options[optionIndex];
+    if (!option.content) return;
+
+    const newContent = { ...option.content, [field]: value };
+
+    // IMPORTANT: Also update legacy text fields for backward compatibility
+    // This ensures validation passes which checks BOTH content AND legacy fields
+    const updates: Partial<Option> = {
+      content: newContent as OptionContent
+    };
+
+    // Sync content text fields to legacy fields
+    if (field === "text" || field === "text_sl" || field === "text_hr") {
+      updates[field] = value;
+    }
+
+    updateOption(optionIndex, updates);
   };
 
   const textFieldName = getTextFieldName("text");
@@ -97,11 +180,38 @@ export function OptionsEditor({
 
       <div className="space-y-3">
         {question.options.map((option, optionIndex) => {
-          // Get the appropriate text field based on language
+          const contentType = getOptionContentType(option);
+
+          // IMPORTANT: Initialize content object if missing (for legacy or newly created options)
+          if (!option.content) {
+            // Auto-fix: Create content object from legacy fields
+            const initialContent = {
+              type: "text" as const,
+              text: option.text || "",
+              text_sl: option.text_sl || "",
+              text_hr: option.text_hr || "",
+            };
+            // Update the option with content object
+            setTimeout(() => {
+              updateOption(optionIndex, { content: initialContent });
+            }, 0);
+          }
+
+          // Get current text value based on content type and language
           let currentText = "";
-          if (textFieldName === "text") currentText = option.text || "";
-          else if (textFieldName === "text_sl") currentText = option.text_sl || "";
-          else if (textFieldName === "text_hr") currentText = option.text_hr || "";
+
+          if (option.content) {
+            if (option.content.type === "text" || option.content.type === "mixed") {
+              if (textFieldName === "text") currentText = option.content.text || "";
+              else if (textFieldName === "text_sl") currentText = option.content.text_sl || "";
+              else if (textFieldName === "text_hr") currentText = option.content.text_hr || "";
+            }
+          } else {
+            // Legacy option without content object - fallback to legacy fields
+            if (textFieldName === "text") currentText = option.text || "";
+            else if (textFieldName === "text_sl") currentText = option.text_sl || "";
+            else if (textFieldName === "text_hr") currentText = option.text_hr || "";
+          }
 
           return (
             <Card key={option.id || optionIndex} className="border-dashed">
@@ -115,7 +225,7 @@ export function OptionsEditor({
                         type={question.questionType === "SINGLE_CHOICE" ? "radio" : "checkbox"}
                         name={question.questionType === "SINGLE_CHOICE" ? "correct-option" : undefined}
                         checked={option.isCorrect}
-                        onChange={(e) => updateOption(optionIndex, "isCorrect", e.target.checked)}
+                        onChange={(e) => updateOption(optionIndex, { isCorrect: e.target.checked })}
                         className="h-4 w-4"
                       />
                       <Label className="text-sm font-normal cursor-pointer">
@@ -139,21 +249,64 @@ export function OptionsEditor({
                     )}
                   </div>
 
-                  {/* Option text */}
+                  {/* Content Type Selector */}
+                  <div>
+                    <Label className="text-sm mb-2 block">Content Type</Label>
+                    <Tabs
+                      value={contentType}
+                      onValueChange={(value) =>
+                        switchContentType(optionIndex, value as "text" | "mixed")
+                      }
+                    >
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="text">Text Only</TabsTrigger>
+                        <TabsTrigger value="mixed">Text + Image</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+
+                  {/* Content Fields based on type */}
                   <div className="space-y-3">
-                    <div>
-                      <Label className="text-sm">
-                        Option Text ({language.toUpperCase()})
-                      </Label>
-                      <Input
-                        value={currentText}
-                        onChange={(e) => updateOption(optionIndex, textFieldName as keyof Option, e.target.value)}
-                        placeholder={getPlaceholder(optionIndex, language)}
-                        className={cn(
-                          option.isCorrect && "border-green-300 bg-green-50"
-                        )}
-                      />
-                    </div>
+                    {contentType === "text" && (
+                      <div>
+                        <Label className="text-sm">
+                          Option Text ({language.toUpperCase()})
+                        </Label>
+                        <Input
+                          value={currentText}
+                          onChange={(e) => updateOptionContent(optionIndex, textFieldName, e.target.value)}
+                          placeholder={getPlaceholder(optionIndex, language)}
+                          className={cn(
+                            option.isCorrect && "border-green-300 bg-green-50"
+                          )}
+                        />
+                      </div>
+                    )}
+
+                    {contentType === "mixed" && option.content && option.content.type === "mixed" && (
+                      <>
+                        <div>
+                          <Label className="text-sm">
+                            Option Text ({language.toUpperCase()})
+                          </Label>
+                          <Input
+                            value={currentText}
+                            onChange={(e) => updateOptionContent(optionIndex, textFieldName, e.target.value)}
+                            placeholder={getPlaceholder(optionIndex, language)}
+                            className={cn(
+                              option.isCorrect && "border-green-300 bg-green-50"
+                            )}
+                          />
+                        </div>
+
+                        <OptionImageUploader
+                          imageUrl={option.content.imageUrl}
+                          language={language}
+                          onImageUpload={(url) => updateOptionContent(optionIndex, "imageUrl", url)}
+                          onImageRemove={() => updateOptionContent(optionIndex, "imageUrl", "")}
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>

@@ -76,36 +76,56 @@ export default async function QuizPage({
         description_hr: quiz.description_hr ?? undefined,
         teacherId: quiz.teacherId,
         questions: quiz.questions
-          .map((question) => ({
-            id: question.id,
-            text: question.text,
-            text_sl: question.text_sl ?? undefined,
-            text_hr: question.text_hr ?? undefined,
-            imageUrl: question.imageUrl ?? undefined,
-            questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING",
-            options: (question.questionType === "TEXT_INPUT" || question.questionType === "DROPDOWN" || question.questionType === "ORDERING" || question.questionType === "MATCHING") ? [] : question.options.map((option) => ({
-              id: option.id,
-              text: option.text,
-              text_sl: option.text_sl ?? undefined,
-              text_hr: option.text_hr ?? undefined,
-              isCorrect: option.correct,
-            })),
-            multipleChoiceData: question.questionType === "MULTIPLE_CHOICE" && question.answersData
-              ? (question.answersData as MultipleChoiceDataType)
-              : undefined,
-            textInputData: question.questionType === "TEXT_INPUT" && question.answersData
-              ? (question.answersData as TextInputDataType)
-              : undefined,
-            dropdownData: question.questionType === "DROPDOWN" && question.answersData
-              ? (question.answersData as DropdownDataType)
-              : undefined,
-            orderingData: question.questionType === "ORDERING" && question.answersData
-              ? (question.answersData as OrderingDataType)
-              : undefined,
-            matchingData: question.questionType === "MATCHING" && question.answersData
-              ? (question.answersData as unknown as MatchingDataType)
-              : undefined,
-          })),
+          .map((question) => {
+            // Debug logging for DROPDOWN and ORDERING questions
+            if (question.questionType === "DROPDOWN" || question.questionType === "ORDERING") {
+              console.log(`[DEBUG] Loading ${question.questionType} question:`, {
+                questionId: question.id,
+                answersData: JSON.stringify(question.answersData, null, 2)
+              });
+            }
+
+            return {
+              id: question.id,
+              text: question.text,
+              text_sl: question.text_sl ?? undefined,
+              text_hr: question.text_hr ?? undefined,
+              imageUrl: question.imageUrl ?? undefined,
+              questionType: question.questionType as "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_INPUT" | "DROPDOWN" | "ORDERING" | "MATCHING",
+              options: (question.questionType === "TEXT_INPUT" || question.questionType === "MATCHING") ? [] : question.options.map((option) => ({
+                id: option.id,
+                text: option.text,
+                text_sl: option.text_sl ?? undefined,
+                text_hr: option.text_hr ?? undefined,
+                isCorrect: option.correct,
+                // Build content object from database fields for proper UI rendering
+                content: {
+                  type: (option.contentType as "text" | "mixed") || "text",
+                  text: option.text || "",
+                  text_sl: option.text_sl || "",
+                  text_hr: option.text_hr || "",
+                  ...(option.contentType === "mixed" && option.imageUrl && {
+                    imageUrl: option.imageUrl,
+                  }),
+                },
+              })),
+              multipleChoiceData: question.questionType === "MULTIPLE_CHOICE" && question.answersData
+                ? (question.answersData as MultipleChoiceDataType)
+                : undefined,
+              textInputData: question.questionType === "TEXT_INPUT" && question.answersData
+                ? (question.answersData as TextInputDataType)
+                : undefined,
+              dropdownData: question.questionType === "DROPDOWN" && question.answersData
+                ? (question.answersData as DropdownDataType)
+                : undefined,
+              orderingData: question.questionType === "ORDERING" && question.answersData
+                ? (question.answersData as OrderingDataType)
+                : undefined,
+              matchingData: question.questionType === "MATCHING" && question.answersData
+                ? (question.answersData as unknown as MatchingDataType)
+                : undefined,
+            };
+          }),
       } as QuizData
     : undefined;
 

@@ -12,7 +12,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { OrderingConfiguration, OrderingItem, OrderingItemContent, OrderingTextContent } from "./quiz-editor-layout";
+import { OptionImageUploader } from "./option-image-uploader";
+import type { OrderingConfiguration, OrderingItem, OrderingItemContent, OrderingTextContent, OrderingMixedContent } from "./quiz-editor-layout";
 
 type Language = "en" | "sl" | "hr";
 
@@ -267,12 +268,77 @@ function ItemEditor({
   canRemove: boolean;
   dragHandleProps: unknown;
 }) {
-  // Helper to update text content fields
-  const updateContent = (updates: Partial<OrderingTextContent>) => {
-    const newContent: OrderingTextContent = { ...item.content as OrderingTextContent, ...updates };
+  const contentType = item.content.type || "text";
+
+  // Get current text based on language
+  const getCurrentText = () => {
+    if (language === "sl") return item.content.text_sl || "";
+    if (language === "hr") return item.content.text_hr || "";
+    return item.content.text || "";
+  };
+
+  // Update content type
+  const updateContentType = (type: "text" | "mixed") => {
+    if (type === "text") {
+      // Switching to TEXT - remove image
+      const newContent: OrderingTextContent = {
+        type: "text",
+        text: item.content.text || "",
+        text_sl: item.content.text_sl || "",
+        text_hr: item.content.text_hr || "",
+      };
+      onUpdate({ content: newContent });
+    } else {
+      // Switching to MIXED - keep text, add image placeholder
+      const newContent: OrderingMixedContent = {
+        type: "mixed",
+        text: item.content.text || "",
+        text_sl: item.content.text_sl || "",
+        text_hr: item.content.text_hr || "",
+        imageUrl: (item.content as OrderingMixedContent).imageUrl || "",
+      };
+      onUpdate({ content: newContent });
+    }
+  };
+
+  // Update text for specific language
+  const updateText = (value: string) => {
+    const updates: Partial<OrderingTextContent | OrderingMixedContent> = {};
+    if (language === "sl") {
+      updates.text_sl = value;
+    } else if (language === "hr") {
+      updates.text_hr = value;
+    } else {
+      updates.text = value;
+    }
+
+    const newContent = { ...item.content, ...updates };
     onUpdate({ content: newContent });
   };
 
+  // Update image URL
+  const updateImageUrl = (url: string) => {
+    if (item.content.type === "mixed") {
+      const newContent: OrderingMixedContent = {
+        ...item.content,
+        imageUrl: url,
+      };
+      onUpdate({ content: newContent });
+    }
+  };
+
+  // Remove image and auto-switch to TEXT type
+  const removeImage = () => {
+    // When removing image from MIXED item, automatically switch to TEXT type
+    // This maintains schema validity (MIXED requires both text and image)
+    const newContent: OrderingTextContent = {
+      type: "text",
+      text: item.content.text || "",
+      text_sl: item.content.text_sl || "",
+      text_hr: item.content.text_hr || "",
+    };
+    onUpdate({ content: newContent });
+  };
 
   return (
     <Card>
@@ -301,41 +367,86 @@ function ItemEditor({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Text content only */}
-          <Tabs defaultValue={language} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="en">English</TabsTrigger>
-              <TabsTrigger value="sl">Slovenian</TabsTrigger>
-              <TabsTrigger value="hr">Croatian</TabsTrigger>
-            </TabsList>
-            <TabsContent value="en" className="space-y-2">
-              <Label>Text Content (EN)</Label>
-              <Textarea
-                value={item.content.text}
-                onChange={(e) => updateContent({ text: e.target.value })}
-                placeholder="Enter step description..."
-                className="min-h-[80px]"
-              />
-            </TabsContent>
-            <TabsContent value="sl" className="space-y-2">
-              <Label>Text Content (SL)</Label>
-              <Textarea
-                value={item.content.text_sl || ""}
-                onChange={(e) => updateContent({ text_sl: e.target.value })}
-                placeholder="Enter step description in Slovenian..."
-                className="min-h-[80px]"
-              />
-            </TabsContent>
-            <TabsContent value="hr" className="space-y-2">
-              <Label>Text Content (HR)</Label>
-              <Textarea
-                value={item.content.text_hr || ""}
-                onChange={(e) => updateContent({ text_hr: e.target.value })}
-                placeholder="Enter step description in Croatian..."
-                className="min-h-[80px]"
-              />
-            </TabsContent>
-          </Tabs>
+        {/* Content Type Selector */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Content Type</Label>
+          <RadioGroup
+            value={contentType}
+            onValueChange={(value) => updateContentType(value as "text" | "mixed")}
+            className="flex gap-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="text" id={`${item.id}-text`} />
+              <Label htmlFor={`${item.id}-text`} className="cursor-pointer font-normal">
+                Text Only
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="mixed" id={`${item.id}-mixed`} />
+              <Label htmlFor={`${item.id}-mixed`} className="cursor-pointer font-normal">
+                Text + Image
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {/* Text Content */}
+        <Tabs defaultValue={language} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="en">English</TabsTrigger>
+            <TabsTrigger value="sl">Slovenian</TabsTrigger>
+            <TabsTrigger value="hr">Croatian</TabsTrigger>
+          </TabsList>
+          <TabsContent value="en" className="space-y-2">
+            <Label>Text Content (EN)</Label>
+            <Textarea
+              value={item.content.text || ""}
+              onChange={(e) => {
+                const newContent = { ...item.content, text: e.target.value };
+                onUpdate({ content: newContent });
+              }}
+              placeholder="Enter step description..."
+              className="min-h-[80px]"
+            />
+          </TabsContent>
+          <TabsContent value="sl" className="space-y-2">
+            <Label>Text Content (SL)</Label>
+            <Textarea
+              value={item.content.text_sl || ""}
+              onChange={(e) => {
+                const newContent = { ...item.content, text_sl: e.target.value };
+                onUpdate({ content: newContent });
+              }}
+              placeholder="Enter step description in Slovenian..."
+              className="min-h-[80px]"
+            />
+          </TabsContent>
+          <TabsContent value="hr" className="space-y-2">
+            <Label>Text Content (HR)</Label>
+            <Textarea
+              value={item.content.text_hr || ""}
+              onChange={(e) => {
+                const newContent = { ...item.content, text_hr: e.target.value };
+                onUpdate({ content: newContent });
+              }}
+              placeholder="Enter step description in Croatian..."
+              className="min-h-[80px]"
+            />
+          </TabsContent>
+        </Tabs>
+
+        {/* Image Upload (MIXED type only) */}
+        {contentType === "mixed" && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Item Image</Label>
+            <OptionImageUploader
+              imageUrl={(item.content as OrderingMixedContent).imageUrl}
+              language={language}
+              onImageUpload={updateImageUrl}
+              onImageRemove={removeImage}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

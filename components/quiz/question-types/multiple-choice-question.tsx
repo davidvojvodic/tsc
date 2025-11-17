@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ImageWithFallback } from "@/components/image-with-fallback";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -9,14 +10,8 @@ import { cn } from "@/lib/utils";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { AlertCircle, CheckCircle } from "lucide-react";
-
-interface Option {
-  id: string;
-  text: string | null;
-  text_sl?: string | null;
-  text_hr?: string | null;
-  isCorrect: boolean;
-}
+import { getLocalizedOptionText, getOptionImageUrl, optionHasImage, getOptionContentType } from "@/lib/option-content-utils";
+import type { Option } from "@/components/quiz-editor/quiz-editor-layout";
 
 interface MultipleChoiceData {
   scoringMethod: "ALL_OR_NOTHING" | "PARTIAL_CREDIT";
@@ -207,9 +202,14 @@ export function MultipleChoiceQuestion({
       {/* Options */}
       <div className="space-y-3">
         {options.map((option) => {
-          const isSelected = selectedOptions.includes(option.id);
+          const isSelected = selectedOptions.includes(option.id!);
           const isOptionDisabled = Boolean(disabled ||
             (!isSelected && maxSelections && selectedCount >= maxSelections));
+
+          const contentType = getOptionContentType(option);
+          const hasImage = optionHasImage(option);
+          const imageUrl = getOptionImageUrl(option);
+          const optionText = getLocalizedOptionText(option, language as "en" | "sl" | "hr");
 
           return (
             <div
@@ -225,20 +225,41 @@ export function MultipleChoiceQuestion({
                 id={option.id}
                 checked={isSelected}
                 onCheckedChange={(checked) =>
-                  handleOptionChange(option.id, checked as boolean)
+                  handleOptionChange(option.id!, checked as boolean)
                 }
                 disabled={isOptionDisabled}
                 className="mt-0.5"
               />
-              <Label
-                htmlFor={option.id}
-                className={cn(
-                  "flex-1 text-sm leading-relaxed",
-                  !isOptionDisabled && "cursor-pointer"
+
+              <div className="flex-1 space-y-2">
+                {/* Image content (for image or mixed types) */}
+                {hasImage && imageUrl && (
+                  <div className="relative w-full max-w-sm">
+                    <ImageWithFallback
+                      src={imageUrl}
+                      alt={optionText || "Option image"}
+                      width={400}
+                      height={300}
+                      className="rounded-md w-full h-auto object-contain"
+                      loading="lazy"
+                      showPlaceholder={true}
+                    />
+                  </div>
                 )}
-              >
-                {getLocalizedContent(option, "text", language)}
-              </Label>
+
+                {/* Text content */}
+                {optionText && (
+                  <Label
+                    htmlFor={option.id}
+                    className={cn(
+                      "block text-sm leading-relaxed",
+                      !isOptionDisabled && "cursor-pointer"
+                    )}
+                  >
+                    {optionText}
+                  </Label>
+                )}
+              </div>
             </div>
           );
         })}

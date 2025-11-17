@@ -269,6 +269,15 @@ model Option {
   text                  String?   @db.Text
   text_sl               String?   @db.Text
   text_hr               String?   @db.Text
+  // Image support fields (nullable for backward compatibility)
+  imageUrl              String?   @db.VarChar(2048)
+  altText               String?   @db.Text
+  altText_sl            String?   @db.Text
+  altText_hr            String?   @db.Text
+  contentType           String    @default("text") @db.VarChar(20)
+  imageSuffix           String?   @db.Text
+  imageSuffix_sl        String?   @db.Text
+  imageSuffix_hr        String?   @db.Text
   questionId            String
   correct               Boolean   @default(false)
   createdAt             DateTime  @default(now())
@@ -277,6 +286,7 @@ model Option {
   correctAnswerQuestion Question? @relation("CorrectAnswer")
 
   @@index([questionId])
+  @@index([contentType])
   @@map("option")
 }
 

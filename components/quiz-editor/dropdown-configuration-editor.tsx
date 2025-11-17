@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2, HelpCircle } from "lucide-react";
+import { Plus, Trash2, HelpCircle, Type, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,12 +11,22 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Language } from "./quiz-editor-provider";
+import { OptionImageUploader } from "./option-image-uploader";
 
 interface DropdownOption {
   id: string;
+  // Legacy text fields (for backward compatibility)
   text?: string;
   text_sl?: string;
   text_hr?: string;
+  // New content system
+  content?: {
+    type: "text" | "mixed";
+    text?: string;
+    text_sl?: string;
+    text_hr?: string;
+    imageUrl?: string;
+  };
   isCorrect: boolean;
 }
 
@@ -121,9 +131,12 @@ export function DropdownConfigurationEditor({
     const newOptionId = `${dropdown.id}_opt${dropdown.options.length + 1}`;
     const newOption: DropdownOption = {
       id: newOptionId,
-      text: `Option ${dropdown.options.length + 1}`,
-      text_sl: "",
-      text_hr: "",
+      content: {
+        type: "text",
+        text: `Option ${dropdown.options.length + 1}`,
+        text_sl: "",
+        text_hr: ""
+      },
       isCorrect: false
     };
     updateDropdown(dropdownIndex, {
@@ -323,16 +336,6 @@ function DropdownFieldEditor({
     onUpdate({ [labelField]: value });
   };
 
-  const updateOptionText = (optionIndex: number, value: string) => {
-    const textField = getTextFieldName();
-    onUpdateOption(optionIndex, { [textField]: value });
-  };
-
-  const getCurrentOptionText = (option: DropdownOption) => {
-    const textField = getTextFieldName();
-    return option[textField as keyof DropdownOption] as string || "";
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -379,35 +382,196 @@ function DropdownFieldEditor({
           </div>
 
           {dropdown.options.map((option, optionIndex) => (
-            <div key={option.id} className="flex items-center gap-2 p-2 border rounded">
-              <Input
-                value={getCurrentOptionText(option)}
-                onChange={(e) => updateOptionText(optionIndex, e.target.value)}
-                placeholder="Option text"
-                className="flex-1"
-              />
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  checked={option.isCorrect}
-                  onCheckedChange={(checked) => onUpdateOption(optionIndex, { isCorrect: !!checked })}
-                />
-                <Label className="text-xs">Correct</Label>
-              </div>
-
-              {dropdown.options.length > 2 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onRemoveOption(optionIndex)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            <DropdownOptionEditor
+              key={option.id}
+              option={option}
+              language={language}
+              onUpdate={(updates) => onUpdateOption(optionIndex, updates)}
+              onRemove={() => onRemoveOption(optionIndex)}
+              canRemove={dropdown.options.length > 2}
+            />
           ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Individual dropdown option editor component
+function DropdownOptionEditor({
+  option,
+  language,
+  onUpdate,
+  onRemove,
+  canRemove
+}: {
+  option: DropdownOption;
+  language: Language;
+  onUpdate: (updates: Partial<DropdownOption>) => void;
+  onRemove: () => void;
+  canRemove: boolean;
+}) {
+  // Get content type (prefer new content system, fallback to legacy)
+  const contentType = option.content?.type || "text";
+
+  // Helper to get localized text
+  const getTextFieldName = () => {
+    if (language === "sl") return "text_sl";
+    if (language === "hr") return "text_hr";
+    return "text";
+  };
+
+  const getCurrentText = () => {
+    const textField = getTextFieldName();
+    if (option.content) {
+      return option.content[textField as keyof typeof option.content] as string || "";
+    }
+    return option[textField as keyof DropdownOption] as string || "";
+  };
+
+  const updateText = (value: string) => {
+    const textField = getTextFieldName();
+    if (option.content) {
+      onUpdate({
+        content: {
+          ...option.content,
+          [textField]: value
+        }
+      });
+    } else {
+      // Legacy mode
+      onUpdate({ [textField]: value });
+    }
+  };
+
+  const updateContentType = (type: "text" | "mixed") => {
+    const currentText = getCurrentText();
+    if (type === "text") {
+      // Switching to TEXT - remove image
+      onUpdate({
+        content: {
+          type: "text",
+          text: option.content?.text || currentText || "",
+          text_sl: option.content?.text_sl || "",
+          text_hr: option.content?.text_hr || ""
+        }
+      });
+    } else {
+      // Switching to MIXED - keep text, add image placeholder
+      onUpdate({
+        content: {
+          type: "mixed",
+          text: option.content?.text || currentText || "",
+          text_sl: option.content?.text_sl || "",
+          text_hr: option.content?.text_hr || "",
+          imageUrl: option.content?.imageUrl || ""
+        }
+      });
+    }
+  };
+
+  const updateImageUrl = (url: string) => {
+    if (option.content) {
+      onUpdate({
+        content: {
+          ...option.content,
+          imageUrl: url
+        }
+      });
+    }
+  };
+
+  const removeImage = () => {
+    if (option.content) {
+      // When removing image from MIXED option, automatically switch to TEXT type
+      // This maintains schema validity (MIXED requires both text and image)
+      onUpdate({
+        content: {
+          type: "text",
+          text: option.content.text || "",
+          text_sl: option.content.text_sl || "",
+          text_hr: option.content.text_hr || ""
+        }
+      });
+    }
+  };
+
+  return (
+    <Card className="border-l-4 border-l-primary/30">
+      <CardContent className="pt-4 space-y-4">
+        {/* Content Type Selector */}
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Content Type</Label>
+          <RadioGroup
+            value={contentType}
+            onValueChange={(value) => updateContentType(value as "text" | "mixed")}
+            className="flex gap-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="text" id={`${option.id}-text`} />
+              <Label htmlFor={`${option.id}-text`} className="text-sm font-normal cursor-pointer flex items-center gap-1">
+                <Type className="h-3 w-3" />
+                Text Only
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="mixed" id={`${option.id}-mixed`} />
+              <Label htmlFor={`${option.id}-mixed`} className="text-sm font-normal cursor-pointer flex items-center gap-1">
+                <ImageIcon className="h-3 w-3" />
+                Text + Image
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {/* Text Input */}
+        <div className="space-y-2">
+          <Label className="text-sm">Option Text ({language.toUpperCase()})</Label>
+          <Input
+            value={getCurrentText()}
+            onChange={(e) => updateText(e.target.value)}
+            placeholder="Enter option text..."
+          />
+        </div>
+
+        {/* Image Upload (MIXED type only) */}
+        {contentType === "mixed" && (
+          <div className="space-y-2">
+            <Label className="text-sm">Option Image</Label>
+            <OptionImageUploader
+              imageUrl={option.content?.imageUrl}
+              language={language}
+              onImageUpload={updateImageUrl}
+              onImageRemove={removeImage}
+            />
+          </div>
+        )}
+
+        {/* Footer: Correct Checkbox + Delete Button */}
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id={`${option.id}-correct`}
+              checked={option.isCorrect}
+              onCheckedChange={(checked) => onUpdate({ isCorrect: !!checked })}
+            />
+            <Label htmlFor={`${option.id}-correct`} className="text-sm font-medium cursor-pointer">
+              Correct Answer
+            </Label>
+          </div>
+
+          {canRemove && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onRemove}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Remove
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

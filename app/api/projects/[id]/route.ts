@@ -350,8 +350,8 @@ export async function PATCH(
         },
       });
     }, {
-      maxWait: 9000, // Maximum time to wait for a transaction slot (9s)
-      timeout: 9000, // Maximum time the transaction can run (9s to fit within Vercel's 10s limit)
+      maxWait: 20000, // Maximum time to wait for a transaction slot (20s)
+      timeout: 20000, // Maximum time the transaction can run (20s)
     });
 
     return NextResponse.json(project);
@@ -599,8 +599,8 @@ export async function POST(req: NextRequest) {
         },
       });
     }, {
-      maxWait: 9000, // Maximum time to wait for a transaction slot (9s)
-      timeout: 9000, // Maximum time the transaction can run (9s to fit within Vercel's 10s limit)
+      maxWait: 20000, // Maximum time to wait for a transaction slot (20s)
+      timeout: 20000, // Maximum time the transaction can run (20s)
     });
 
     return NextResponse.json(project);

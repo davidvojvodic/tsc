@@ -517,6 +517,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           },
         },
       });
+    }, {
+      maxWait: 20000, // Maximum time to wait for a transaction slot (20s)
+      timeout: 20000, // Maximum time the transaction can run (20s)
     });
 
     // Step 5: Respond with the updated quiz data
@@ -623,6 +626,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       await tx.quiz.delete({
         where: { id: quizId },
       });
+    }, {
+      maxWait: 20000, // Maximum time to wait for a transaction slot (20s)
+      timeout: 20000, // Maximum time the transaction can run (20s)
     });
 
     // Step 4: Respond with a success message

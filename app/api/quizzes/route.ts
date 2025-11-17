@@ -354,6 +354,9 @@ export async function POST(req: NextRequest) {
           },
         },
       });
+    }, {
+      maxWait: 20000, // Maximum time to wait for a transaction slot (20s)
+      timeout: 20000, // Maximum time the transaction can run (20s)
     });
 
     // Step 5: Respond with the created quiz data

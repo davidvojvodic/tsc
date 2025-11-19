@@ -29,6 +29,9 @@ export function QuestionImageUploader({
         <div className={cn("space-y-2", disabled && "opacity-50 pointer-events-none")}>
           <label className="text-sm font-medium">
             Question Image (Optional)
+            <span className="text-muted-foreground font-normal ml-2 text-xs">
+              • Shared across all languages
+            </span>
           </label>
 
           {/* Upload Dropzone */}
@@ -85,7 +88,12 @@ export function QuestionImageUploader({
       ) : (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Question Image</label>
+            <label className="text-sm font-medium">
+              Question Image
+              <span className="text-muted-foreground font-normal ml-2 text-xs">
+                • Shared across all languages
+              </span>
+            </label>
             <Button
               type="button"
               variant="ghost"

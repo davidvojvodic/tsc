@@ -330,7 +330,7 @@ export function MatchingConfigurationEditor({
                 onClick={() => addItem("left")}
                 size="sm"
                 variant="outline"
-                disabled={matchingData.leftItems.length >= 10}
+                disabled={matchingData.leftItems.length >= 20}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Item
@@ -402,7 +402,7 @@ export function MatchingConfigurationEditor({
                 onClick={() => addItem("right")}
                 size="sm"
                 variant="outline"
-                disabled={matchingData.rightItems.length >= 10}
+                disabled={matchingData.rightItems.length >= 20}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Item

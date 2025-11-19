@@ -502,10 +502,10 @@ function validateMatchingQuestion(
       message: "At least 2 left items are required"
     });
     result.missingFields.push("Left items");
-  } else if (question.matchingData.leftItems.length > 8) {
+  } else if (question.matchingData.leftItems.length > 20) {
     result.errors.push({
       field: "matchingData.leftItems",
-      message: "Maximum 8 left items allowed"
+      message: "Maximum 20 left items allowed"
     });
   } else {
     let allLeftItemsValid = true;
@@ -575,10 +575,10 @@ function validateMatchingQuestion(
       message: "At least 2 right items are required"
     });
     result.missingFields.push("Right items");
-  } else if (question.matchingData.rightItems.length > 10) {
+  } else if (question.matchingData.rightItems.length > 20) {
     result.errors.push({
       field: "matchingData.rightItems",
-      message: "Maximum 10 right items allowed"
+      message: "Maximum 20 right items allowed"
     });
   } else {
     let allRightItemsValid = true;

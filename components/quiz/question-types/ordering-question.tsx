@@ -14,6 +14,8 @@ import type { OrderingItem, OrderingConfiguration } from "@/components/quiz-edit
 interface OrderingQuestionProps {
   questionId: string;
   questionData: OrderingConfiguration;
+  questionText?: string;
+  questionImageUrl?: string;
   selectedAnswer?: string[];
   onAnswerChange: (questionId: string, answer: string[]) => void;
   disabled?: boolean;
@@ -88,6 +90,8 @@ function shuffleArray<T>(array: T[]): T[] {
 export function OrderingQuestion({
   questionId,
   questionData,
+  questionText,
+  questionImageUrl,
   selectedAnswer = [],
   onAnswerChange,
   disabled = false,
@@ -188,6 +192,26 @@ export function OrderingQuestion({
 
   return (
     <div className={cn("space-y-4", className)}>
+      {/* Question text and image */}
+      {(questionText || questionImageUrl) && (
+        <div className="space-y-3 mb-4">
+          {questionImageUrl && (
+            <div className="relative w-full max-w-2xl mx-auto rounded-lg overflow-hidden border">
+              <ImageWithFallback
+                src={questionImageUrl}
+                alt="Question diagram"
+                width={800}
+                height={600}
+                className="object-contain w-full"
+              />
+            </div>
+          )}
+          {questionText && (
+            <p className="text-sm font-medium text-foreground">{questionText}</p>
+          )}
+        </div>
+      )}
+
       {/* Instructions */}
       <div className="flex items-center gap-4">
         <div className="flex-1">

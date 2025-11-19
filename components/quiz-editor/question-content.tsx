@@ -187,8 +187,10 @@ export function QuestionContent({
         />
       </div>
 
-      {/* Image Upload (only shown for TEXT_INPUT and only in EN language) */}
-      {question.questionType === "TEXT_INPUT" && language === "en" && (
+      {/* Image Upload (shown for TEXT_INPUT, MATCHING, ORDERING - only in EN language) */}
+      {(question.questionType === "TEXT_INPUT" ||
+        question.questionType === "MATCHING" ||
+        question.questionType === "ORDERING") && language === "en" && (
         <QuestionImageUploader
           imageUrl={question.imageUrl}
           onImageUpload={(url) => onChange("imageUrl", url)}

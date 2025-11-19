@@ -276,6 +276,8 @@ export function QuestionRenderer({
       <OrderingQuestion
         questionId={question.id}
         questionData={question.orderingData}
+        questionText={getLocalizedContent(question, "text", language) || undefined}
+        questionImageUrl={question.imageUrl || undefined}
         selectedAnswer={isStringArray(selectedAnswer) ? selectedAnswer : []}
         onAnswerChange={handleOrderingChange}
         disabled={disabled}
@@ -302,6 +304,8 @@ export function QuestionRenderer({
       <MatchingQuestion
         questionId={question.id}
         questionData={question.matchingData}
+        questionText={getLocalizedContent(question, "text", language) || undefined}
+        questionImageUrl={question.imageUrl || undefined}
         language={language}
         selectedAnswer={isMatchingAnswer(selectedAnswer) ? selectedAnswer : []}
         onAnswerChange={handleMatchingChange}

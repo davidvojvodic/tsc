@@ -71,6 +71,8 @@ interface MatchingQuestionData {
 interface MatchingQuestionProps {
   questionId: string;
   questionData: MatchingQuestionData;
+  questionText?: string;
+  questionImageUrl?: string;
   language: SupportedLanguage;
   selectedAnswer?: Connection[];
   onAnswerChange: (questionId: string, connections: Connection[]) => void;
@@ -126,6 +128,8 @@ const getTranslations = (language: SupportedLanguage) => {
 export function MatchingQuestion({
   questionId,
   questionData,
+  questionText,
+  questionImageUrl,
   language,
   selectedAnswer = [],
   onAnswerChange,
@@ -366,6 +370,26 @@ export function MatchingQuestion({
 
   return (
     <div className="space-y-4">
+      {/* Question text and image */}
+      {(questionText || questionImageUrl) && (
+        <div className="space-y-3 mb-4">
+          {questionImageUrl && (
+            <div className="relative w-full max-w-2xl mx-auto rounded-lg overflow-hidden border">
+              <Image
+                src={questionImageUrl}
+                alt="Question diagram"
+                width={800}
+                height={600}
+                className="object-contain w-full"
+              />
+            </div>
+          )}
+          {questionText && (
+            <p className="text-sm font-medium text-foreground">{questionText}</p>
+          )}
+        </div>
+      )}
+
       {/* Instructions */}
       <Alert>
         <AlertCircle className="h-4 w-4" />

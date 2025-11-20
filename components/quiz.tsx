@@ -335,10 +335,14 @@ export default function QuizComponent({
 
   const handlePrevious = () => {
     setCurrentQuestionIndex((prev) => Math.max(0, prev - 1));
+    // Scroll to top of page when navigating between questions
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleNext = () => {
     setCurrentQuestionIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
+    // Scroll to top of page when navigating between questions
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = async () => {

@@ -360,9 +360,10 @@ export default async function QuizSubmissionsPage({
               const selections = selectedAnswerIds[0] as Record<string, string>;
               dropdowns?.forEach(dropdown => {
                 const selectedOptionId = selections[dropdown.id];
-                const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId);
+                const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId) as
+                  { id: string; text: string; text_sl?: string; text_hr?: string; isCorrect: boolean } | undefined;
                 if (selectedOption) {
-                  const optText = (selectedOption.text_sl as string) || (selectedOption.text_hr as string) || selectedOption.text || selectedOptionId;
+                  const optText = selectedOption.text_sl || selectedOption.text_hr || selectedOption.text || selectedOptionId;
                   selectedAnswersText.push(`${dropdown.label}: ${optText}`);
                 } else {
                   selectedAnswersText.push(`${dropdown.label}: ${selectedOptionId}`);
@@ -374,9 +375,10 @@ export default async function QuizSubmissionsPage({
               const correctSelections = correctAnswerIds[0] as Record<string, string>;
               dropdowns?.forEach(dropdown => {
                 const correctOptionId = correctSelections[dropdown.id];
-                const correctOption = dropdown.options.find(opt => opt.id === correctOptionId);
+                const correctOption = dropdown.options.find(opt => opt.id === correctOptionId) as
+                  { id: string; text: string; text_sl?: string; text_hr?: string; isCorrect: boolean } | undefined;
                 if (correctOption) {
-                  const optText = (correctOption.text_sl as string) || (correctOption.text_hr as string) || correctOption.text || correctOptionId;
+                  const optText = correctOption.text_sl || correctOption.text_hr || correctOption.text || correctOptionId;
                   correctAnswersText.push(`${dropdown.label}: ${optText}`);
                 } else {
                   correctAnswersText.push(`${dropdown.label}: ${correctOptionId || ''}`);
@@ -386,16 +388,18 @@ export default async function QuizSubmissionsPage({
           } else {
             // For choice questions, look up option text by ID
             selectedAnswersText = selectedAnswerIds.map((id: string) => {
-              const option = optionsMap.get(id);
+              const option = optionsMap.get(id) as
+                { id: string; text: string; text_sl?: string; text_hr?: string; correct: boolean } | undefined;
               if (option) {
-                return (option.text_sl as string) || (option.text_hr as string) || option.text || id;
+                return option.text_sl || option.text_hr || option.text || id;
               }
               return id;
             });
             correctAnswersText = correctAnswerIds.map((id: string) => {
-              const option = optionsMap.get(id);
+              const option = optionsMap.get(id) as
+                { id: string; text: string; text_sl?: string; text_hr?: string; correct: boolean } | undefined;
               if (option) {
-                return (option.text_sl as string) || (option.text_hr as string) || option.text || id;
+                return option.text_sl || option.text_hr || option.text || id;
               }
               return id;
             });
@@ -491,9 +495,10 @@ export default async function QuizSubmissionsPage({
               const selections = answer.selectedOptionId as Record<string, string>;
               dropdowns?.forEach(dropdown => {
                 const selectedOptionId = selections[dropdown.id];
-                const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId);
+                const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId) as
+                  { id: string; text: string; text_sl?: string; text_hr?: string; isCorrect: boolean } | undefined;
                 if (selectedOption) {
-                  const optText = (selectedOption.text_sl as string) || (selectedOption.text_hr as string) || selectedOption.text || selectedOptionId;
+                  const optText = selectedOption.text_sl || selectedOption.text_hr || selectedOption.text || selectedOptionId;
                   selectedAnswersText.push(`${dropdown.label}: ${optText}`);
                 } else {
                   selectedAnswersText.push(`${dropdown.label}: ${selectedOptionId}`);
@@ -505,22 +510,25 @@ export default async function QuizSubmissionsPage({
               const correctSelections = answer.correctOptionId as Record<string, string[]>;
               dropdowns?.forEach(dropdown => {
                 const correctOptionIds = correctSelections[dropdown.id] || [];
-                const correctOptions = dropdown.options.filter(opt => correctOptionIds.includes(opt.id));
+                const correctOptions = dropdown.options.filter(opt => correctOptionIds.includes(opt.id)) as
+                  Array<{ id: string; text: string; text_sl?: string; text_hr?: string; isCorrect: boolean }>;
                 const correctTexts = correctOptions.map(opt =>
-                  (opt.text_sl as string) || (opt.text_hr as string) || opt.text
+                  opt.text_sl || opt.text_hr || opt.text
                 );
                 correctAnswersText.push(`${dropdown.label}: ${correctTexts.join(', ')}`);
               });
             }
           } else {
             // For choice questions, look up option text by ID
-            const selectedOption = optionsMap.get(answer.selectedOptionId as string);
-            const correctOption = optionsMap.get(answer.correctOptionId as string);
+            const selectedOption = optionsMap.get(answer.selectedOptionId as string) as
+              { id: string; text: string; text_sl?: string; text_hr?: string; correct: boolean } | undefined;
+            const correctOption = optionsMap.get(answer.correctOptionId as string) as
+              { id: string; text: string; text_sl?: string; text_hr?: string; correct: boolean } | undefined;
             const selectedText = selectedOption
-              ? ((selectedOption.text_sl as string) || (selectedOption.text_hr as string) || selectedOption.text || (answer.selectedOptionId as string))
+              ? (selectedOption.text_sl || selectedOption.text_hr || selectedOption.text || (answer.selectedOptionId as string))
               : (answer.selectedOptionId as string);
             const correctText = correctOption
-              ? ((correctOption.text_sl as string) || (correctOption.text_hr as string) || correctOption.text || (answer.correctOptionId as string))
+              ? (correctOption.text_sl || correctOption.text_hr || correctOption.text || (answer.correctOptionId as string))
               : (answer.correctOptionId as string);
             selectedAnswersText = [selectedText];
             correctAnswersText = [correctText];

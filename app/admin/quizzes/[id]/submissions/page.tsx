@@ -110,9 +110,26 @@ export default async function QuizSubmissionsPage({
       displayOrder: index + 1, // For proper ordering in display
     });
 
+    // Add regular question options to map
     question.options.forEach((option) => {
       optionsMap.set(option.id, option);
     });
+
+    // Add dropdown options to map as well
+    if (question.questionType === "DROPDOWN" && question.answersData) {
+      const dropdownData = question.answersData as Record<string, unknown>;
+      const dropdowns = dropdownData?.dropdowns as Array<{
+        id: string;
+        label: string;
+        options: Array<{ id: string; text: string; text_sl?: string; text_hr?: string; isCorrect: boolean }>;
+      }> | undefined;
+
+      dropdowns?.forEach(dropdown => {
+        dropdown.options.forEach(option => {
+          optionsMap.set(option.id, option);
+        });
+      });
+    }
 
     // Handle ORDERING questions - build a map of item IDs to their content
     if (question.questionType === "ORDERING" && question.answersData) {
@@ -126,11 +143,20 @@ export default async function QuizSubmissionsPage({
           const contentType = content.type as string;
 
           if (contentType === "text") {
-            contentText = (content.text as string) || (item.id as string);
+            const textSl = (content.text_sl as string) || "";
+            const textHr = (content.text_hr as string) || "";
+            const textEn = (content.text as string) || "";
+            contentText = textSl || textHr || textEn || (item.id as string);
           } else if (contentType === "image") {
-            contentText = (content.altText as string) || "Image";
+            const altTextSl = (content.altText_sl as string) || "";
+            const altTextHr = (content.altText_hr as string) || "";
+            const altTextEn = (content.altText as string) || "";
+            contentText = altTextSl || altTextHr || altTextEn || "Image";
           } else if (contentType === "mixed") {
-            contentText = (content.text as string) || "Mixed content";
+            const textSl = (content.text_sl as string) || "";
+            const textHr = (content.text_hr as string) || "";
+            const textEn = (content.text as string) || "";
+            contentText = textSl || textHr || textEn || "Mixed content";
           }
           itemsMap.set(item.id as string, {
             text: contentText,
@@ -152,14 +178,38 @@ export default async function QuizSubmissionsPage({
         matchingData.leftItems.forEach((item: Record<string, unknown>) => {
           const content = item.content as Record<string, unknown>;
           const contentType = content.type as string;
+          const position = item.position as number;
           let contentText = "";
 
           if (contentType === "text") {
-            contentText = (content.text as string) || (item.id as string);
+            // Prioritize localized text over placeholder English text
+            const textSl = (content.text_sl as string) || "";
+            const textHr = (content.text_hr as string) || "";
+            const textEn = (content.text as string) || "";
+
+            // Use first non-empty localized text, or fall back to English
+            contentText = textSl || textHr || textEn || `Item ${position}`;
+
+            // Replace generic placeholder text with position-based identifier
+            if (contentText.match(/^Left item \d+$/i)) {
+              contentText = `Left ${position}`;
+            }
           } else if (contentType === "image") {
-            contentText = (content.altText as string) || "Image";
+            const altTextSl = (content.altText_sl as string) || "";
+            const altTextHr = (content.altText_hr as string) || "";
+            const altTextEn = (content.altText as string) || "";
+            contentText = altTextSl || altTextHr || altTextEn || `Image ${position}`;
           } else if (contentType === "mixed") {
-            contentText = (content.text as string) || "Mixed content";
+            const textSl = (content.text_sl as string) || "";
+            const textHr = (content.text_hr as string) || "";
+            const textEn = (content.text as string) || "";
+            const altTextSl = (content.altText_sl as string) || "";
+            const altTextHr = (content.altText_hr as string) || "";
+            const altTextEn = (content.altText as string) || "";
+
+            const text = textSl || textHr || textEn;
+            const altText = altTextSl || altTextHr || altTextEn;
+            contentText = text || altText || `Mixed ${position}`;
           }
 
           leftItems.set(item.id as string, contentText);
@@ -171,14 +221,38 @@ export default async function QuizSubmissionsPage({
         matchingData.rightItems.forEach((item: Record<string, unknown>) => {
           const content = item.content as Record<string, unknown>;
           const contentType = content.type as string;
+          const position = item.position as number;
           let contentText = "";
 
           if (contentType === "text") {
-            contentText = (content.text as string) || (item.id as string);
+            // Prioritize localized text over placeholder English text
+            const textSl = (content.text_sl as string) || "";
+            const textHr = (content.text_hr as string) || "";
+            const textEn = (content.text as string) || "";
+
+            // Use first non-empty localized text, or fall back to English
+            contentText = textSl || textHr || textEn || `Item ${position}`;
+
+            // Replace generic placeholder text with position-based identifier
+            if (contentText.match(/^Right item \d+$/i)) {
+              contentText = `Right ${position}`;
+            }
           } else if (contentType === "image") {
-            contentText = (content.altText as string) || "Image";
+            const altTextSl = (content.altText_sl as string) || "";
+            const altTextHr = (content.altText_hr as string) || "";
+            const altTextEn = (content.altText as string) || "";
+            contentText = altTextSl || altTextHr || altTextEn || `Image ${position}`;
           } else if (contentType === "mixed") {
-            contentText = (content.text as string) || "Mixed content";
+            const textSl = (content.text_sl as string) || "";
+            const textHr = (content.text_hr as string) || "";
+            const textEn = (content.text as string) || "";
+            const altTextSl = (content.altText_sl as string) || "";
+            const altTextHr = (content.altText_hr as string) || "";
+            const altTextEn = (content.altText as string) || "";
+
+            const text = textSl || textHr || textEn;
+            const altText = altTextSl || altTextHr || altTextEn;
+            contentText = text || altText || `Mixed ${position}`;
           }
 
           rightItems.set(item.id as string, contentText);
@@ -287,7 +361,12 @@ export default async function QuizSubmissionsPage({
               dropdowns?.forEach(dropdown => {
                 const selectedOptionId = selections[dropdown.id];
                 const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId);
-                selectedAnswersText.push(`${dropdown.label}: ${selectedOption?.text || selectedOptionId}`);
+                if (selectedOption) {
+                  const optText = (selectedOption.text_sl as string) || (selectedOption.text_hr as string) || selectedOption.text || selectedOptionId;
+                  selectedAnswersText.push(`${dropdown.label}: ${optText}`);
+                } else {
+                  selectedAnswersText.push(`${dropdown.label}: ${selectedOptionId}`);
+                }
               });
             }
 
@@ -296,18 +375,29 @@ export default async function QuizSubmissionsPage({
               dropdowns?.forEach(dropdown => {
                 const correctOptionId = correctSelections[dropdown.id];
                 const correctOption = dropdown.options.find(opt => opt.id === correctOptionId);
-                correctAnswersText.push(`${dropdown.label}: ${correctOption?.text || correctOptionId || ''}`);
+                if (correctOption) {
+                  const optText = (correctOption.text_sl as string) || (correctOption.text_hr as string) || correctOption.text || correctOptionId;
+                  correctAnswersText.push(`${dropdown.label}: ${optText}`);
+                } else {
+                  correctAnswersText.push(`${dropdown.label}: ${correctOptionId || ''}`);
+                }
               });
             }
           } else {
             // For choice questions, look up option text by ID
             selectedAnswersText = selectedAnswerIds.map((id: string) => {
               const option = optionsMap.get(id);
-              return option?.text || id;
+              if (option) {
+                return (option.text_sl as string) || (option.text_hr as string) || option.text || id;
+              }
+              return id;
             });
             correctAnswersText = correctAnswerIds.map((id: string) => {
               const option = optionsMap.get(id);
-              return option?.text || id;
+              if (option) {
+                return (option.text_sl as string) || (option.text_hr as string) || option.text || id;
+              }
+              return id;
             });
           }
 
@@ -402,7 +492,12 @@ export default async function QuizSubmissionsPage({
               dropdowns?.forEach(dropdown => {
                 const selectedOptionId = selections[dropdown.id];
                 const selectedOption = dropdown.options.find(opt => opt.id === selectedOptionId);
-                selectedAnswersText.push(`${dropdown.label}: ${selectedOption?.text || selectedOptionId}`);
+                if (selectedOption) {
+                  const optText = (selectedOption.text_sl as string) || (selectedOption.text_hr as string) || selectedOption.text || selectedOptionId;
+                  selectedAnswersText.push(`${dropdown.label}: ${optText}`);
+                } else {
+                  selectedAnswersText.push(`${dropdown.label}: ${selectedOptionId}`);
+                }
               });
             }
 
@@ -411,15 +506,24 @@ export default async function QuizSubmissionsPage({
               dropdowns?.forEach(dropdown => {
                 const correctOptionIds = correctSelections[dropdown.id] || [];
                 const correctOptions = dropdown.options.filter(opt => correctOptionIds.includes(opt.id));
-                correctAnswersText.push(`${dropdown.label}: ${correctOptions.map(opt => opt.text).join(', ')}`);
+                const correctTexts = correctOptions.map(opt =>
+                  (opt.text_sl as string) || (opt.text_hr as string) || opt.text
+                );
+                correctAnswersText.push(`${dropdown.label}: ${correctTexts.join(', ')}`);
               });
             }
           } else {
             // For choice questions, look up option text by ID
             const selectedOption = optionsMap.get(answer.selectedOptionId as string);
             const correctOption = optionsMap.get(answer.correctOptionId as string);
-            selectedAnswersText = [selectedOption?.text || (answer.selectedOptionId as string)];
-            correctAnswersText = [correctOption?.text || (answer.correctOptionId as string)];
+            const selectedText = selectedOption
+              ? ((selectedOption.text_sl as string) || (selectedOption.text_hr as string) || selectedOption.text || (answer.selectedOptionId as string))
+              : (answer.selectedOptionId as string);
+            const correctText = correctOption
+              ? ((correctOption.text_sl as string) || (correctOption.text_hr as string) || correctOption.text || (answer.correctOptionId as string))
+              : (answer.correctOptionId as string);
+            selectedAnswersText = [selectedText];
+            correctAnswersText = [correctText];
           }
 
           return {

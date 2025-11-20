@@ -127,6 +127,10 @@ const getTranslations = (language: SupportedLanguage) => {
 
       correctAnswers: "Correct Answers",
 
+      points: "points",
+
+      yourScore: "Your Score",
+
       perfectScore: "Perfect Score!",
 
       wellDone: "Well Done!",
@@ -159,6 +163,10 @@ const getTranslations = (language: SupportedLanguage) => {
 
       correctAnswers: "Pravilni odgovori",
 
+      points: "točk",
+
+      yourScore: "Vaš rezultat",
+
       perfectScore: "Odličen rezultat!",
 
       wellDone: "Dobro opravljeno!",
@@ -190,6 +198,10 @@ const getTranslations = (language: SupportedLanguage) => {
       hereIsHowYouDid: "Evo kako ste riješili kviz:",
 
       correctAnswers: "Točni odgovori",
+
+      points: "bodova",
+
+      yourScore: "Vaš rezultat",
 
       perfectScore: "Savršen rezultat!",
 
@@ -233,6 +245,11 @@ export default function QuizComponent({
   const [quizSubmitted, setQuizSubmitted] = useState(false);
 
   const [correctAnswers, setCorrectAnswers] = useState(0);
+
+  // Detailed scoring for partial credit
+  const [totalScore, setTotalScore] = useState(0);
+  const [maxTotalScore, setMaxTotalScore] = useState(0);
+  const [scorePercentage, setScorePercentage] = useState(0);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -347,6 +364,17 @@ export default function QuizComponent({
 
       // Use the server-calculated score
       setCorrectAnswers(result.correctAnswers);
+
+      // Store detailed scoring data if available
+      if (result.scoring) {
+        setTotalScore(result.scoring.totalScore);
+        setMaxTotalScore(result.scoring.maxTotalScore);
+        setScorePercentage(result.scoring.percentage);
+      } else {
+        // Fallback to legacy percentage calculation
+        setScorePercentage(result.score || 0);
+      }
+
       setQuizSubmitted(true);
     } catch (error) {
       console.error("Error submitting quiz:", error);
@@ -416,10 +444,17 @@ export default function QuizComponent({
     setQuizSubmitted(false);
 
     setCorrectAnswers(0);
+    setTotalScore(0);
+    setMaxTotalScore(0);
+    setScorePercentage(0);
   };
 
   const renderResultMessage = () => {
-    const percentage = (correctAnswers / totalQuestions) * 100;
+    // Use scorePercentage from API if available, otherwise calculate from correctAnswers
+    const percentage = scorePercentage || (correctAnswers / totalQuestions) * 100;
+
+    // Determine what to display - points or correct answer count
+    const showPoints = maxTotalScore > 0;
 
     if (percentage === 100) {
       return (
@@ -430,8 +465,15 @@ export default function QuizComponent({
             {t.perfectScore}
           </AlertTitle>
 
-          <AlertDescription className="text-green-700">
-            {correctAnswers} / {totalQuestions} {t.correctAnswers}
+          <AlertDescription className="text-green-700 space-y-2">
+            <div className="text-lg font-semibold">
+              {percentage.toFixed(1)}%
+            </div>
+            {showPoints && (
+              <div className="text-sm">
+                {totalScore} / {maxTotalScore} {t.points}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       );
@@ -444,8 +486,15 @@ export default function QuizComponent({
             {t.wellDone}
           </AlertTitle>
 
-          <AlertDescription className="text-blue-700">
-            {correctAnswers} / {totalQuestions} {t.correctAnswers}
+          <AlertDescription className="text-blue-700 space-y-2">
+            <div className="text-lg font-semibold">
+              {percentage.toFixed(1)}%
+            </div>
+            {showPoints && (
+              <div className="text-sm">
+                {totalScore} / {maxTotalScore} {t.points}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       );
@@ -458,8 +507,15 @@ export default function QuizComponent({
             {t.keepPracticing}
           </AlertTitle>
 
-          <AlertDescription className="text-amber-700">
-            {correctAnswers} / {totalQuestions} {t.correctAnswers}
+          <AlertDescription className="text-amber-700 space-y-2">
+            <div className="text-lg font-semibold">
+              {percentage.toFixed(1)}%
+            </div>
+            {showPoints && (
+              <div className="text-sm">
+                {totalScore} / {maxTotalScore} {t.points}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       );

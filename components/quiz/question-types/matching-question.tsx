@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
-import { Trash2, RotateCcw, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Trash2, RotateCcw, XCircle, AlertCircle, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -92,6 +92,7 @@ const getTranslations = (language: SupportedLanguage) => {
       instructions: "Click an item on the left, then click an item on the right to create a connection",
       clearAll: "Clear All",
       connections: "connections",
+      activeConnections: "Active Connections:",
       removeConnection: "Remove connection",
       perfectMatch: "Perfect! All connections are correct.",
       partiallyCorrect: "connections correct",
@@ -103,6 +104,7 @@ const getTranslations = (language: SupportedLanguage) => {
       instructions: "Kliknite element na levi, nato kliknite element na desni za ustvarjanje povezave",
       clearAll: "Počisti vse",
       connections: "povezave",
+      activeConnections: "Aktivne povezave:",
       removeConnection: "Odstrani povezavo",
       perfectMatch: "Popolno! Vse povezave so pravilne.",
       partiallyCorrect: "povezave pravilne",
@@ -114,6 +116,7 @@ const getTranslations = (language: SupportedLanguage) => {
       instructions: "Kliknite stavku s lijeve strane, zatim kliknite stavku s desne strane za stvaranje veze",
       clearAll: "Obriši sve",
       connections: "veze",
+      activeConnections: "Aktivne veze:",
       removeConnection: "Ukloni vezu",
       perfectMatch: "Savršeno! Sve veze su točne.",
       partiallyCorrect: "veze točne",
@@ -147,45 +150,92 @@ export function MatchingQuestion({
   const containerRef = useRef<HTMLDivElement>(null);
   const leftColumnRef = useRef<HTMLDivElement>(null);
   const rightColumnRef = useRef<HTMLDivElement>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   // Update connections when selectedAnswer changes
   useEffect(() => {
     setConnections(selectedAnswer);
   }, [selectedAnswer]);
 
-  // Update item positions on mount and resize
+  // Update item positions - debounced with requestAnimationFrame
   const updatePositions = useCallback(() => {
     if (!leftColumnRef.current || !rightColumnRef.current || !containerRef.current) return;
 
-    const newPositions = new Map<string, DOMRect>();
-    const containerRect = containerRef.current.getBoundingClientRect();
+    // Cancel any pending animation frame
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
 
-    // Get left items positions
-    questionData.leftItems.forEach(item => {
-      const element = document.getElementById(`left-${item.id}`);
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        newPositions.set(`left-${item.id}`, rect);
-      }
+    // Schedule update for next animation frame
+    rafIdRef.current = requestAnimationFrame(() => {
+      const newPositions = new Map<string, DOMRect>();
+
+      // Get left items positions
+      questionData.leftItems.forEach(item => {
+        const element = document.getElementById(`left-${item.id}`);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          newPositions.set(`left-${item.id}`, rect);
+        }
+      });
+
+      // Get right items positions
+      questionData.rightItems.forEach(item => {
+        const element = document.getElementById(`right-${item.id}`);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          newPositions.set(`right-${item.id}`, rect);
+        }
+      });
+
+      setItemPositions(newPositions);
+      rafIdRef.current = null;
     });
-
-    // Get right items positions
-    questionData.rightItems.forEach(item => {
-      const element = document.getElementById(`right-${item.id}`);
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        newPositions.set(`right-${item.id}`, rect);
-      }
-    });
-
-    setItemPositions(newPositions);
   }, [questionData.leftItems, questionData.rightItems]);
 
+  // Use useLayoutEffect for synchronous position calculations before paint
+  useEffect(() => {
+    // Initial update
+    updatePositions();
+
+    // Update on window resize (debounced)
+    let resizeTimer: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(updatePositions, 100);
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Update on scroll (with RAF debouncing via updatePositions)
+    const handleScroll = () => {
+      updatePositions();
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Use ResizeObserver only on the container, not individual items
+    const resizeObserver = new ResizeObserver(() => {
+      updatePositions();
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(resizeTimer);
+      resizeObserver.disconnect();
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, [updatePositions]);
+
+  // Update positions when connections change
   useEffect(() => {
     updatePositions();
-    window.addEventListener('resize', updatePositions);
-    return () => window.removeEventListener('resize', updatePositions);
-  }, [updatePositions]);
+  }, [connections, updatePositions]);
 
   // Validate if connection is allowed (one-to-one: each item can only be connected once)
   const isConnectionAllowed = (leftId: string, rightId: string): boolean => {
@@ -268,22 +318,25 @@ export function MatchingQuestion({
     const containerRect = containerRef.current.getBoundingClientRect();
     const display = questionData.display || {};
 
-    return connections.map((connection, index) => {
+    const lines = [];
+
+    // Render existing connections
+    connections.forEach((connection, index) => {
       const leftRect = itemPositions.get(`left-${connection.leftId}`);
       const rightRect = itemPositions.get(`right-${connection.rightId}`);
 
-      if (!leftRect || !rightRect) return null;
+      if (!leftRect || !rightRect) return;
 
-      // Calculate line coordinates
+      // Calculate line coordinates relative to container
       const startX = leftRect.right - containerRect.left;
-      const startY = leftRect.top + leftRect.height / 2 - containerRect.top;
+      const startY = (leftRect.top + leftRect.height / 2) - containerRect.top;
       const endX = rightRect.left - containerRect.left;
-      const endY = rightRect.top + rightRect.height / 2 - containerRect.top;
+      const endY = (rightRect.top + rightRect.height / 2) - containerRect.top;
 
       const color = getConnectionColor(connection);
       const strokeDasharray = display.connectionStyle === "dashed" ? "5,5" : undefined;
 
-      return (
+      lines.push(
         <g key={`${connection.leftId}-${connection.rightId}-${index}`}>
           <line
             x1={startX}
@@ -304,6 +357,39 @@ export function MatchingQuestion({
         </g>
       );
     });
+
+    // Render hover preview line
+    if (selectedLeft && hoveredRight) {
+      const leftRect = itemPositions.get(`left-${selectedLeft}`);
+      const rightRect = itemPositions.get(`right-${hoveredRight}`);
+
+      if (leftRect && rightRect) {
+        const startX = leftRect.right - containerRect.left;
+        const startY = (leftRect.top + leftRect.height / 2) - containerRect.top;
+        const endX = rightRect.left - containerRect.left;
+        const endY = (rightRect.top + rightRect.height / 2) - containerRect.top;
+
+        lines.push(
+          <g key="hover-preview">
+            <line
+              x1={startX}
+              y1={startY}
+              x2={endX}
+              y2={endY}
+              stroke="#94a3b8"
+              strokeWidth={2}
+              strokeDasharray="8,4"
+              opacity={0.6}
+              className="transition-all duration-200"
+            />
+            <circle cx={startX} cy={startY} r={4} fill="#94a3b8" opacity={0.6} />
+            <circle cx={endX} cy={endY} r={4} fill="#94a3b8" opacity={0.6} />
+          </g>
+        );
+      }
+    }
+
+    return lines;
   };
 
   const renderItemContent = (item: MatchingItem) => {
@@ -312,16 +398,16 @@ export function MatchingQuestion({
     switch (content.type) {
       case "image":
         return content.imageUrl ? (
-          <div className="relative w-full h-32 rounded-md overflow-hidden">
+          <div className="relative w-full h-48 rounded-md overflow-hidden bg-muted/30">
             <Image
               src={content.imageUrl}
               alt={getLocalizedContent(content, "altText", language) || "Matching item"}
               fill
-              className="object-cover"
+              className="object-contain p-2"
             />
           </div>
         ) : (
-          <div className="w-full h-32 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-sm">
+          <div className="w-full h-48 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-sm">
             No image
           </div>
         );
@@ -333,12 +419,12 @@ export function MatchingQuestion({
         return (
           <div className="flex flex-col gap-3">
             {content.imageUrl && (
-              <div className="relative w-full h-32 rounded-md overflow-hidden">
+              <div className="relative w-full h-40 rounded-md overflow-hidden bg-muted/30">
                 <Image
                   src={content.imageUrl}
                   alt={getLocalizedContent(content, "altText", language) || "Matching item"}
                   fill
-                  className="object-cover"
+                  className="object-contain p-2"
                 />
               </div>
             )}
@@ -415,8 +501,8 @@ export function MatchingQuestion({
       </div>
 
       {/* Main matching interface */}
-      <div ref={containerRef} className="relative">
-        <div className="grid grid-cols-2 gap-8">
+      <div ref={containerRef} className="relative min-h-[400px]">
+        <div className="grid grid-cols-2 gap-8 relative z-10">
           {/* Left column */}
           <div ref={leftColumnRef} className="space-y-2">
             {questionData.leftItems
@@ -439,9 +525,9 @@ export function MatchingQuestion({
                       {renderItemContent(item)}
                     </div>
                     {isLeftItemConnected(item.id) && (
-                      <Badge variant="secondary" className="flex-shrink-0">
-                        {connections.filter(c => c.leftId === item.id).length}
-                      </Badge>
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="h-3 w-3 rounded-full bg-blue-600 ring-2 ring-blue-200" />
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -470,9 +556,9 @@ export function MatchingQuestion({
                 >
                   <div className="flex items-start gap-2">
                     {isRightItemConnected(item.id) && (
-                      <Badge variant="secondary" className="flex-shrink-0">
-                        {connections.filter(c => c.rightId === item.id).length}
-                      </Badge>
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="h-3 w-3 rounded-full bg-blue-600 ring-2 ring-blue-200" />
+                      </div>
                     )}
                     <div className="flex-1">
                       {renderItemContent(item)}
@@ -483,10 +569,14 @@ export function MatchingQuestion({
           </div>
         </div>
 
-        {/* SVG overlay for connection lines */}
+        {/* SVG overlay for connection lines - positioned absolutely to cover entire container */}
         <svg
-          className="absolute inset-0 pointer-events-none"
-          style={{ width: '100%', height: '100%' }}
+          className="absolute top-0 left-0 pointer-events-none z-0"
+          style={{
+            width: '100%',
+            height: '100%',
+            overflow: 'visible'
+          }}
         >
           {renderConnections()}
         </svg>
@@ -495,7 +585,7 @@ export function MatchingQuestion({
       {/* Connection list with remove buttons */}
       {connections.length > 0 && !showResults && (
         <div className="space-y-2">
-          <div className="text-sm font-medium">Active Connections:</div>
+          <div className="text-sm font-medium">{t.activeConnections}</div>
           <div className="space-y-1">
             {connections.map((connection, index) => {
               const leftItem = questionData.leftItems.find(i => i.id === connection.leftId);
@@ -509,12 +599,15 @@ export function MatchingQuestion({
                 if (content.type === "text") {
                   return getLocalizedContent(content, "text", language);
                 } else if (content.type === "image") {
-                  return "[Image]";
+                  // Use altText for image descriptions
+                  const altText = getLocalizedContent(content, "altText", language);
+                  return altText || `Item ${item.position + 1}`;
                 } else if (content.type === "mixed") {
                   const text = getLocalizedContent(content, "text", language);
-                  return text || "[Image]";
+                  const altText = getLocalizedContent(content, "altText", language);
+                  return text || altText || `Item ${item.position + 1}`;
                 }
-                return "";
+                return `Item ${item.position + 1}`;
               };
 
               return (

@@ -120,7 +120,7 @@ export function GalleryView({
                     </p>
                   </div>
                 </DialogTrigger>
-                <DialogContent className="max-w-[90vw] w-[90vw]">
+                <DialogContent className="max-w-7xl w-full">
                   <DialogVisuallyHidden>
                     <DialogTitle>Image Gallery - View More Images</DialogTitle>
                   </DialogVisuallyHidden>
@@ -200,7 +200,7 @@ function GalleryImageThumbnail({
             alt={image.alt || "Project image"}
             fill
             quality={50}
-            sizes="(max-width: 768px) 50vw, 200px"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -208,7 +208,7 @@ function GalleryImageThumbnail({
           </div>
         </div>
       </DialogTrigger>
-      <DialogContent className="max-w-[90vw] w-[90vw]">
+      <DialogContent className="max-w-7xl w-full">
         <DialogVisuallyHidden>
           <DialogTitle>Image Gallery - Full Size View</DialogTitle>
         </DialogVisuallyHidden>
@@ -255,7 +255,7 @@ function ImageGallery({
       <Carousel setApi={setApi} className="w-full mx-auto">
         <CarouselContent className="-ml-0">
           {images.map((img, index) => (
-            <CarouselItem key={img.id} className="pl-0">
+            <CarouselItem key={img.id} className="pl-0 min-w-0 flex justify-center">
               <div className="relative w-full h-[70vh] flex items-center justify-center">
                 {/* Only load the current image and adjacent ones to improve performance */}
                 {Math.abs(currentImageIndex - index) < 3 && (
@@ -366,7 +366,7 @@ export function PhaseGalleryThumbnail({
             </div>
           </div>
         </DialogTrigger>
-        <DialogContent className="max-w-[90vw] w-[90vw]">
+        <DialogContent className="max-w-7xl w-full">
           <DialogVisuallyHidden>
             <DialogTitle>Phase Gallery - Timeline Images</DialogTitle>
           </DialogVisuallyHidden>
@@ -399,7 +399,7 @@ export function PhaseGalleryThumbnail({
           </div>
         </div>
       </DialogTrigger>
-      <DialogContent className="max-w-[90vw] w-[90vw]">
+      <DialogContent className="max-w-7xl w-full">
         <DialogVisuallyHidden>
           <DialogTitle>Project Gallery - All Images</DialogTitle>
         </DialogVisuallyHidden>

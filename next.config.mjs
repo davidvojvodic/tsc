@@ -17,7 +17,7 @@ const nextConfig = {
                 pathname: '/**',
             },
             {
-                protocol: 'https', 
+                protocol: 'https',
                 hostname: '*.ufs.sh',
                 port: '',
                 pathname: '/**',
@@ -38,6 +38,12 @@ const nextConfig = {
                 protocol: 'http',
                 hostname: '194.249.165.38',
                 port: '4560',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'ka2.tscmb.si',
+                port: '',
                 pathname: '/**',
             },
         ],
@@ -64,37 +70,37 @@ const nextConfig = {
                 // Security headers for non-auth API routes (Better Auth handles CORS for auth routes)
                 source: "/api/((?!auth).)*",
                 headers: [
-                  // Security headers for API routes
-                  { key: "X-Content-Type-Options", value: "nosniff" },
-                  { key: "X-Frame-Options", value: "DENY" },
-                  { key: "X-XSS-Protection", value: "1; mode=block" },
-                  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-                  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
+                    // Security headers for API routes
+                    { key: "X-Content-Type-Options", value: "nosniff" },
+                    { key: "X-Frame-Options", value: "DENY" },
+                    { key: "X-XSS-Protection", value: "1; mode=block" },
+                    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+                    { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
                 ]
             },
             {
                 // Comprehensive security headers for all routes
                 source: "/(.*)",
                 headers: [
-                  // Content Security Policy
-                  { 
-                    key: "Content-Security-Policy", 
-                    value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline' https://vercel.live; img-src 'self' data: blob: https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://res.cloudinary.com https://utfs.io https://*.ufs.sh https://ka2-waterwise.eu https://vercel.live https://vercel.com; media-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* rtsp://194.249.165.38:*; connect-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://ka2-waterwise.eu https://api.uploadthing.com https://*.ingest.uploadthing.com https://vercel.live wss://ws-us3.pusher.com wss:; frame-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://www.youtube.com https://*.youtube.com https://ka2-waterwise.eu https://vercel.live; font-src 'self' data: https://vercel.live https://assets.vercel.com; object-src 'none'; base-uri 'self'; form-action 'self';" 
-                  },
-                  // Additional Security Headers
-                  { key: "X-Content-Type-Options", value: "nosniff" },
-                  { key: "X-Frame-Options", value: "SAMEORIGIN" },
-                  { key: "X-XSS-Protection", value: "1; mode=block" },
-                  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-                  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
-                  // Strict Transport Security (HSTS)
-                  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-                  // Prevent MIME type sniffing
-                  { key: "X-DNS-Prefetch-Control", value: "off" },
-                  // Cross-Origin Policies - relaxed for external resources
-                  { key: "Cross-Origin-Embedder-Policy", value: "unsafe-none" },
-                  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-                  { key: "Cross-Origin-Resource-Policy", value: "cross-origin" }
+                    // Content Security Policy
+                    {
+                        key: "Content-Security-Policy",
+                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline' https://vercel.live; img-src 'self' data: blob: https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://res.cloudinary.com https://utfs.io https://*.ufs.sh https://ka2-waterwise.eu https://vercel.live https://vercel.com; media-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* rtsp://194.249.165.38:*; connect-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://ka2-waterwise.eu https://api.uploadthing.com https://*.ingest.uploadthing.com https://vercel.live wss://ws-us3.pusher.com wss:; frame-src 'self' https://ka2.tscmb.si http://194.249.165.38:* https://194.249.165.38:* https://www.youtube.com https://*.youtube.com https://ka2-waterwise.eu https://vercel.live; font-src 'self' data: https://vercel.live https://assets.vercel.com; object-src 'none'; base-uri 'self'; form-action 'self';"
+                    },
+                    // Additional Security Headers
+                    { key: "X-Content-Type-Options", value: "nosniff" },
+                    { key: "X-Frame-Options", value: "SAMEORIGIN" },
+                    { key: "X-XSS-Protection", value: "1; mode=block" },
+                    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+                    { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
+                    // Strict Transport Security (HSTS)
+                    { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+                    // Prevent MIME type sniffing
+                    { key: "X-DNS-Prefetch-Control", value: "off" },
+                    // Cross-Origin Policies - relaxed for external resources
+                    { key: "Cross-Origin-Embedder-Policy", value: "unsafe-none" },
+                    { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+                    { key: "Cross-Origin-Resource-Policy", value: "cross-origin" }
                 ]
             }
         ];

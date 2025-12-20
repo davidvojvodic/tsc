@@ -190,7 +190,9 @@ export function QuestionContent({
       {/* Image Upload (shown for TEXT_INPUT, MATCHING, ORDERING - shared across all languages) */}
       {(question.questionType === "TEXT_INPUT" ||
         question.questionType === "MATCHING" ||
-        question.questionType === "ORDERING") && (
+        question.questionType === "ORDERING" ||
+        question.questionType === "SINGLE_CHOICE" ||
+        question.questionType === "MULTIPLE_CHOICE") && (
         <QuestionImageUploader
           imageUrl={question.imageUrl}
           onImageUpload={(url) => onChange("imageUrl", url)}

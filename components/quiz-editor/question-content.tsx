@@ -192,7 +192,8 @@ export function QuestionContent({
         question.questionType === "MATCHING" ||
         question.questionType === "ORDERING" ||
         question.questionType === "SINGLE_CHOICE" ||
-        question.questionType === "MULTIPLE_CHOICE") && (
+        question.questionType === "MULTIPLE_CHOICE" ||
+        question.questionType === "DROPDOWN") && (
         <QuestionImageUploader
           imageUrl={question.imageUrl}
           onImageUpload={(url) => onChange("imageUrl", url)}

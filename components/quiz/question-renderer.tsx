@@ -206,8 +206,9 @@ export function QuestionRenderer({
         onSelectionChange={handleMultipleChoiceChange}
         disabled={disabled}
         showValidation={showValidation}
-        language={language}
+
         className={className}
+        imageUrl={question.imageUrl}
       />
     );
   }
@@ -254,8 +255,9 @@ export function QuestionRenderer({
         selectedAnswers={typeof selectedAnswer === "object" && !Array.isArray(selectedAnswer) ? selectedAnswer : {}}
         onAnswerChange={handleDropdownChange}
         disabled={disabled}
-        language={language}
+
         className={className}
+        imageUrl={question.imageUrl}
       />
     );
   }
@@ -320,6 +322,19 @@ export function QuestionRenderer({
       <h3 className="text-xl font-medium">
         {getLocalizedContent(question, "text", language)}
       </h3>
+
+      {question.imageUrl && (
+        <div className="relative w-full max-w-2xl mx-auto mb-4 rounded-lg overflow-hidden border">
+          <ImageWithFallback
+            src={question.imageUrl}
+            alt="Question image"
+            width={800}
+            height={600}
+            className="object-contain w-full"
+            loading="eager"
+          />
+        </div>
+      )}
 
       <RadioGroup
         value={typeof selectedAnswer === "string" ? selectedAnswer : ""}

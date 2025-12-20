@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageDropdown } from "@/components/ui/image-dropdown";
+import { ImageWithFallback } from "@/components/image-with-fallback";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { CheckCircle2, XCircle } from "lucide-react";
+import parse, { DOMNode, Element, domToReact, Text } from 'html-react-parser';
 
 interface DropdownOption {
   id: string;
@@ -51,6 +53,7 @@ interface DropdownQuestionProps {
   text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
+  imageUrl?: string | null;
   dropdownData: DropdownConfiguration;
   selectedAnswers?: Record<string, string>;
   onAnswerChange: (questionId: string, answers: Record<string, string>) => void;
@@ -71,6 +74,7 @@ export function DropdownQuestion({
   text,
   text_sl,
   text_hr,
+  imageUrl,
   dropdownData,
   selectedAnswers = {},
   onAnswerChange,
@@ -101,98 +105,129 @@ export function DropdownQuestion({
     return dropdown.options.some(opt => opt.content?.type === "mixed");
   };
 
+
+
+// ... (other imports remain, remove unused split logic if needed)
+
   const renderTemplateWithDropdowns = () => {
     const template = getTemplate();
-    const parts = template.split(/(\{[^}]+\})/);
+    
+    // Configure parser options to replace placeholders with components
+    const options = {
+      replace: (domNode: DOMNode) => {
+        // Only process text nodes
+        if (domNode instanceof Text) {
+          const text = domNode.data;
+          // Check for placeholder pattern {dropdownId}
+          // We split by the pattern to handle text mixed with placeholders in the same node
+          const parts = text.split(/(\{[^}]+\})/);
+          
+          if (parts.length === 1) return; // No placeholders
+          
+          return (
+            <>
+              {parts.map((part, index) => {
+                const match = part.match(/^\{([^}]+)\}$/);
+                if (match) {
+                  const dropdownId = match[1];
+                  const dropdown = dropdownData.dropdowns.find(d => d.id === dropdownId);
 
-    return parts.map((part, index) => {
-      const match = part.match(/^\{([^}]+)\}$/);
+                  if (!dropdown) {
+                    return <span key={index} className="text-destructive font-bold text-sm">[Missing: {dropdownId}]</span>;
+                  }
 
-      if (match) {
-        const dropdownId = match[1];
-        const dropdown = dropdownData.dropdowns.find(d => d.id === dropdownId);
+                  const result = results.find(r => r.dropdownId === dropdownId);
+                  const isCorrect = result?.isCorrect;
+                  const hasResult = showResults && result;
+                  const useImageDropdown = hasImageOptions(dropdown);
+                  const variant = hasResult ? (isCorrect ? "success" : "error") : "default";
 
-        if (!dropdown) {
-          return <span key={index} className="text-red-500">[Missing dropdown: {dropdownId}]</span>;
+                  return (
+                    <span key={index} className="inline-flex items-center gap-2 mx-1 align-middle">
+                      {useImageDropdown ? (
+                        <ImageDropdown
+                          options={dropdown.options}
+                          value={selections[dropdownId] || ""}
+                          onValueChange={(value) => handleSelectionChange(dropdownId, value)}
+                          placeholder={getLocalizedContent(dropdown, "label", language) || dropdown.label || "Select"}
+                          disabled={disabled}
+                          variant={variant}
+                          language={language}
+                          className="inline-flex min-w-[180px]"
+                        />
+                      ) : (
+                        <Select
+                          value={selections[dropdownId] || ""}
+                          onValueChange={(value) => handleSelectionChange(dropdownId, value)}
+                          disabled={disabled}
+                        >
+                          <SelectTrigger
+                            className={`
+                              inline-flex min-w-[120px] h-8 px-2 py-1 text-sm
+                              ${hasResult ? (isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50') : ''}
+                            `}
+                          >
+                            <SelectValue
+                              placeholder={getLocalizedContent(dropdown, "label", language) || dropdown.label || "Select"}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {dropdown.options.map((option) => {
+                              const optionText = option.content
+                                ? getLocalizedContent(option.content, "text", language)
+                                : getLocalizedContent(option, "text", language) || option.text;
+
+                              return (
+                                <SelectItem key={option.id} value={option.id}>
+                                  {optionText}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {hasResult && (
+                        <span className="inline-flex">
+                          {isCorrect ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-600" />
+                          )}
+                        </span>
+                      )}
+                    </span>
+                  );
+                }
+                // Return regular text parts
+                return <span key={index}>{part}</span>;
+              })}
+            </>
+          );
         }
-
-        const result = results.find(r => r.dropdownId === dropdownId);
-        const isCorrect = result?.isCorrect;
-        const hasResult = showResults && result;
-        const useImageDropdown = hasImageOptions(dropdown);
-
-        // Determine variant based on results
-        const variant = hasResult ? (isCorrect ? "success" : "error") : "default";
-
-        return (
-          <span key={index} className="inline-flex items-center gap-2 mx-1">
-            {useImageDropdown ? (
-              // Use ImageDropdown for options with images
-              <ImageDropdown
-                options={dropdown.options}
-                value={selections[dropdownId] || ""}
-                onValueChange={(value) => handleSelectionChange(dropdownId, value)}
-                placeholder={getLocalizedContent(dropdown, "label", language) || dropdown.label || "Select"}
-                disabled={disabled}
-                variant={variant}
-                language={language}
-                className="inline-flex min-w-[180px]"
-              />
-            ) : (
-              // Use native Select for text-only options
-              <Select
-                value={selections[dropdownId] || ""}
-                onValueChange={(value) => handleSelectionChange(dropdownId, value)}
-                disabled={disabled}
-              >
-                <SelectTrigger
-                  className={`
-                    inline-flex min-w-[120px] h-8 px-2 py-1 text-sm
-                    ${hasResult ? (isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50') : ''}
-                  `}
-                >
-                  <SelectValue
-                    placeholder={getLocalizedContent(dropdown, "label", language) || dropdown.label || "Select"}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {dropdown.options.map((option) => {
-                    // Get text from content or legacy fields
-                    const optionText = option.content
-                      ? getLocalizedContent(option.content, "text", language)
-                      : getLocalizedContent(option, "text", language) || option.text;
-
-                    return (
-                      <SelectItem key={option.id} value={option.id}>
-                        {optionText}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            )}
-
-            {hasResult && (
-              <span className="inline-flex">
-                {isCorrect ? (
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-red-600" />
-                )}
-              </span>
-            )}
-          </span>
-        );
       }
+    };
 
-      return <span key={index}>{part}</span>;
-    });
+    // Parse the HTML string with our replacement rules
+    return parse(template, options);
   };
 
   return (
     <div className={`space-y-4 ${className || ''}`}>
       {/* Question text */}
       <div className="space-y-2">
+        {imageUrl && (
+          <div className="relative w-full max-w-2xl mx-auto mb-4 rounded-lg overflow-hidden border">
+            <ImageWithFallback
+              src={imageUrl}
+              alt="Question image"
+              width={800}
+              height={600}
+              className="object-contain w-full"
+              loading="eager"
+            />
+          </div>
+        )}
         <h3 className="text-xl font-medium">
           {getLocalizedContent({ text, text_sl, text_hr }, "text", language)}
         </h3>

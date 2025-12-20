@@ -29,6 +29,7 @@ interface MultipleChoiceQuestionProps {
   text: string | null;
   text_sl?: string | null;
   text_hr?: string | null;
+  imageUrl?: string | null;
   options: Option[];
   multipleChoiceData: MultipleChoiceData;
   selectedOptions: string[];
@@ -89,6 +90,7 @@ export function MultipleChoiceQuestion({
   text,
   text_sl,
   text_hr,
+  imageUrl,
   options,
   multipleChoiceData,
   selectedOptions,
@@ -181,6 +183,18 @@ export function MultipleChoiceQuestion({
     <div className={cn("space-y-4", className)}>
       {/* Question text */}
       <div className="space-y-2">
+        {imageUrl && (
+          <div className="relative w-full max-w-2xl mx-auto mb-4 rounded-lg overflow-hidden border">
+            <ImageWithFallback
+              src={imageUrl}
+              alt="Question image"
+              width={800}
+              height={600}
+              className="object-contain w-full"
+              loading="eager"
+            />
+          </div>
+        )}
         <h3 className="text-xl font-medium">
           {getLocalizedContent({ text, text_sl, text_hr }, "text", language)}
         </h3>

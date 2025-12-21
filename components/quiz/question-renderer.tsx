@@ -12,7 +12,7 @@ import { MatchingQuestion } from "./question-types/matching-question";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { cn } from "@/lib/utils";
-import type { OrderingItem, OrderingConfiguration, OrderingItemContent } from "@/components/quiz-editor/quiz-editor-layout";
+import type { OrderingConfiguration, OrderingItemContent } from "@/components/quiz-editor/quiz-editor-layout";
 
 interface Option {
   id: string;

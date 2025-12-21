@@ -107,6 +107,7 @@ export interface DropdownField {
   options: DropdownOption[];
 }
 
+
 export interface DropdownOption {
   id: string;
   text?: string;
@@ -220,7 +221,6 @@ export interface MatchingConfiguration {
 interface QuizEditorLayoutProps {
   quiz?: QuizData;
   onSave: (data: QuizData) => Promise<void>;
-  onAutoSave: (data: Partial<QuizData>) => Promise<void>;
   onCancel?: () => void;
   teachers: Teacher[];
   validationErrors?: GroupedValidationErrors | null;
@@ -229,7 +229,6 @@ interface QuizEditorLayoutProps {
 export function QuizEditorLayout({
   quiz,
   onSave,
-  onAutoSave,
   onCancel,
   teachers,
   validationErrors

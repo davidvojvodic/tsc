@@ -5,11 +5,9 @@ import React, {
   useContext,
   useState,
   useCallback,
-  useEffect,
-  useRef
+  useEffect
 } from "react";
-import { toast } from "sonner";
-import { QuizData, Question, Option } from "./quiz-editor-layout";
+import { QuizData, Question } from "./quiz-editor-layout";
 import { validateQuestion as validateQuestionUtil, ValidationError } from "@/lib/quiz-validation";
 
 export type Language = "en" | "sl" | "hr";
@@ -156,7 +154,7 @@ export function QuizEditorProvider({
   // Real-time validation
   useEffect(() => {
     const errors: Record<string, ValidationError[]> = {};
-    quiz.questions.forEach((question, index) => {
+    quiz.questions.forEach((question) => {
       const questionErrors = validateQuestion(question);
       if (questionErrors.length > 0) {
         errors[question.id] = questionErrors;

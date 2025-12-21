@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { AlertCircle, CheckCircle } from "lucide-react";
-import { getLocalizedOptionText, getOptionImageUrl, optionHasImage, getOptionContentType } from "@/lib/option-content-utils";
+import { getLocalizedOptionText, getOptionImageUrl, optionHasImage } from "@/lib/option-content-utils";
 import type { Option } from "@/components/quiz-editor/quiz-editor-layout";
 
 interface MultipleChoiceData {
@@ -220,7 +220,7 @@ export function MultipleChoiceQuestion({
           const isOptionDisabled = Boolean(disabled ||
             (!isSelected && maxSelections && selectedCount >= maxSelections));
 
-          const contentType = getOptionContentType(option);
+          // const contentType = getOptionContentType(option);
           const hasImage = optionHasImage(option);
           const imageUrl = getOptionImageUrl(option);
           const optionText = getLocalizedOptionText(option, language as "en" | "sl" | "hr");

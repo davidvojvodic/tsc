@@ -16,7 +16,7 @@ interface QuizEditorWizardProps {
 
 export function QuizEditorWizard({ teachers, onSave, onCancel, validationErrors }: QuizEditorWizardProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
-  const { quiz, saveQuiz } = useQuizEditor();
+  const { quiz } = useQuizEditor();
 
   const validateStep1 = (): boolean => {
     // Check if at least one language has a title

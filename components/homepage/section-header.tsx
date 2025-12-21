@@ -55,16 +55,7 @@ export function SectionHeader({
     }
   };
 
-  const getStatusPulse = (type: "live" | "demo" | "offline") => {
-    switch (type) {
-      case "live":
-        return "after:bg-green-400";
-      case "demo":
-        return "after:bg-blue-400";
-      case "offline":
-        return "";
-    }
-  };
+
 
   return (
     <div className={cn("relative overflow-hidden", className)}>

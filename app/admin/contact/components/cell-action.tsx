@@ -42,7 +42,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
 
       toast.success("Contact submission deleted.");
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong.");
     } finally {
       setLoading(false);
@@ -91,7 +91,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
 
       toast.success("Marked as read.");
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong.");
     } finally {
       setLoading(false);

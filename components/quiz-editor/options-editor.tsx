@@ -11,7 +11,7 @@ import { Language } from "./quiz-editor-provider";
 import { cn } from "@/lib/utils";
 import { OptionImageUploader } from "./option-image-uploader";
 import { getOptionContentType } from "@/lib/option-content-utils";
-import { useToast } from "@/hooks/use-toast";
+
 
 interface OptionsEditorProps {
   question: Question;
@@ -24,7 +24,6 @@ export function OptionsEditor({
   language,
   onChange
 }: OptionsEditorProps) {
-  const { toast } = useToast();
 
   const getTextFieldName = (baseField: string) => {
     if (language === "sl") return `${baseField}_sl`;

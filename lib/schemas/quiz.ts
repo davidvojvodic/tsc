@@ -533,7 +533,7 @@ const questionSchema = z.object({
       return false;
     }
 
-    const { leftItems, rightItems, correctMatches, matchingType, distractors } = data.matchingData;
+    const { leftItems, rightItems, correctMatches, distractors } = data.matchingData;
 
     // Must have at least 2 items in each column
     if (leftItems.length < 2 || rightItems.length < 2) {

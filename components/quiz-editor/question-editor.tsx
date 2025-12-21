@@ -14,20 +14,18 @@ import { QuestionActions } from "./question-actions";
 import { EmptyState } from "./empty-state";
 import { AutoSaveIndicator } from "./autosave-indicator";
 import { ScoringMethodSelector } from "./scoring-method-selector";
-import { Teacher, Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration, MultipleChoiceConfiguration } from "./quiz-editor-layout";
+import { Option, TextInputConfiguration, DropdownConfiguration, OrderingConfiguration, MatchingConfiguration, MultipleChoiceConfiguration } from "./quiz-editor-layout";
 import { validateQuestion } from "@/lib/quiz-validation";
 import { GroupedValidationErrors, questionHasErrors } from "@/lib/validation-utils";
 
 interface QuestionEditorProps {
   questionIndex: number;
-  teachers: Teacher[];
   onQuestionChange: (index: number) => void;
   validationErrors?: GroupedValidationErrors | null;
 }
 
 export function QuestionEditor({
   questionIndex,
-  teachers,
   onQuestionChange,
   validationErrors
 }: QuestionEditorProps) {

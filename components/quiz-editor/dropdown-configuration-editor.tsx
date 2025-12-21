@@ -320,11 +320,7 @@ function DropdownFieldEditor({
     return "label";
   };
 
-  const getTextFieldName = () => {
-    if (language === "sl") return "text_sl";
-    if (language === "hr") return "text_hr";
-    return "text";
-  };
+
 
   const getCurrentLabel = () => {
     const labelField = getLabelFieldName();

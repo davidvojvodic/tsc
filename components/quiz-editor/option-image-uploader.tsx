@@ -1,12 +1,7 @@
-"use client";
-
 import React, { useState } from "react";
 import { UploadButton } from "@/lib/uploadthing";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { X, ImageIcon, Loader2 } from "lucide-react";
-import { ImageWithFallback } from "@/components/image-with-fallback";
 import { cn } from "@/lib/utils";
 import { Language } from "./quiz-editor-provider";
 
@@ -20,7 +15,6 @@ interface OptionImageUploaderProps {
 
 export function OptionImageUploader({
   imageUrl,
-  language,
   onImageUpload,
   onImageRemove,
   disabled = false,

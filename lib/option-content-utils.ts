@@ -3,7 +3,7 @@
  * Supports backward compatibility between legacy text fields and new content system
  */
 
-import type { Option, OptionContent, OptionTextContent, OptionMixedContent } from "@/components/quiz-editor/quiz-editor-layout";
+import type { Option, OptionTextContent, OptionMixedContent } from "@/components/quiz-editor/quiz-editor-layout";
 
 export type Language = "en" | "sl" | "hr";
 export type ContentType = "text" | "mixed";

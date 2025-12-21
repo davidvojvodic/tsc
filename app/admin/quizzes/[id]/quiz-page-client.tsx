@@ -7,7 +7,6 @@ import { QuizEditorV2 } from "@/components/quiz-editor/quiz-editor-v2";
 import { QuizData, Teacher } from "@/components/quiz-editor/quiz-editor-layout";
 import { quizSchema } from "@/lib/schemas/quiz";
 import { parseValidationErrors, GroupedValidationErrors } from "@/lib/validation-utils";
-import { ZodError } from "zod";
 
 interface QuizPageClientProps {
   teachers: Teacher[];
@@ -21,13 +20,11 @@ export default function QuizPageClient({
   quizId,
 }: QuizPageClientProps) {
   const router = useRouter();
-  const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<GroupedValidationErrors | null>(null);
 
   const handleSave = useCallback(
     async (data: QuizData) => {
       try {
-        setIsSaving(true);
 
         // Step 1: Validate the quiz data BEFORE sending to server
         const validationResult = quizSchema.safeParse(data);
@@ -41,7 +38,6 @@ export default function QuizPageClient({
           toast.error(`Validation failed: ${errors.totalErrorCount} error${errors.totalErrorCount > 1 ? "s" : ""} found. Please fix them before saving.`);
 
           // Stop the save process
-          setIsSaving(false);
           return;
         }
 
@@ -189,8 +185,6 @@ export default function QuizPageClient({
           error instanceof Error ? error.message : `Failed to ${quizId === "new" ? "create" : "save"} quiz`
         );
         throw error;
-      } finally {
-        setIsSaving(false);
       }
     },
     [quizId, router]

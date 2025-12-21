@@ -24,7 +24,7 @@ interface QuestionsStepProps {
   validationErrors?: GroupedValidationErrors | null;
 }
 
-export function QuestionsStep({ teachers, onBack, onSave, onCancel, validationErrors }: QuestionsStepProps) {
+export function QuestionsStep({ onBack, onSave, validationErrors }: QuestionsStepProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const { quiz } = useQuizEditor();
@@ -102,7 +102,7 @@ export function QuestionsStep({ teachers, onBack, onSave, onCancel, validationEr
           {/* Mobile Layout - Show only current editor */}
           <QuestionEditor
             questionIndex={currentQuestionIndex}
-            teachers={teachers}
+
             onQuestionChange={handleQuestionSelect}
             validationErrors={validationErrors}
           />
@@ -126,7 +126,6 @@ export function QuestionsStep({ teachers, onBack, onSave, onCancel, validationEr
             <ResizablePanel defaultSize={75} minSize={60}>
               <QuestionEditor
                 questionIndex={currentQuestionIndex}
-                teachers={teachers}
                 onQuestionChange={handleQuestionSelect}
                 validationErrors={validationErrors}
               />

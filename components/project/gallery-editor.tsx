@@ -43,7 +43,7 @@ export function GalleryEditor({
       // No limit on number of images - removed artificial restriction
       setSelectedFiles((prev) => [...prev, ...acceptedFiles]);
     },
-    [value.length]
+    []
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

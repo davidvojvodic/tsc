@@ -3,11 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
-import { Trash2, RotateCcw, XCircle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Trash2, RotateCcw, AlertCircle, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -299,7 +298,7 @@ export function MatchingQuestion({
   };
 
   // Get connection line color based on results
-  const getConnectionColor = (connection: Connection): string => {
+  const getConnectionColor = (): string => {
     const display = questionData.display || {};
 
     if (!showResults) {
@@ -333,7 +332,7 @@ export function MatchingQuestion({
       const endX = rightRect.left - containerRect.left;
       const endY = (rightRect.top + rightRect.height / 2) - containerRect.top;
 
-      const color = getConnectionColor(connection);
+      const color = getConnectionColor();
       const strokeDasharray = display.connectionStyle === "dashed" ? "5,5" : undefined;
 
       lines.push(

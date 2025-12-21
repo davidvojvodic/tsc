@@ -225,6 +225,7 @@ export function RealtimeCameraStream({ className }: RealtimeCameraStreamProps) {
         </div>
       )}
 
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
         alt="Real-time Camera Feed"

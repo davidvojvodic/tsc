@@ -3,17 +3,16 @@
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Trash2, GripVertical, HelpCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OptionImageUploader } from "./option-image-uploader";
-import type { OrderingConfiguration, OrderingItem, OrderingItemContent, OrderingTextContent, OrderingMixedContent } from "./quiz-editor-layout";
+import type { OrderingConfiguration, OrderingItem, OrderingTextContent, OrderingMixedContent } from "./quiz-editor-layout";
 
 type Language = "en" | "sl" | "hr";
 
@@ -270,15 +269,10 @@ function ItemEditor({
 }) {
   const contentType = item.content.type || "text";
 
-  // Get current text based on language
-  const getCurrentText = () => {
-    if (language === "sl") return item.content.text_sl || "";
-    if (language === "hr") return item.content.text_hr || "";
-    return item.content.text || "";
-  };
+
 
   // Update content type
-  const updateContentType = (type: "text" | "mixed") => {
+  const handleContentTypeChange = (type: "text" | "mixed") => {
     if (type === "text") {
       // Switching to TEXT - remove image
       const newContent: OrderingTextContent = {
@@ -299,21 +293,6 @@ function ItemEditor({
       };
       onUpdate({ content: newContent });
     }
-  };
-
-  // Update text for specific language
-  const updateText = (value: string) => {
-    const updates: Partial<OrderingTextContent | OrderingMixedContent> = {};
-    if (language === "sl") {
-      updates.text_sl = value;
-    } else if (language === "hr") {
-      updates.text_hr = value;
-    } else {
-      updates.text = value;
-    }
-
-    const newContent = { ...item.content, ...updates };
-    onUpdate({ content: newContent });
   };
 
   // Update image URL
@@ -372,7 +351,7 @@ function ItemEditor({
           <Label className="text-sm font-medium">Content Type</Label>
           <RadioGroup
             value={contentType}
-            onValueChange={(value) => updateContentType(value as "text" | "mixed")}
+            onValueChange={(value) => handleContentTypeChange(value as "text" | "mixed")}
             className="flex gap-4"
           >
             <div className="flex items-center space-x-2">

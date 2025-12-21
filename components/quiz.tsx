@@ -16,8 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
 
-import { cn } from "@/lib/utils";
-
 import { AlertCircle, CheckCircle2, Trophy, Loader2 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -31,7 +29,7 @@ import { QuestionRenderer } from "@/components/quiz/question-renderer";
 
 import { getLocalizedContent } from "@/lib/language-utils";
 
-import type { OrderingItem, OrderingConfiguration } from "@/components/quiz-editor/quiz-editor-layout";
+import type { OrderingConfiguration } from "@/components/quiz-editor/quiz-editor-layout";
 
 interface Option {
   id: string;

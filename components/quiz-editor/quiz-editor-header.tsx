@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Save, ArrowLeft, Loader2 } from "lucide-react";
 import { useQuizEditor, Language } from "./quiz-editor-provider";
 import { LanguageTabs } from "./language-tabs";
@@ -27,7 +27,7 @@ interface QuizEditorHeaderProps {
 }
 
 export function QuizEditorHeader({ teachers, onSave, onCancel }: QuizEditorHeaderProps) {
-  const { quiz, updateQuiz, currentLanguage, setCurrentLanguage, hasUnsavedChanges, saveQuiz } = useQuizEditor();
+  const { quiz, updateQuiz, currentLanguage, setCurrentLanguage, saveQuiz } = useQuizEditor();
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 

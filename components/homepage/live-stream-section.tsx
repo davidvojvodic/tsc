@@ -81,13 +81,13 @@ const translations = {
 };
 
 export function LiveStreamSection({ locale = "en" }: LiveStreamSectionProps) {
-  const [isLive, setIsLive] = useState(true);
+  const [isLive] = useState(true);
   const [viewers, setViewers] = useState(0);
-  const [uptime, setUptime] = useState("98.7%");
+  const [uptime] = useState("98.7%");
   const [streamQuality, setStreamQuality] = useState<
     "excellent" | "good" | "poor"
   >("excellent");
-  const [currentFps, setCurrentFps] = useState(2);
+  const [currentFps] = useState(2);
 
   // Simulate viewer count and system stats
   useEffect(() => {

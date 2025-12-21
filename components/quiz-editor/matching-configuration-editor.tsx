@@ -18,7 +18,6 @@ import { QuestionImageUploader } from "@/components/quiz-editor/question-image-u
 import type {
   MatchingConfiguration,
   MatchingItem,
-  MatchingItemContent,
   MatchingTextContent,
   MatchingImageContent,
   MatchingMixedContent,

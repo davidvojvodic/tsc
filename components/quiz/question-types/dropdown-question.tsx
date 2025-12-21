@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { CheckCircle2, XCircle } from "lucide-react";
-import parse, { DOMNode, Element, domToReact, Text } from 'html-react-parser';
+import parse, { DOMNode } from 'html-react-parser';
 
 interface DropdownOption {
   id: string;
@@ -116,11 +116,10 @@ export function DropdownQuestion({
     const options = {
       replace: (domNode: DOMNode) => {
         // Broad check for text nodes
-        // @ts-ignore
+        // @ts-expect-error - domNode type definition is incomplete
         const isText = domNode.type === 'text' || (!domNode.type && typeof domNode.data === 'string');
         
         if (isText) {
-          // @ts-ignore
           const text = domNode.data;
           // Check for placeholder pattern {dropdownId}
           // We split by the pattern to handle text mixed with placeholders in the same node

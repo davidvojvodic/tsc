@@ -471,31 +471,7 @@ function generateOrderingFeedback(
 /**
  * Generate detailed feedback for ordering questions with partial credit
  */
-function generateDetailedOrderingFeedback(
-  correctOrder: string[],
-  userOrder: string[],
-  items: OrderingDataType['items'],
-  correctPositions: number,
-  adjacentPairs: number
-): string {
-  const totalItems = items.length;
 
-  if (correctPositions === totalItems) {
-    return "Perfect! All items are in the correct order.";
-  }
-
-  if (correctPositions === 0) {
-    return "None of the items are in the correct position. Please review the sequence.";
-  }
-
-  let feedback = `${correctPositions}/${totalItems} items in correct positions.`;
-
-  if (adjacentPairs > 0) {
-    feedback += ` ${adjacentPairs} correct adjacent relationships.`;
-  }
-
-  return feedback;
-}
 
 /**
  * Get display text for an ordering item
@@ -521,7 +497,7 @@ function scoreMatchingQuestion(
     throw new Error(`Matching question ${question.id} missing configuration data`);
   }
 
-  const { correctMatches, scoring, matchingType, leftItems, rightItems } = matchingData;
+  const { correctMatches, scoring } = matchingData;
   const {
     pointsPerMatch = 1,
     penalizeIncorrect = true,

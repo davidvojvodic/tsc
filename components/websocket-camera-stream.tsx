@@ -260,6 +260,7 @@ export function WebSocketCameraStream({
         </div>
       )}
 
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
         alt="WebSocket Camera Feed"

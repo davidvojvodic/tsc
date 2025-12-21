@@ -125,6 +125,7 @@ export function LiveCameraStream({ className }: LiveCameraStreamProps) {
         </div>
       )}
 
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
         alt="Live Camera Feed"

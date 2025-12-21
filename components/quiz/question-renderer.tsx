@@ -209,6 +209,7 @@ export function QuestionRenderer({
 
         className={className}
         imageUrl={question.imageUrl}
+        language={language}
       />
     );
   }
@@ -258,6 +259,7 @@ export function QuestionRenderer({
 
         className={className}
         imageUrl={question.imageUrl}
+        language={language}
       />
     );
   }

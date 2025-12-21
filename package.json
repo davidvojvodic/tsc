@@ -40,6 +40,7 @@
     "@sanity/image-url": "^1.0.2",
     "@sanity/preview-kit": "^5.1.11",
     "@sanity/vision": "^3.61.0",
+    "@tailwindcss/typography": "^0.5.19",
     "@tiptap/extension-link": "^2.10.3",
     "@tiptap/extension-placeholder": "^2.10.3",
     "@tiptap/extension-text-style": "^2.10.3",

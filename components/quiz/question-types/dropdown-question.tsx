@@ -115,8 +115,12 @@ export function DropdownQuestion({
     // Configure parser options to replace placeholders with components
     const options = {
       replace: (domNode: DOMNode) => {
-        // Only process text nodes
-        if (domNode instanceof Text) {
+        // Broad check for text nodes
+        // @ts-ignore
+        const isText = domNode.type === 'text' || (!domNode.type && typeof domNode.data === 'string');
+        
+        if (isText) {
+          // @ts-ignore
           const text = domNode.data;
           // Check for placeholder pattern {dropdownId}
           // We split by the pattern to handle text mixed with placeholders in the same node
@@ -233,8 +237,8 @@ export function DropdownQuestion({
         </h3>
       </div>
 
-      {/* Template with dropdowns */}
-      <div className="text-base leading-relaxed">
+      {/* Template with dropdowns - Uses typography plugin for table styling */}
+      <div className="prose prose-sm max-w-none dark:prose-invert">
         {renderTemplateWithDropdowns()}
       </div>
 

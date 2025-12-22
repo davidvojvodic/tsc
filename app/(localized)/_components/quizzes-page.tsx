@@ -14,6 +14,14 @@ import { BrainCircuit, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { SupportedLanguage } from "@/store/language-context";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
 
 interface Quiz {
   id: string;
@@ -23,6 +31,7 @@ interface Quiz {
   description: string | null;
   description_sl?: string | null;
   description_hr?: string | null;
+  createdAt: Date | string;
   teacher: {
     name: string;
     photo: {
@@ -47,7 +56,10 @@ const getTranslations = (language: SupportedLanguage) => {
       questions: "Questions",
       estimated: "Estimated",
       minutes: "minutes",
-      startQuiz: "Start Quiz"
+      startQuiz: "Start Quiz",
+      sortBy: "Sort by",
+      newest: "Newest",
+      oldest: "Oldest"
     },
     sl: {
       title: "Preverjanje znanja",
@@ -55,7 +67,10 @@ const getTranslations = (language: SupportedLanguage) => {
       questions: "Vprašanj",
       estimated: "Ocenjeno",
       minutes: "minut",
-      startQuiz: "Začnite kviz"
+      startQuiz: "Začnite kviz",
+      sortBy: "Razvrsti po",
+      newest: "Najnovejše",
+      oldest: "Najstarejše"
     },
     hr: {
       title: "Provjera znanja",
@@ -63,7 +78,10 @@ const getTranslations = (language: SupportedLanguage) => {
       questions: "Pitanja",
       estimated: "Procijenjeno",
       minutes: "minuta",
-      startQuiz: "Započni kviz"
+      startQuiz: "Započni kviz",
+      sortBy: "Sortiraj po",
+      newest: "Najnovije",
+      oldest: "Najstarije"
     }
   };
   
@@ -73,6 +91,13 @@ const getTranslations = (language: SupportedLanguage) => {
 export function QuizzesPage({ quizzes, language }: QuizzesPageProps) {
   const t = getTranslations(language);
   const prefix = language === "en" ? "" : `/${language}`;
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const sortedQuizzes = [...quizzes].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+  });
   
   return (
     <Container>
@@ -87,9 +112,25 @@ export function QuizzesPage({ quizzes, language }: QuizzesPageProps) {
           </p>
         </div>
 
+        {/* Sort Dropdown */}
+        <div className="mb-8 flex justify-end">
+          <Select
+            value={sortOrder}
+            onValueChange={(value) => setSortOrder(value as "asc" | "desc")}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={t.sortBy} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">{t.oldest}</SelectItem>
+              <SelectItem value="desc">{t.newest}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Quiz Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {quizzes.map((quiz) => {
+          {sortedQuizzes.map((quiz) => {
             const title = language === "en" ? quiz.title :
                         language === "sl" ? (quiz.title_sl || quiz.title) :
                         (quiz.title_hr || quiz.title);
@@ -101,7 +142,7 @@ export function QuizzesPage({ quizzes, language }: QuizzesPageProps) {
             return (
               <Card key={quiz.id} className="flex flex-col">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4">
                     <CardTitle className="line-clamp-2">{title}</CardTitle>
                     <BrainCircuit className="h-5 w-5 text-primary" />
                   </div>
@@ -123,7 +164,7 @@ export function QuizzesPage({ quizzes, language }: QuizzesPageProps) {
                             alt={quiz.teacher.name}
                             width={24}
                             height={24}
-                            className="rounded-full"
+                            className="rounded-full object-cover aspect-square"
                           />
                         ) : null}
                         <span>{quiz.teacher.name}</span>

@@ -23,6 +23,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
+import dynamic from "next/dynamic";
+
+const PdfThumbnail = dynamic(() => import("@/components/pdf-thumbnail"), { 
+    ssr: false,
+    loading: () => <div className="w-full h-48 bg-muted/10 flex items-center justify-center animate-pulse"><FileText className="h-10 w-10 text-muted-foreground/20" /></div>
+});
 
 interface Material {
   id: string;
@@ -189,6 +195,10 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
                 />
             </div>
         );
+    }
+
+    if (fileExt === 'pdf') {
+        return <PdfThumbnail url={material.url} />;
     }
 
     // Icon placeholders

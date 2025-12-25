@@ -21,6 +21,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import dynamic from "next/dynamic";
@@ -299,6 +300,9 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
               <DialogTitle className="mr-4">
                   {previewMaterial && getLocalizedContent(previewMaterial, "title", language)}
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                  {previewMaterial ? `Preview of ${previewMaterial.filename}` : "Material preview"}
+              </DialogDescription>
               {previewMaterial && (
                 <Button variant="ghost" size="icon" asChild>
                   <a href={previewMaterial.url} target="_blank" rel="noopener noreferrer">

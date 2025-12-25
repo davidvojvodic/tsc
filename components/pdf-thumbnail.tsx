@@ -8,7 +8,7 @@ import { FileText } from "lucide-react";
 // Note: You must copy the worker file from node_modules/pdfjs-dist/build/pdf.worker.min.mjs
 // to public/pdf.worker.min.mjs in your specific Next.js setup, or use a CDN.
 // For simplicity and reliability in this environment, we'll try CDN first.
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PdfThumbnailProps {
   url: string;
@@ -22,7 +22,8 @@ export default function PdfThumbnail({ url }: PdfThumbnailProps) {
     setNumPages(numPages);
   }
 
-  function onDocumentLoadError() {
+  function onDocumentLoadError(error: Error) {
+    console.error("PDF Load Error:", error);
     setError(true);
   }
 
@@ -46,6 +47,10 @@ export default function PdfThumbnail({ url }: PdfThumbnailProps) {
                 <FileText className="h-10 w-10 text-muted-foreground/20" />
             </div>
         }
+        options={{
+            cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+            cMapPacked: true,
+        }}
       >
         <Page 
             pageNumber={1} 

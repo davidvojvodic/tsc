@@ -82,7 +82,7 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
                 <img 
                     src={material.url} 
                     alt={material.title} 
-                    className="max-w-full max-h-[70vh] object-contain" 
+                    className="max-w-full max-h-full object-contain" 
                 />
             </div>
         );
@@ -92,7 +92,7 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
         return (
             <iframe 
                 src={material.url} 
-                className="w-full h-[70vh] rounded-md border bg-white"
+                className="w-full flex-1 rounded-md border bg-white"
             />
         );
     }
@@ -101,7 +101,7 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
         return (
             <iframe 
                 src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(material.url)}`}
-                className="w-full h-[70vh] rounded-md border bg-white"
+                className="w-full flex-1 rounded-md border bg-white"
             />
         );
     }
@@ -295,7 +295,7 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
 
 
       <Dialog open={!!previewMaterial} onOpenChange={(open) => !open && setPreviewMaterial(null)}>
-        <DialogContent className="max-w-4xl w-full h-[80vh]">
+        <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col">
             <DialogHeader className="flex flex-row items-center justify-between">
               <DialogTitle className="mr-4">
                   {previewMaterial && getLocalizedContent(previewMaterial, "title", language)}

@@ -90,6 +90,7 @@ async function getMaterials(
           category_hr: true,
           filename: true,
           language: true,
+          url: true,
         },
         orderBy: {
           createdAt: "desc",

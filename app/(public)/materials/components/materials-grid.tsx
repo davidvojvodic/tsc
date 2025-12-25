@@ -12,10 +12,17 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, File, Globe } from "lucide-react";
+import { Download, File, Globe, Eye, ExternalLink, FileText, FileSpreadsheet, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import { SupportedLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 
 interface Material {
   id: string;
@@ -33,6 +40,7 @@ interface Material {
   category_hr?: string | null;
   filename: string;
   language: string;
+  url: string;
 }
 
 interface MaterialsGridProps {
@@ -41,6 +49,58 @@ interface MaterialsGridProps {
 }
 
 export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
+  const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
+
+  const getPreviewContent = (material: Material) => {
+    const defaultPreview = (
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+            <File className="h-16 w-16 text-muted-foreground mb-4" />
+            <p className="text-lg font-medium mb-2">
+                {language === "sl" ? "Predogled ni na voljo" : language === "hr" ? "Pregled nije dostupan" : "Preview not available"}
+            </p>
+            <Button onClick={() => handleDownload(material.id, material.filename)}>
+                <Download className="mr-2 h-4 w-4" />
+                {language === "sl" ? "Prenesi datoteko" : language === "hr" ? "Preuzmi datoteku" : "Download file"}
+            </Button>
+        </div>
+    );
+
+    if (!material.url) return defaultPreview;
+
+    const fileExt = material.filename.split('.').pop()?.toLowerCase();
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt || '')) {
+        return (
+            <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-md overflow-hidden">
+                <img 
+                    src={material.url} 
+                    alt={material.title} 
+                    className="max-w-full max-h-[70vh] object-contain" 
+                />
+            </div>
+        );
+    }
+    
+    if (fileExt === 'pdf') {
+        return (
+            <iframe 
+                src={material.url} 
+                className="w-full h-[70vh] rounded-md border bg-white"
+            />
+        );
+    }
+    
+    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExt || '')) {
+        return (
+            <iframe 
+                src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(material.url)}`}
+                className="w-full h-[70vh] rounded-md border bg-white"
+            />
+        );
+    }
+
+    return defaultPreview;
+  };
   if (materials.length === 0) {
     return (
       <div className="text-center py-12">
@@ -105,7 +165,48 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
     return langCode;
   };
 
+
+
+  const getThumbnailContent = (material: Material) => {
+    if (!material.url) {
+        return (
+            <div className="w-full h-48 bg-muted/30 flex items-center justify-center">
+                <File className="h-16 w-16 text-muted-foreground/50" />
+            </div>
+        );
+    }
+
+    const fileExt = material.filename.split('.').pop()?.toLowerCase();
+    
+    // Image thumbnail
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt || '')) {
+         return (
+            <div className="w-full h-48 bg-muted/30 flex items-center justify-center overflow-hidden">
+                <img 
+                    src={material.url} 
+                    alt={material.title} 
+                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                />
+            </div>
+        );
+    }
+
+    // Icon placeholders
+    let Icon = File;
+    if (fileExt === 'pdf') Icon = FileText;
+    else if (['doc', 'docx'].includes(fileExt || '')) Icon = FileText;
+    else if (['xls', 'xlsx', 'csv'].includes(fileExt || '')) Icon = FileSpreadsheet;
+    else if (['ppt', 'pptx'].includes(fileExt || '')) Icon = FileImage;
+
+    return (
+        <div className="w-full h-48 bg-muted/10 flex items-center justify-center group-hover:bg-muted/20 transition-colors">
+            <Icon className="h-20 w-20 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
+        </div>
+    );
+  };
+
   return (
+    <>
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {materials.map((material) => {
         const title = getLocalizedContent(material, "title", language);
@@ -132,7 +233,15 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
                 </Badge>
               )}
             </CardHeader>
-            <CardContent className="flex-1">
+            
+            <div 
+                className="cursor-pointer group overflow-hidden border-y border-muted/20"
+                onClick={() => setPreviewMaterial(material)}
+            >
+                {getThumbnailContent(material)}
+            </div>
+
+            <CardContent className="flex-1 pt-6 text-2xl">
               {description && (
                 <CardDescription className="line-clamp-2 mb-4">
                   {description}
@@ -154,22 +263,44 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
               </div>
             </CardContent>
             <CardFooter className="mt-auto pt-6">
-              <Button
-                className="w-full"
-                onClick={() => handleDownload(material.id, material.filename)}
-              >
-                <Download className="mr-2 h-4 w-4" />{" "}
-                {language === "sl"
-                  ? "Prenesi"
-                  : language === "hr"
-                    ? "Preuzmi"
-                    : "Download"}
-              </Button>
+              <div className="flex gap-2 w-full">
+                <Button
+                  className="w-full"
+                  onClick={() => handleDownload(material.id, material.filename)}
+                >
+                  <Download className="mr-2 h-4 w-4" />{" "}
+                  {language === "sl"
+                    ? "Prenesi"
+                    : language === "hr"
+                      ? "Preuzmi"
+                      : "Download"}
+                </Button>
+              </div>
             </CardFooter>
           </Card>
         );
       })}
     </div>
+
+
+      <Dialog open={!!previewMaterial} onOpenChange={(open) => !open && setPreviewMaterial(null)}>
+        <DialogContent className="max-w-4xl w-full h-[80vh]">
+            <DialogHeader className="flex flex-row items-center justify-between">
+              <DialogTitle className="mr-4">
+                  {previewMaterial && getLocalizedContent(previewMaterial, "title", language)}
+              </DialogTitle>
+              {previewMaterial && (
+                <Button variant="ghost" size="icon" asChild>
+                  <a href={previewMaterial.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+            </DialogHeader>
+            {previewMaterial && getPreviewContent(previewMaterial)}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

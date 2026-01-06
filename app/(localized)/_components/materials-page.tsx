@@ -90,11 +90,14 @@ async function getMaterials(
           category_hr: true,
           filename: true,
           language: true,
+          url: true,
+          previewUrl: true,
         },
         orderBy: {
           createdAt: "desc",
         },
       }),
+
       prisma.material.groupBy({
         by: language === "sl" ? ["category_sl"] : language === "hr" ? ["category_hr"] : ["category"],
         where: {

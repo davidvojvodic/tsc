@@ -28,6 +28,10 @@ const materialSchema = z.object({
     name: z.string(),
     size: z.number(),
   }),
+  preview: z.object({
+    url: z.string().url(),
+    key: z.string(),
+  }).optional().nullable(),
 });
 
 async function checkAdminAccess(userId: string) {
@@ -108,6 +112,8 @@ export async function POST(req: NextRequest) {
         size: validatedData.file.size,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         type: type as any,
+        previewUrl: validatedData.preview?.url,
+        previewKey: validatedData.preview?.key,
       },
     });
 

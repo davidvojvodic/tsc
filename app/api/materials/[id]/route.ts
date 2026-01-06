@@ -31,6 +31,13 @@ const updateMaterialSchema = z.object({
       size: z.number(),
     })
     .optional(),
+  preview: z
+    .object({
+      url: z.string().url(),
+      key: z.string(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export async function PATCH(
@@ -103,6 +110,14 @@ export async function PATCH(
         fileKey: validatedData.file.key,
         size: validatedData.file.size,
         type,
+      };
+    }
+
+    if (validatedData.preview) {
+      updateData = {
+        ...updateData,
+        previewUrl: validatedData.preview.url,
+        previewKey: validatedData.preview.key,
       };
     }
 
@@ -189,6 +204,8 @@ export async function POST(req: NextRequest) {
         size: validatedData.file.size,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         type: type as any,
+        previewUrl: validatedData.preview?.url,
+        previewKey: validatedData.preview?.key,
       },
     });
 

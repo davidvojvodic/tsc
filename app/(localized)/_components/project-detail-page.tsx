@@ -14,27 +14,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { GalleryView, GalleryImage } from "@/components/project/gallery-view";
+import { OptimizedGallery, GalleryImage } from "./activity-gallery";
 import { ProjectTeam } from "@/components/project/project-team";
 import { RichTextDisplay } from "@/components/rich-text-content";
 import { getLocalizedContent } from "@/lib/language-utils";
 import { SupportedLanguage } from "@/store/language-context";
 import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+
 import {
   Accordion,
   AccordionContent,
@@ -638,151 +625,14 @@ export function ProjectDetailPage({
                                                   🖼️ {t.activityGallery}
                                                 </h6>
 
-                                                {activity.images.length ===
-                                                1 ? (
-                                                  // Single image - larger display
-                                                  <Dialog>
-                                                    <DialogTrigger asChild>
-                                                      <div className="group relative aspect-video rounded-lg overflow-hidden bg-muted cursor-pointer max-w-md">
-                                                        <Image
-                                                          src={
-                                                            activity.images[0]
-                                                              .media.url
-                                                          }
-                                                          alt={
-                                                            getLocalizedContent(activity.images[0].media, "alt", language) ||
-                                                            activityTitle ||
-                                                            activity.title
-                                                          }
-                                                          fill
-                                                          quality={50}
-                                                          sizes="(max-width: 768px) 100vw, 400px"
-                                                          className="object-cover transition-transform group-hover:scale-105"
-                                                          loading="lazy"
-                                                        />
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                          <Expand className="w-6 h-6 text-white" />
-                                                        </div>
-                                                      </div>
-                                                    </DialogTrigger>
-                                                    <DialogContent className="max-w-4xl">
-                                                      <DialogHeader>
-                                                        <DialogTitle>
-                                                          {activityTitle ||
-                                                            activity.title}
-                                                        </DialogTitle>
-                                                      </DialogHeader>
-                                                      <div className="relative h-[70vh] max-h-[600px] w-full">
-                                                        <Image
-                                                          src={
-                                                            activity.images[0]
-                                                              .media.url
-                                                          }
-                                                          alt={
-                                                            getLocalizedContent(activity.images[0].media, "alt", language) ||
-                                                            activityTitle ||
-                                                            activity.title
-                                                          }
-                                                          fill
-                                                          quality={50}
-                                                          sizes="(max-width: 768px) 100vw, 80vw"
-                                                          className="object-contain"
-                                                        />
-                                                      </div>
-                                                    </DialogContent>
-                                                  </Dialog>
-                                                ) : (
-                                                  // Multiple images - grid with carousel dialog
-                                                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                                                    {activity.images.map(
-                                                      (imageRel, imgIndex) => (
-                                                        <Dialog
-                                                          key={
-                                                            imageRel.media.id
-                                                          }
-                                                        >
-                                                          <DialogTrigger
-                                                            asChild
-                                                          >
-                                                            <div className="group relative aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer">
-                                                              <Image
-                                                                src={
-                                                                  imageRel.media
-                                                                    .url
-                                                                }
-                                                                alt={
-                                                                  getLocalizedContent(imageRel.media, "alt", language) ||
-                                                                  `${activityTitle || activity.title} - Image ${imgIndex + 1}`
-                                                                }
-                                                                fill
-                                                                quality={50}
-                                                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                                                className="object-cover transition-transform group-hover:scale-105"
-                                                                loading="lazy"
-                                                              />
-                                                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                <Expand className="w-5 h-5 text-white" />
-                                                              </div>
-                                                              <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                                                                {imgIndex + 1}/
-                                                                {
-                                                                  activity
-                                                                    .images!
-                                                                    .length
-                                                                }
-                                                              </div>
-                                                            </div>
-                                                          </DialogTrigger>
-                                                          <DialogContent className="max-w-6xl">
-                                                            <DialogHeader>
-                                                              <DialogTitle>
-                                                                {activityTitle ||
-                                                                  activity.title}{" "}
-                                                                - {t.gallery}
-                                                              </DialogTitle>
-                                                            </DialogHeader>
-                                                            <Carousel className="w-full">
-                                                              <CarouselContent>
-                                                                {activity.images!.map(
-                                                                  (img) => (
-                                                                    <CarouselItem
-                                                                      key={
-                                                                        img
-                                                                          .media
-                                                                          .id
-                                                                      }
-                                                                    >
-                                                                      <div className="relative h-[70vh] max-h-[700px] w-full">
-                                                                        <Image
-                                                                          src={
-                                                                            img
-                                                                              .media
-                                                                              .url
-                                                                          }
-                                                                          alt={
-                                                                            getLocalizedContent(img.media, "alt", language) ||
-                                                                            activityTitle ||
-                                                                            activity.title
-                                                                          }
-                                                                          fill
-                                                                          quality={50}
-                                                                          sizes="(max-width: 768px) 100vw, 90vw"
-                                                                          className="object-contain"
-                                                                        />
-                                                                      </div>
-                                                                    </CarouselItem>
-                                                                  )
-                                                                )}
-                                                              </CarouselContent>
-                                                              <CarouselPrevious />
-                                                              <CarouselNext />
-                                                            </Carousel>
-                                                          </DialogContent>
-                                                        </Dialog>
-                                                      )
-                                                    )}
-                                                  </div>
-                                                )}
+                                                <OptimizedGallery
+                                                  images={activity.images.map(img => ({
+                                                    id: img.media.id,
+                                                    url: img.media.url,
+                                                    alt: getLocalizedContent(img.media, "alt", language) || activityTitle || activity.title || "Activity Image"
+                                                  }))}
+                                                  title={activityTitle || activity.title}
+                                                />
                                               </div>
                                             )}
 
@@ -885,11 +735,23 @@ export function ProjectDetailPage({
 
           {/* Project Gallery - only actual gallery images */}
           {projectGalleryImages.length > 0 && (
-            <GalleryView
-              images={projectGalleryImages}
-              title={t.projectGallery}
-              columns={4} // We now handle responsive columns inside the component
-            />
+            <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
+               <div className="p-6 pb-2">
+                 <h3 className="flex items-center gap-2 font-semibold">
+                    <span className="text-xl">🖼️</span> {t.projectGallery}
+                 </h3>
+               </div>
+               <div className="p-6 pt-2">
+                 <OptimizedGallery
+                   images={projectGalleryImages.map(img => ({
+                     ...img,
+                     alt: img.alt || projectName || project.name || "Gallery Image"
+                   }))}
+                   title={t.projectGallery}
+                   maxVisible={12}
+                 />
+               </div>
+            </div>
           )}
           {/* Resources */}
           {project.quizzes.length > 0 && (

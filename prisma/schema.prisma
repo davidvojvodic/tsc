@@ -157,7 +157,7 @@ model Media {
   posts        Post[]        @relation("PostCover")
   pages        Page[]
   projectHero  Project[]     @relation("ProjectHero")
-  gallery      ProjectToGallery[]
+  projectGallery ProjectToGallery[]
   activityMedia ProjectActivityToMedia[]
 
   @@index([projectId])

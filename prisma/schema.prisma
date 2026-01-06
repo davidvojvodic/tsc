@@ -158,7 +158,7 @@ model Media {
   pages        Page[]
   projectHero  Project[]     @relation("ProjectHero")
   projectGallery ProjectToGallery[]
-  activityMedia ProjectActivityToMedia[]
+  activities   ProjectActivityToMedia[]
 
   @@index([projectId])
   @@map("media")

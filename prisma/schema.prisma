@@ -156,7 +156,7 @@ model Media {
   teachers     Teacher[]     @relation("TeacherPhoto")
   posts        Post[]        @relation("PostCover")
   pages        Page[]
-  projects     Project[]     @relation("ProjectHeroImage")
+  projectHero  Project[]     @relation("ProjectHero")
   gallery      ProjectToGallery[]
   activityMedia ProjectActivityToMedia[]
 
@@ -319,12 +319,13 @@ model Project {
   publishedAt    DateTime?
   featured       Boolean   @default(false)
   heroImageId    String?
-  heroImage      Media?    @relation("ProjectHeroImage", fields: [heroImageId], references: [id])
+  heroImage      Media?    @relation("ProjectHero", fields: [heroImageId], references: [id])
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   timeline       ProjectPhase[]
   teachers       TeacherToProject[]
   quizzes        Quiz[]
+  // Removed duplicate Media[] if present, but here removing the spurious 'media' field if it was auto-added
   pages          Page[]
   posts          Post[]
   media          Media[]

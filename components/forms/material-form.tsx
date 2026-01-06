@@ -55,6 +55,14 @@ const formSchema = z.object({
   language: z.enum(["en", "sl", "hr"]).default("en"),
 });
 
+// Helper for preview file state
+interface PreviewFile {
+  url: string;
+  key: string;
+  name: string;
+  size: number;
+}
+
 type FormValues = z.infer<typeof formSchema>;
 
 interface MaterialFormProps {
@@ -73,6 +81,8 @@ interface MaterialFormProps {
     fileKey: string;
     filename: string;
     size: number;
+    previewUrl?: string | null;
+    previewKey?: string | null;
   };
 }
 
@@ -92,6 +102,17 @@ export function MaterialForm({ initialData }: MaterialFormProps) {
           key: initialData.fileKey,
           name: initialData.filename,
           size: initialData.size,
+        }
+      : null
+  );
+
+  const [previewFile, setPreviewFile] = useState<PreviewFile | null>(
+    initialData?.previewUrl && initialData?.previewKey
+      ? {
+          url: initialData.previewUrl,
+          key: initialData.previewKey,
+          name: "Preview Image",
+          size: 0, // We might not have size stored for preview
         }
       : null
   );
@@ -141,6 +162,7 @@ export function MaterialForm({ initialData }: MaterialFormProps) {
         body: JSON.stringify({
           ...values,
           file,
+          preview: previewFile,
         }),
       });
 
@@ -227,6 +249,66 @@ export function MaterialForm({ initialData }: MaterialFormProps) {
                     }}
                     onUploadError={(error: Error) => {
                       toast.error(`Upload failed: ${error.message}`);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <FormLabel>Preview Image (Optional)</FormLabel>
+              {previewFile ? (
+                <div className="flex items-center p-4 border rounded-lg bg-muted/50">
+                  <div className="h-12 w-12 rounded overflow-hidden bg-background relative mr-4">
+                     <img 
+                        src={previewFile.url} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                     />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{previewFile.name}</p>
+                    {previewFile.size > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        {formatBytes(previewFile.size)}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setPreviewFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <UploadDropzone
+                    endpoint="imageUploader"
+                    onClientUploadComplete={(res) => {
+                      if (res?.[0]) {
+                        setPreviewFile({
+                          url: res[0].ufsUrl || res[0].url,
+                          key: res[0].key,
+                          name: res[0].name,
+                          size: res[0].size,
+                        });
+                        toast.success("Preview image uploaded");
+                      }
+                    }}
+                    onUploadError={(error: Error) => {
+                      toast.error(`Upload failed: ${error.message}`);
+                    }}
+                    appearance={{
+                      container: "flex flex-col items-center justify-center border-2 border-dashed h-40 w-full rounded-md border-muted-foreground/25 bg-muted/5 hover:bg-muted/10 transition-colors",
+                      allowedContent: "text-xs text-muted-foreground mt-2",
+                      button: "bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium !h-auto !py-3 !px-6 !min-h-[40px] rounded-md transition-colors",
+                      label: "text-sm text-muted-foreground hover:text-foreground transition-colors",
+                    }}
+                    content={{
+                     label: "Upload preview image",
                     }}
                   />
                 </div>

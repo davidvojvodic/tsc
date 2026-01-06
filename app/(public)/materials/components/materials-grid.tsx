@@ -12,7 +12,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, File, Globe, Eye, ExternalLink, FileText, FileSpreadsheet, FileImage } from "lucide-react";
+import { Download, File, Globe, Eye, ExternalLink, FileText, FileSpreadsheet, FileImage, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SupportedLanguage } from "@/store/language-context";
 import { getLocalizedContent } from "@/lib/language-utils";
@@ -48,6 +48,7 @@ interface Material {
   filename: string;
   language: string;
   url: string;
+  previewUrl?: string | null;
 }
 
 interface MaterialsGridProps {
@@ -57,6 +58,13 @@ interface MaterialsGridProps {
 
 export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  // Reset loading state when material changes
+  const handlePreviewOpen = (material: Material) => {
+    setPreviewMaterial(material);
+    setIsPreviewLoading(true);
+  };
 
   const getPreviewContent = (material: Material) => {
     const defaultPreview = (
@@ -90,19 +98,35 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
     
     if (fileExt === 'pdf') {
         return (
-            <iframe 
-                src={material.url} 
-                className="w-full flex-1 rounded-md border bg-white"
-            />
+            <div className="w-full flex-1 relative bg-muted/5 rounded-md border overflow-hidden">
+                {isPreviewLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+                    </div>
+                )}
+                <iframe 
+                    src={material.url} 
+                    className={`w-full h-full bg-white opacity-0 transition-opacity duration-300 ${!isPreviewLoading ? 'opacity-100' : ''}`}
+                    onLoad={() => setIsPreviewLoading(false)}
+                />
+            </div>
         );
     }
     
     if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExt || '')) {
         return (
-            <iframe 
-                src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(material.url)}`}
-                className="w-full flex-1 rounded-md border bg-white"
-            />
+             <div className="w-full flex-1 relative bg-muted/5 rounded-md border overflow-hidden">
+                {isPreviewLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+                    </div>
+                )}
+                <iframe 
+                    src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(material.url)}`}
+                    className={`w-full h-full bg-white opacity-0 transition-opacity duration-300 ${!isPreviewLoading ? 'opacity-100' : ''}`}
+                    onLoad={() => setIsPreviewLoading(false)}
+                />
+            </div>
         );
     }
 
@@ -175,6 +199,19 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
 
 
   const getThumbnailContent = (material: Material) => {
+    // Priority 1: User uploaded preview image
+    if (material.previewUrl) {
+         return (
+            <div className="w-full h-48 bg-muted/30 flex items-center justify-center overflow-hidden">
+                <img 
+                    src={material.previewUrl} 
+                    alt={material.title} 
+                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                />
+            </div>
+        );
+    }
+
     if (!material.url) {
         return (
             <div className="w-full h-48 bg-muted/30 flex items-center justify-center">
@@ -198,20 +235,41 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
         );
     }
 
+    // PDF Thumbnail generation causing runtime errors (Object.defineProperty)
+    // Disabled to prevent page crashes. Falls back to icon.
+    // if (fileExt === 'pdf') {
+    //     return <PdfThumbnail url={material.url} />;
+    // }
+
+    // Icon placeholders with specific colors
+    let Icon = File;
+    let iconClass = "text-muted-foreground/40";
+    let bgClass = "bg-muted/10";
+
     if (fileExt === 'pdf') {
-        return <PdfThumbnail url={material.url} />;
+        Icon = FileText;
+        iconClass = "text-red-500/60 group-hover:text-red-600";
+        bgClass = "bg-red-500/5 group-hover:bg-red-500/10";
+    }
+    else if (['doc', 'docx'].includes(fileExt || '')) {
+        Icon = FileText;
+        iconClass = "text-blue-500/60 group-hover:text-blue-600";
+        bgClass = "bg-blue-500/5 group-hover:bg-blue-500/10";
+    }
+    else if (['xls', 'xlsx', 'csv'].includes(fileExt || '')) {
+        Icon = FileSpreadsheet;
+        iconClass = "text-green-500/60 group-hover:text-green-600";
+        bgClass = "bg-green-500/5 group-hover:bg-green-500/10";
+    }
+    else if (['ppt', 'pptx'].includes(fileExt || '')) {
+        Icon = FileImage;
+        iconClass = "text-orange-500/60 group-hover:text-orange-600";
+        bgClass = "bg-orange-500/5 group-hover:bg-orange-500/10";
     }
 
-    // Icon placeholders
-    let Icon = File;
-    if (fileExt === 'pdf') Icon = FileText;
-    else if (['doc', 'docx'].includes(fileExt || '')) Icon = FileText;
-    else if (['xls', 'xlsx', 'csv'].includes(fileExt || '')) Icon = FileSpreadsheet;
-    else if (['ppt', 'pptx'].includes(fileExt || '')) Icon = FileImage;
-
     return (
-        <div className="w-full h-48 bg-muted/10 flex items-center justify-center group-hover:bg-muted/20 transition-colors">
-            <Icon className="h-20 w-20 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
+        <div className={`w-full h-48 flex items-center justify-center transition-colors ${bgClass}`}>
+            <Icon className={`h-20 w-20 transition-colors ${iconClass}`} />
         </div>
     );
   };
@@ -232,11 +290,7 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
           <Card key={material.id} className="flex flex-col">
             <CardHeader>
               <div className="flex justify-between items-start mb-2">
-                <CardTitle className="line-clamp-2">{title}</CardTitle>
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Globe className="h-3 w-3" />
-                  {getLanguageName(material.language, language)}
-                </Badge>
+                <CardTitle className="line-clamp-2 leading-tight">{title}</CardTitle>
               </div>
               {category && (
                 <Badge variant="secondary" className="w-fit">
@@ -247,7 +301,7 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
             
             <div 
                 className="cursor-pointer group overflow-hidden border-y border-muted/20"
-                onClick={() => setPreviewMaterial(material)}
+                onClick={() => handlePreviewOpen(material)}
             >
                 {getThumbnailContent(material)}
             </div>
@@ -262,14 +316,6 @@ export function MaterialsGrid({ materials, language }: MaterialsGridProps) {
                 <div className="flex items-center">
                   <File className="mr-2 h-4 w-4" />
                   <span>{formatBytes(material.size)}</span>
-                </div>
-                <div>
-                  {material.downloads}{" "}
-                  {language === "sl"
-                    ? "prenosov"
-                    : language === "hr"
-                      ? "preuzimanja"
-                      : "downloads"}
                 </div>
               </div>
             </CardContent>

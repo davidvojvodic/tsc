@@ -255,6 +255,8 @@ model Question {
   questionType     QuestionType @default(SINGLE_CHOICE)
   answersData      Json?
   migrationVersion Int          @default(1)
+  options          Option[]     @relation("QuestionOptions")
+  correctAnswer    Option?      @relation("CorrectAnswer", fields: [correctOptionId], references: [id])
 
   @@index([quizId])
   @@index([questionType])
@@ -264,22 +266,24 @@ model Question {
 }
 
 model Option {
-  id             String   @id @default(uuid())
-  text           String?  @db.Text
-  text_sl        String?  @db.Text
-  text_hr        String?  @db.Text
-  questionId     String
-  correct        Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  imageUrl       String?  @db.VarChar(2048)
-  altText        String?  @db.Text
-  altText_sl     String?  @db.Text
-  altText_hr     String?  @db.Text
-  contentType    String   @default("text") @db.VarChar(20)
-  imageSuffix    String?  @db.Text
-  imageSuffix_sl String?  @db.Text
-  imageSuffix_hr String?  @db.Text
+  id                    String    @id @default(uuid())
+  text                  String?   @db.Text
+  text_sl               String?   @db.Text
+  text_hr               String?   @db.Text
+  questionId            String
+  correct               Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  imageUrl              String?   @db.VarChar(2048)
+  altText               String?   @db.Text
+  altText_sl            String?   @db.Text
+  altText_hr            String?   @db.Text
+  contentType           String    @default("text") @db.VarChar(20)
+  imageSuffix           String?   @db.Text
+  imageSuffix_sl        String?   @db.Text
+  imageSuffix_hr        String?   @db.Text
+  question              Question  @relation("QuestionOptions", fields: [questionId], references: [id], onDelete: Cascade)
+  correctAnswerQuestion Question? @relation("CorrectAnswer")
 
   @@index([questionId])
   @@index([contentType])

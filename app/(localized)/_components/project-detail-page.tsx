@@ -419,14 +419,7 @@ export function ProjectDetailPage({
                 {completionPercentage}%
               </p>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground break-words">
-                {t.resources}
-              </p>
-              <p className="text-lg sm:text-xl font-semibold break-words">
-                {project.quizzes.length} {t.quizzes}
-              </p>
-            </div>
+           
           </div>
         </CardContent>
       </Card>

@@ -177,6 +177,13 @@ export default async function MaterialsPage(props: {
                 ? "Pristupite našoj zbirci obrazovnih resursa i dokumenata kao podrška vašem putovanju učenja."
                 : "Access our collection of educational resources and documents to support your learning journey."}
           </p>
+          <p className="mt-4 text-sm text-muted-foreground max-w-2xl mx-auto">
+            {language === "sl"
+              ? "Razen tam, kjer je navedeno drugače, je to delo licencirano pod CC BY-NC 4.0."
+              : language === "hr"
+                ? "Osim tamo gdje je drugačije naznačeno, ovo je djelo licencirano pod CC BY-NC 4.0."
+                : "Except where otherwise noted, this work is licensed under CC BY-NC 4.0."}
+          </p>
         </div>
 
         <LocalizedMaterialsFilter categories={categories} language={language} />

@@ -24,6 +24,7 @@ const getTranslations = (language: SupportedLanguage) => {
       quickLinks: "Quick Links",
       resourcesHeading: "Resources",
       copyright: "© 2024 WaterWise. All rights reserved.",
+      license: "Except where otherwise noted, this work is licensed under CC BY-NC 4.0.",
       address:
         "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
       coordinator: "Mitja Draškovič, WaterWise project coordinator",
@@ -49,6 +50,7 @@ const getTranslations = (language: SupportedLanguage) => {
       quickLinks: "Hitre povezave",
       resourcesHeading: "Viri",
       copyright: "© 2024 WaterWise. Vse pravice pridržane.",
+      license: "Razen tam, kjer je navedeno drugače, je to delo licencirano pod CC BY-NC 4.0.",
       address:
         "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
       coordinator: "Mitja Draškovič, koordinator projekta WaterWise",
@@ -74,6 +76,7 @@ const getTranslations = (language: SupportedLanguage) => {
       quickLinks: "Brze poveznice",
       resourcesHeading: "Resursi",
       copyright: "© 2024 WaterWise. Sva prava pridržana.",
+      license: "Osim tamo gdje je drugačije naznačeno, ovo je djelo licencirano pod CC BY-NC 4.0.",
       address:
         "Tehniški šolski center Maribor, Zolajeva ulica 12, 2000 Maribor",
       coordinator: "Mitja Draškovič, koordinator projekta WaterWise",
@@ -304,7 +307,10 @@ export async function Footer() {
             </div>
 
             {/* Copyright */}
-            <p className="text-xs text-muted-foreground">{t.copyright}</p>
+            <div className="flex flex-col items-center sm:items-end gap-1">
+              <p className="text-xs text-muted-foreground">{t.copyright}</p>
+              <p className="text-xs text-muted-foreground text-center sm:text-right max-w-sm">{t.license}</p>
+            </div>
           </div>
         </div>
       </Container>

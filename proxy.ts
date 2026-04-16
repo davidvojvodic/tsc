@@ -18,6 +18,20 @@ const EXCLUDED_PATHS = [
   "/public",
 ];
 
+// Allow back/forward cache: Next.js marks dynamic pages with `no-store`, which
+// disables bfcache. Swapping to `no-cache` keeps pages fresh but bfcache-eligible.
+const BFCACHE_FRIENDLY_CACHE_CONTROL = "private, no-cache, must-revalidate";
+
+function withPassthrough(request: NextRequest, locale: string) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-locale", locale);
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+  response.headers.set("Cache-Control", BFCACHE_FRIENDLY_CACHE_CONTROL);
+  return response;
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -41,7 +55,7 @@ export function proxy(request: NextRequest) {
     // If path already has language prefix, ensure cookie is set to match URL language
     const pathLang = pathname.split("/")[1];
     if (SUPPORTED_LANGUAGES.includes(pathLang)) {
-      const response = NextResponse.next();
+      const response = withPassthrough(request, pathLang);
       const currentCookie = request.cookies.get("NEXT_LOCALE")?.value;
 
       // Only set cookie if it's different from current
@@ -55,7 +69,7 @@ export function proxy(request: NextRequest) {
       return response;
     }
 
-    return NextResponse.next();
+    return withPassthrough(request, DEFAULT_LANGUAGE);
   }
 
   // Get language from cookie

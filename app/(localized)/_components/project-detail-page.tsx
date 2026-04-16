@@ -11,7 +11,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { OptimizedGallery, GalleryImage } from "./activity-gallery";
@@ -383,7 +382,9 @@ export function ProjectDetailPage({
       {/* Project Overview */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>{t.aboutThisProject}</CardTitle>
+          <h2 className="text-2xl font-semibold leading-none tracking-tight">
+            {t.aboutThisProject}
+          </h2>
           <CardDescription>{t.projectOverview}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -431,7 +432,9 @@ export function ProjectDetailPage({
           {project.timeline.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>{t.projectTimeline}</CardTitle>
+                <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                  {t.projectTimeline}
+                </h2>
                 <CardDescription>{t.trackProgress}</CardDescription>
               </CardHeader>
               <CardContent>
@@ -508,9 +511,9 @@ export function ProjectDetailPage({
                                           </div>
 
                                           <div className="text-left flex-1 min-w-0">
-                                            <h5 className="font-semibold text-sm sm:text-base group-hover:text-primary transition-colors break-words">
+                                            <h4 className="font-semibold text-sm sm:text-base group-hover:text-primary transition-colors break-words">
                                               {activityTitle || activity.title}
-                                            </h5>
+                                            </h4>
 
                                             {/* Info badges */}
                                             <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3">
@@ -586,9 +589,9 @@ export function ProjectDetailPage({
                                           {activity.teachers &&
                                             activity.teachers.length > 0 && (
                                               <div className="bg-muted/30 rounded-lg p-4">
-                                                <h6 className="font-medium mb-3 text-sm text-foreground flex items-center gap-2">
+                                                <h5 className="font-medium mb-3 text-sm text-foreground flex items-center gap-2">
                                                   👥 {t.assignedTeachers}
-                                                </h6>
+                                                </h5>
                                                 <div className="flex flex-wrap gap-2">
                                                   {activity.teachers.map(
                                                     (teacherRel) => (
@@ -614,9 +617,9 @@ export function ProjectDetailPage({
                                           {activity.images &&
                                             activity.images.length > 0 && (
                                               <div className="bg-muted/30 rounded-lg p-4">
-                                                <h6 className="font-medium mb-4 text-sm text-foreground flex items-center gap-2">
+                                                <h5 className="font-medium mb-4 text-sm text-foreground flex items-center gap-2">
                                                   🖼️ {t.activityGallery}
-                                                </h6>
+                                                </h5>
 
                                                 <OptimizedGallery
                                                   images={activity.images.map(img => ({
@@ -638,9 +641,9 @@ export function ProjectDetailPage({
                                             
                                             return languageFilteredMaterials.length > 0 && (
                                               <div className="bg-muted/30 rounded-lg p-4">
-                                                <h6 className="font-medium mb-4 text-sm text-foreground flex items-center gap-2">
+                                                <h5 className="font-medium mb-4 text-sm text-foreground flex items-center gap-2">
                                                   📁 {t.activityResources}
-                                                </h6>
+                                                </h5>
                                                 <div className="space-y-3">
                                                   {languageFilteredMaterials.map((materialRel) => (
                                                     <div
@@ -730,9 +733,9 @@ export function ProjectDetailPage({
           {projectGalleryImages.length > 0 && (
             <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
                <div className="p-6 pb-2">
-                 <h3 className="flex items-center gap-2 font-semibold">
+                 <h2 className="flex items-center gap-2 font-semibold">
                     <span className="text-xl">🖼️</span> {t.projectGallery}
-                 </h3>
+                 </h2>
                </div>
                <div className="p-6 pt-2">
                  <OptimizedGallery
@@ -750,10 +753,10 @@ export function ProjectDetailPage({
           {project.quizzes.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <h2 className="flex items-center gap-2 text-2xl font-semibold leading-none tracking-tight">
                   <BrainCircuit className="h-5 w-5" />
                   {t.learningResources}
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">

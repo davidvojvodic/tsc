@@ -15,5 +15,5 @@ export default async function ProjectPage({
   const { slug } = await params;
   
   // Redirect to the localized path
-  redirect(`/${language === "en" ? "" : language}/projects/${slug}`);
+  redirect(`/${language === "en" ? "en" : language}/projects/${slug}`);
 }

@@ -8,5 +8,5 @@ export default async function QuizzesPage() {
   const language = langCookie?.value || "en";
   
   // Redirect to the localized path
-  redirect(`/${language === "en" ? "" : language}/quizzes`);
+  redirect(`/${language === "en" ? "en" : language}/quizzes`);
 }

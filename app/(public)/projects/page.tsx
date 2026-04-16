@@ -8,5 +8,5 @@ export default async function ProjectsPage() {
   const language = langCookie?.value || "en";
   
   // Redirect to the localized path
-  redirect(`/${language === "en" ? "" : language}/projects`);
+  redirect(`/${language === "en" ? "en" : language}/projects`);
 }

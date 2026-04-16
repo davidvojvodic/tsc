@@ -109,8 +109,8 @@ const getNavigationLinks = (language: SupportedLanguage) => {
     cookies: "/cookies",
   };
 
-  // If we're not in English, prefix all paths with language code
-  const prefix = language === "en" ? "" : `/${language}`;
+  // Prefix all paths with language code
+  const prefix = `/${language}`;
 
   const paths = {
     home: `${prefix}${basePaths.home}`,

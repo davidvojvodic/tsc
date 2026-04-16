@@ -15,5 +15,5 @@ export default async function QuizPage({
   const { id } = await params;
   
   // Redirect to the localized path
-  redirect(`/${language === "en" ? "" : language}/quizzes/${id}`);
+  redirect(`/${language === "en" ? "en" : language}/quizzes/${id}`);
 }
